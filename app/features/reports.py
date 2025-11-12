@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, Response
 from flask_login import login_required
 from sqlalchemy import func
-from app.db.models import db, Inventory, Item, Warehouse, Event, NeedsList, Fulfilment, Donor, Donation
+from app.db.models import db, Inventory, Item, Warehouse, Event, Donor, Donation
 from datetime import datetime
 import csv
 from io import StringIO
@@ -68,14 +68,6 @@ def export_inventory():
         mimetype='text/csv',
         headers={'Content-Disposition': f'attachment; filename=inventory_summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
     )
-
-@reports_bp.route('/needs_fulfilment')
-@login_required
-def needs_fulfilment():
-    needs = NeedsList.query.order_by(NeedsList.create_dtime.desc()).limit(100).all()
-    fulfilments = Fulfilment.query.order_by(Fulfilment.create_dtime.desc()).limit(100).all()
-    
-    return render_template('reports/needs_fulfilment.html', needs=needs, fulfilments=fulfilments)
 
 @reports_bp.route('/donations_summary')
 @login_required

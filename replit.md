@@ -4,12 +4,12 @@
 
 DRIMS (Disaster Relief Inventory Management System) is a comprehensive web-based platform for the Government of Jamaica's ODPEM. It manages the full lifecycle of disaster relief supplies, from inventory tracking and donation management to relief request processing and distribution.
 
-The system integrates a **dual workflow architecture**, combining the authoritative ODPEM `aidmgmt-3.sql` schema with modern DRIMS workflow enhancements for compliance and improved user experience.
+The system uses the authoritative ODPEM `aidmgmt-3.sql` schema for all disaster relief workflows, ensuring complete compliance with established government processes.
 
 Key capabilities include:
 - **Multi-warehouse inventory management** with real-time and bin-level tracking.
 - **Disaster event coordination** and supply allocation.
-- **Dual relief workflows**: AIDMGMT (Request → Package → Intake) and DRIMS (Needs List → Fulfilment → Dispatch → Receipt).
+- **AIDMGMT relief workflow**: Request → Package → Intake for disaster relief processing.
 - **Comprehensive management suite**: User administration with RBAC, donor, agency, custodian management, inventory transfers, and location tracking.
 - **Analytics & reporting**: Dashboard with KPIs, notifications, and exportable reports.
 - **Donation and transfer management** with audit trails.
@@ -20,6 +20,14 @@ Key capabilities include:
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+
+### November 12, 2025 - DRIMS Needs/Fulfillment Workflow Removal (System Simplification)
+- **Scope**: Removed entire Needs List/Fulfillment/Dispatch/Receipt workflow to focus exclusively on AIDMGMT
+- **Database**: Dropped 7 tables (needs_list, needs_list_item, fulfilment, fulfilment_line_item, fulfilment_edit_log, dispatch_manifest, receipt_record)
+- **Schema Reduction**: Database reduced from 47 to 40 tables
+- **Backup Created**: drims_backup_20251112180328.sql (131KB) - full backup before destructive changes
+- **Code Cleanup**: Removed 4 Flask blueprints, 7 model classes, navigation menu items, and 3 RBAC functions (can_approve_needs_lists, can_prepare_fulfilments, can_submit_needs_lists)
+- **Rationale**: Streamlined system to use only the authoritative ODPEM AIDMGMT workflow for all relief operations
 
 ### November 12, 2025 - Official Government Branding Implementation
 - **Login Screen**: Integrated Jamaica Coat of Arms and ODPEM logo with proper hierarchy
@@ -61,7 +69,7 @@ Preferred communication style: Simple, everyday language.
 - **Data Processing**: Pandas 2.2.2
 
 ### Application Structure
-- **Modular Blueprint Architecture**: `app.py` for main application, `app/features/*` for feature-specific blueprints (AIDMGMT workflow, DRIMS workflow, core entities, management features, system features).
+- **Modular Blueprint Architecture**: `app.py` for main application, `app/features/*` for feature-specific blueprints (AIDMGMT workflow, core entities, management features, system features).
 - `app/db/models.py`: SQLAlchemy models mapping to a pre-existing database schema (database-first approach).
 - `app/core/*`: Shared utilities.
 - `templates/`: Jinja2 templates with consistent GOJ branding.
@@ -75,7 +83,7 @@ Preferred communication style: Simple, everyday language.
 - **Empty States**: Icon-based empty states for improved user experience.
 
 ### Database Architecture
-- **Hybrid Schema Strategy**: 51 tables total, combining 26 core ODPEM tables (`aidmgmt-3.sql`) and 16 DRIMS extension tables.
+- **Schema**: 40 tables total from the authoritative ODPEM `aidmgmt-3.sql` schema.
 - **Key Design Decisions**:
     - **UPPERCASE Enforcement**: All `varchar` fields stored in uppercase.
     - **Audit Fields**: `create_by_id`, `create_dtime`, `update_by_id`, `update_dtime`, `version_nbr` on ODPEM tables.
@@ -85,7 +93,6 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Flow Patterns
 - **AIDMGMT Relief Workflow**: Relief Request Creation → Package Preparation → Distribution & Intake.
-- **DRIMS Modern Workflow**: Needs Assessment (Draft → Submitted → Approved → Completed) → Fulfilment Processing (In Preparation → Ready → Dispatched → Received → Completed) → Dispatch Tracking → Receipt Confirmation.
 - **Inventory Management**: Central `inventory` table tracks stock by warehouse and item, with `usable_qty`, `reserved_qty`, `defective_qty`, `expired_qty`. `location` table provides bin-level tracking.
 
 ## External Dependencies

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify
 from flask_login import login_required
 from sqlalchemy import func
-from app.db.models import db, Inventory, Item, NeedsList, Fulfilment
+from app.db.models import db, Inventory, Item
 
 notifications_bp = Blueprint('notifications', __name__)
 
@@ -16,10 +16,7 @@ def unread_count():
         func.sum(Inventory.usable_qty) <= Item.reorder_qty
     ).count()
     
-    pending_needs = NeedsList.query.filter_by(status='Submitted').count()
-    pending_fulfilments = Fulfilment.query.filter_by(status='In Preparation').count()
-    
-    total_count = low_stock_count + pending_needs + pending_fulfilments
+    total_count = low_stock_count
     
     return jsonify({'count': total_count})
 
@@ -39,9 +36,6 @@ def index():
         func.sum(Inventory.usable_qty) <= Item.reorder_qty
     ).all()
     
-    pending_needs = NeedsList.query.filter_by(status='Submitted').count()
-    pending_fulfilments = Fulfilment.query.filter_by(status='In Preparation').count()
-    
     notifications = []
     
     if low_stock_items:
@@ -54,25 +48,5 @@ def index():
                 'link': f'/items/{item.item_id}',
                 'timestamp': 'Just now'
             })
-    
-    if pending_needs > 0:
-        notifications.append({
-            'type': 'info',
-            'icon': 'clipboard-check',
-            'title': 'Pending Needs Lists',
-            'message': f'{pending_needs} needs list(s) awaiting approval',
-            'link': '/needs_list/',
-            'timestamp': 'Today'
-        })
-    
-    if pending_fulfilments > 0:
-        notifications.append({
-            'type': 'info',
-            'icon': 'truck',
-            'title': 'Pending Fulfilments',
-            'message': f'{pending_fulfilments} fulfilment(s) in preparation',
-            'link': '/fulfilment/',
-            'timestamp': 'Today'
-        })
     
     return render_template('notifications/index.html', notifications=notifications)

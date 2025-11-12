@@ -2,7 +2,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required
 from sqlalchemy import func, desc
 from app.db.models import (
-    db, Inventory, Item, Warehouse, NeedsList, Fulfilment, 
+    db, Inventory, Item, Warehouse, 
     Event, Donor, Agency, User
 )
 from datetime import datetime, timedelta
@@ -55,23 +55,7 @@ def index():
         Warehouse.warehouse_id, Warehouse.warehouse_name
     ).all()
     
-    recent_needs = NeedsList.query.order_by(desc(NeedsList.create_dtime)).limit(50).all()
-    recent_fulfilments = Fulfilment.query.order_by(desc(Fulfilment.create_dtime)).limit(50).all()
     active_events = Event.query.filter_by(status_code='A').order_by(desc(Event.event_start_date)).limit(5).all()
-    
-    submitted_needs = NeedsList.query.filter_by(status='Submitted').order_by(desc(NeedsList.create_dtime)).limit(10).all()
-    awaiting_approval_needs = NeedsList.query.filter_by(status='Awaiting Approval').order_by(desc(NeedsList.create_dtime)).limit(10).all()
-    ready_fulfilments = Fulfilment.query.filter_by(status='Ready').order_by(desc(Fulfilment.create_dtime)).limit(10).all()
-    
-    needs_by_status = db.session.query(
-        NeedsList.status,
-        func.count(NeedsList.needs_list_id).label('count')
-    ).group_by(NeedsList.status).all()
-    
-    fulfilment_by_status = db.session.query(
-        Fulfilment.status,
-        func.count(Fulfilment.fulfilment_id).label('count')
-    ).group_by(Fulfilment.status).all()
     
     category_distribution = db.session.query(
         ItemCateg.catg_desc,
@@ -91,15 +75,8 @@ def index():
         'total_inventory_value': total_inventory_value,
         'low_stock_items': low_stock_items,
         'warehouse_stock': warehouse_stock,
-        'recent_needs': recent_needs,
-        'recent_fulfilments': recent_fulfilments,
         'active_events': active_events,
-        'needs_by_status': dict(needs_by_status),
-        'fulfilment_by_status': dict(fulfilment_by_status),
-        'category_distribution': category_distribution,
-        'submitted_needs': submitted_needs,
-        'awaiting_approval_needs': awaiting_approval_needs,
-        'ready_fulfilments': ready_fulfilments
+        'category_distribution': category_distribution
     }
     
     if 'Logistics Manager' in user_role_names or 'LOG_MGR' in user_role_codes:
