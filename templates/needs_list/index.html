@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "macros/status_badge.html" import render_status_badge %}
+
+{% block title %}Needs Lists - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Needs Lists</h2>
+    <a href="{{ url_for('needs_list.create') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Create Needs List
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>List Number</th>
+                        <th>Agency</th>
+                        <th>Event</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for list in needs_lists %}
+                    <tr>
+                        <td><strong>{{ list.list_number }}</strong></td>
+                        <td>{{ list.agency.agency_name }}</td>
+                        <td>{{ list.event.event_name }}</td>
+                        <td>{{ render_status_badge(list.priority, 'needs_list_priority') }}</td>
+                        <td>{{ render_status_badge(list.status, 'needs_list') }}</td>
+                        <td>{{ list.items|length }} items</td>
+                        <td>{{ list.created_at.strftime('%Y-%m-%d %H:%M') if list.created_at else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('needs_list.view', needs_list_id=list.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No needs lists found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

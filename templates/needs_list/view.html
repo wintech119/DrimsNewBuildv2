@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% from "macros/status_badge.html" import render_status_badge %}
+
+{% block title %}{{ needs_list.list_number }} - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Needs List: {{ needs_list.list_number }}</h2>
+    <a href="{{ url_for('needs_list.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                <h5 class="mb-0">List Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>List Number:</strong></div>
+                    <div class="col-md-8">{{ needs_list.list_number }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Agency:</strong></div>
+                    <div class="col-md-8">{{ needs_list.agency.agency_name }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Event:</strong></div>
+                    <div class="col-md-8">{{ needs_list.event.event_name }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Priority:</strong></div>
+                    <div class="col-md-8">{{ render_status_badge(needs_list.priority, 'needs_list_priority') }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Status:</strong></div>
+                    <div class="col-md-8">{{ render_status_badge(needs_list.status, 'needs_list') }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Requested By:</strong></div>
+                    <div class="col-md-8">{{ needs_list.requested_by_name or 'N/A' }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Contact:</strong></div>
+                    <div class="col-md-8">{{ needs_list.requested_by_contact or 'N/A' }}</div>
+                </div>
+                {% if needs_list.notes %}
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Notes:</strong></div>
+                    <div class="col-md-8">{{ needs_list.notes }}</div>
+                </div>
+                {% endif %}
+                {% if needs_list.justification %}
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Justification:</strong></div>
+                    <div class="col-md-8">{{ needs_list.justification }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                <h5 class="mb-0">Items Requested</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Requested</th>
+                                <th>Approved</th>
+                                <th>Fulfilled</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in needs_list.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.item.item_name }}</strong><br>
+                                    <small class="text-muted">{{ item.item.item_catg_name }}</small>
+                                </td>
+                                <td>{{ "%.2f"|format(item.requested_qty) }}</td>
+                                <td>{{ "%.2f"|format(item.approved_qty) }}</td>
+                                <td>{{ "%.2f"|format(item.fulfilled_qty) }}</td>
+                                <td><span class="badge bg-secondary">{{ item.status }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-gold);">
+                <h6 class="mb-0">Actions</h6>
+            </div>
+            <div class="card-body">
+                {% if needs_list.is_draft %}
+                <form method="POST" action="{{ url_for('needs_list.submit', needs_list_id=needs_list.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-send"></i> Submit for Review
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if needs_list.status == 'Submitted' %}
+                <form method="POST" action="{{ url_for('needs_list.approve', needs_list_id=needs_list.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                </form>
+                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="bi bi-x-circle"></i> Reject
+                </button>
+                {% endif %}
+
+                {% if needs_list.status == 'Approved' %}
+                <a href="{{ url_for('fulfilment.create_from_needs_list', needs_list_id=needs_list.id) }}" class="btn btn-primary w-100 mb-2">
+                    <i class="bi bi-box"></i> Create Fulfilment
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="background-color: var(--goj-gold);">
+                <h6 class="mb-0">Timeline</h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Created:</strong><br>{{ needs_list.created_at.strftime('%Y-%m-%d %H:%M') if needs_list.created_at else 'N/A' }}<br>
+                    <small class="text-muted">by {{ needs_list.created_by }}</small></p>
+                    
+                    {% if needs_list.submitted_at %}
+                    <p><strong>Submitted:</strong><br>{{ needs_list.submitted_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+                    
+                    {% if needs_list.reviewed_at %}
+                    <p><strong>Reviewed:</strong><br>{{ needs_list.reviewed_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                    <small class="text-muted">by {{ needs_list.reviewed_by }}</small></p>
+                    {% endif %}
+                    
+                    {% if needs_list.approved_at %}
+                    <p><strong>Approved:</strong><br>{{ needs_list.approved_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                    <small class="text-muted">by {{ needs_list.approved_by }}</small></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('needs_list.reject', needs_list_id=needs_list.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Needs List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="review_notes" class="form-label">Reason for Rejection</label>
+                        <textarea name="review_notes" id="review_notes" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
