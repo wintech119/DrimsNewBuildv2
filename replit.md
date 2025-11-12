@@ -1,5 +1,17 @@
 # DRIMS - Disaster Relief Inventory Management System
 
+## Recent Changes
+
+**November 12, 2025 - Complete DRIMS Modern Workflow Implementation**
+- ✅ Needs List feature: Create, submit, approve relief needs with full workflow state management
+- ✅ Fulfilment feature: Multi-step processing (In Preparation → Ready → Dispatched → Received → Completed)
+- ✅ Dispatch Manifest feature: Track shipment logistics with vehicle/driver information
+- ✅ Receipt Record feature: Confirm delivery with condition notes and discrepancy tracking
+- ✅ Status badge macro system for consistent UI across both workflows
+- ✅ Cascading status updates: Completing fulfilment auto-updates parent needs list
+- ✅ End-to-end workflow tested: NL000001/NL000002 → FUL000001/FUL000002 → RR000001
+- ✅ All features integrated into navigation menu with GOJ branding
+
 ## Overview
 
 DRIMS (Disaster Relief Inventory Management System) is a comprehensive web-based platform designed for the Government of Jamaica's Office of Disaster Preparedness and Emergency Management (ODPEM). The system manages the complete lifecycle of disaster relief supplies—from inventory tracking and donation management to relief request processing and distribution.
@@ -32,7 +44,10 @@ Preferred communication style: Simple, everyday language.
 
 **Modular Blueprint Architecture**:
 - `app.py` - Main Flask application with blueprint registration
-- `app/features/*` - Feature-specific blueprints (events, warehouses, items, inventory, donations, requests, packages, intake)
+- `app/features/*` - Feature-specific blueprints:
+  - AIDMGMT workflow: `requests.py`, `packages.py`, `intake.py`
+  - DRIMS workflow: `needs_list.py`, `fulfilment.py`, `dispatch.py`, `receipt.py`
+  - Core entities: `events.py`, `warehouses.py`, `items.py`, `inventory.py`, `donations.py`
 - `app/db/models.py` - SQLAlchemy models mapping to existing database schema
 - `app/core/*` - Shared utilities (audit helpers, status mappings)
 - `templates/` - Jinja2 templates organized by feature
@@ -88,10 +103,25 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Flow Patterns
 
-**AIDMGMT Relief Workflow**:
+**AIDMGMT Relief Workflow** (Official ODPEM Process):
 1. **Relief Request Creation** (`reliefrqst` + `reliefrqst_item`) - Agencies submit needs
 2. **Package Preparation** (`reliefpkg` + `reliefpkg_item`) - Warehouse staff allocate inventory
 3. **Distribution & Intake** (`dbintake` + `dbintake_item`) - Receiving locations confirm receipt
+
+**DRIMS Modern Workflow** (Enhanced User Experience):
+1. **Needs Assessment** (`needs_list`) - Create, submit, approve relief needs
+   - Status flow: Draft → Submitted → Approved → Completed
+   - Tracks agency, event, priority, and requested items
+2. **Fulfilment Processing** (`fulfilment` + `fulfilment_item`) - Allocate inventory and prepare shipments
+   - Status flow: In Preparation → Ready → Dispatched → Received → Completed
+   - Maintains edit logs for accountability (`fulfilment_edit_log`)
+   - Auto-updates parent needs list status when completed
+3. **Dispatch Tracking** (`dispatch_manifest`) - Document shipment logistics
+   - Records vehicle, driver, route information
+   - Links to fulfilment for complete chain of custody
+4. **Receipt Confirmation** (`receipt_record`) - Verify delivery and condition
+   - Captures received_by, condition notes, discrepancy tracking
+   - Triggers fulfilment status update to "Received"
 
 **Inventory Management**:
 - Central `inventory` table tracks stock by warehouse + item
