@@ -24,6 +24,16 @@
   <!-- Header / Hero -->
   <header class="bg-gradient-to-r from-goj-green to-goj-green-dark text-white">
     <div class="mx-auto max-w-5xl px-6 py-10 text-center">
+      <!-- Logos -->
+      <div class="flex items-center justify-center gap-6 mb-6">
+        <img src="{{ url_for('static', filename='images/jamaica-coat-of-arms.png') }}" 
+             alt="Jamaica Coat of Arms" 
+             class="h-20 md:h-24 w-auto drop-shadow-lg">
+        <img src="{{ url_for('static', filename='images/odpem-logo.png') }}" 
+             alt="ODPEM Logo" 
+             class="h-16 md:h-20 w-auto drop-shadow-lg">
+      </div>
+      
       <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
         Disaster Relief Inventory Management System
       </h1>
