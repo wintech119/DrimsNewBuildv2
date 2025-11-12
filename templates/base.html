@@ -412,24 +412,11 @@
         </div>
     </div>
 
+    {% if current_user.is_authenticated %}
     <div class="main-content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-    </div>
-    {% endif %}
-
-    {% if not current_user.is_authenticated %}
+    {% else %}
     <main class="container mt-5">
+    {% endif %}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -442,6 +429,9 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
+    {% if current_user.is_authenticated %}
+    </div>
+    {% else %}
     </main>
     {% endif %}
 
