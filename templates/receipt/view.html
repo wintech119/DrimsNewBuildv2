@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ receipt.receipt_number }} - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Receipt Record: {{ receipt.receipt_number }}</h2>
+    <a href="{{ url_for('receipt.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                <h5 class="mb-0">Receipt Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-md-3"><strong>Receipt Number:</strong></div>
+                    <div class="col-md-9">{{ receipt.receipt_number }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-3"><strong>Fulfilment:</strong></div>
+                    <div class="col-md-9">
+                        <a href="{{ url_for('fulfilment.view', fulfilment_id=receipt.fulfilment.id) }}">
+                            {{ receipt.fulfilment.fulfilment_number }}
+                        </a>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-3"><strong>Received By:</strong></div>
+                    <div class="col-md-9">{{ receipt.received_by }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-3"><strong>Received At:</strong></div>
+                    <div class="col-md-9">{{ receipt.received_at.strftime('%Y-%m-%d %H:%M') if receipt.received_at else 'N/A' }}</div>
+                </div>
+                {% if receipt.condition_notes %}
+                <div class="row mb-2">
+                    <div class="col-md-3"><strong>Condition Notes:</strong></div>
+                    <div class="col-md-9">{{ receipt.condition_notes }}</div>
+                </div>
+                {% endif %}
+                {% if receipt.discrepancy_notes %}
+                <div class="row mb-2">
+                    <div class="col-md-3"><strong>Discrepancy Notes:</strong></div>
+                    <div class="col-md-9">{{ receipt.discrepancy_notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                <h5 class="mb-0">Received Items</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Quantity Received</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in receipt.fulfilment.line_items %}
+                            <tr>
+                                <td><strong>{{ line.item.item_name }}</strong></td>
+                                <td>{{ line.item.item_catg_name }}</td>
+                                <td>{{ "%.2f"|format(line.received_qty) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

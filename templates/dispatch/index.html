@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Dispatch Manifests - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Dispatch Manifests</h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Manifest Number</th>
+                        <th>Fulfilment</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Driver</th>
+                        <th>Dispatched</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for manifest in manifests %}
+                    <tr>
+                        <td><strong>{{ manifest.manifest_number }}</strong></td>
+                        <td>{{ manifest.fulfilment.fulfilment_number }}</td>
+                        <td>{{ manifest.from_warehouse.warehouse_name }}</td>
+                        <td>{{ manifest.to_warehouse.warehouse_name }}</td>
+                        <td>{{ manifest.driver_name or 'N/A' }}</td>
+                        <td>{{ manifest.dispatched_at.strftime('%Y-%m-%d %H:%M') if manifest.dispatched_at else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('dispatch.view', manifest_id=manifest.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No dispatch manifests found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

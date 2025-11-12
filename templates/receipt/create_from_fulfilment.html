@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Create Receipt Record - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Create Receipt Record for {{ fulfilment.fulfilment_number }}</h2>
+    <a href="{{ url_for('fulfilment.view', fulfilment_id=fulfilment.id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-3">
+                <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                    <h5 class="mb-0">Receipt Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="received_by" class="form-label">Received By</label>
+                        <input type="text" name="received_by" id="received_by" class="form-control" value="{{ current_user.full_name }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="condition_notes" class="form-label">Condition Notes</label>
+                        <textarea name="condition_notes" id="condition_notes" class="form-control" rows="3" placeholder="Describe the condition of received items"></textarea>
+                        <small class="text-muted">Note any damage, defects, or quality issues</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="discrepancy_notes" class="form-label">Discrepancy Notes</label>
+                        <textarea name="discrepancy_notes" id="discrepancy_notes" class="form-control" rows="3" placeholder="Note any differences from manifest"></textarea>
+                        <small class="text-muted">Report missing items, quantity differences, or unexpected items</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header" style="background-color: var(--goj-green); color: white;">
+            <h5 class="mb-0">Items Being Received</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Category</th>
+                            <th>Expected Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in fulfilment.line_items %}
+                        <tr>
+                            <td><strong>{{ line.item.item_name }}</strong></td>
+                            <td>{{ line.item.item_catg_name }}</td>
+                            <td>{{ "%.2f"|format(line.dispatched_qty) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end">
+        <a href="{{ url_for('fulfilment.view', fulfilment_id=fulfilment.id) }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> Confirm Receipt
+        </button>
+    </div>
+</form>
+{% endblock %}
