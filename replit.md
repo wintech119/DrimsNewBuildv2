@@ -21,6 +21,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 12, 2025 - User Creation Organization Dropdown with Security Enhancements
+- **User Interface**: Replaced text input with dropdown for organization field in user creation and editing
+  - **Dropdown Structure**: Uses `<optgroup>` to separate active agencies (status='A') from custodians
+  - **Value Format**: "AGENCY:<id>" or "CUSTODIAN:<id>" for clear type identification
+  - **Current Value Selection**: Edit form pre-selects the user's current organization (agency or custodian)
+- **Comprehensive Validation** (8-layer protection stack):
+  1. **Tamper Detection**: Field presence check BEFORE value retrieval prevents malicious requests
+  2. **Format Validation**: Requires colon separator in value
+  3. **Prefix Whitelist**: Only accepts 'AGENCY' or 'CUSTODIAN' prefixes
+  4. **Numeric ID Validation**: Verifies ID is numeric before database lookup
+  5. **Database Validation**: Confirms entity exists in respective table
+  6. **Status Verification**: Agencies must have status_code='A' (active)
+  7. **Consistent State**: Agency selection sets both organization name and agency_id FK; custodian selection explicitly clears agency_id=None
+  8. **Transaction Protection**: try/except with rollback prevents partial commits
+- **Session State Protection**: Edit route calls `db.session.refresh(user)` after rollback to discard stale mutations
+- **Security**: Prevents tampered POST requests from wiping organization data when field is missing
+- **Data Integrity**: Zero risk of orphaned foreign keys or inconsistent organization/agency_id states
+- **User Experience**: Form preserves input on validation errors, friendly error messages guide users
+
 ### November 12, 2025 - Agency Account Creation Workflow Tables
 - **New Tables**: Added two tables for agency account request workflow without altering any existing tables
   - **`agency_account_request`**: Main request table with optimistic locking (version_nbr)
