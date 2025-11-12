@@ -21,6 +21,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 12, 2025 - User Table Enhancement for Full Account Management
+- **Database Migration**: Added comprehensive user account management columns to `public.user` table
+  - **MFA Support**: `mfa_enabled` (boolean), `mfa_secret` (varchar) for multi-factor authentication
+  - **Account Lockout**: `failed_login_count` (smallint), `lock_until_at` (timestamp) for security lockout controls
+  - **Password Management**: `password_algo` (varchar, default 'argon2id'), `password_changed_at` (timestamp)
+  - **Agency Linkage**: `agency_id` foreign key to `agency.agency_id` with index for user-agency relationships
+  - **Account Status**: `status_code` (char, default 'A') with CHECK constraint ('A'=Active, 'I'=Inactive, 'L'=Locked)
+  - **Username**: `username` (varchar, unique) for alternative login method
+  - **Optimistic Locking**: `version_nbr` (integer, NOT NULL) for concurrent update protection
+- **Database Constraints**: Added unique index on `username`, foreign key to agency table, status code validation
+- **Audit Triggers**: Created `set_updated_at()` trigger function to automatically update `updated_at` timestamp
+- **Model Updates**: Updated `User` model in `app/db/models.py` with all new columns and agency relationship
+- **Data Preservation**: Migration is idempotent and preserves all existing user data (4 users updated with version_nbr=1)
+- **citext Extension**: Enabled for case-insensitive email comparisons
+
 ### November 12, 2025 - Optimistic Locking Implementation
 - **Configuration**: Automatic optimistic locking using SQLAlchemy's `version_id_col` feature
 - **Coverage**: All 40 database tables with `version_nbr` column now have optimistic locking enabled
