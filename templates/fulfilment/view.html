@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% from "macros/status_badge.html" import render_status_badge %}
+
+{% block title %}{{ fulfilment.fulfilment_number }} - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Fulfilment: {{ fulfilment.fulfilment_number }}</h2>
+    <a href="{{ url_for('fulfilment.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                <h5 class="mb-0">Fulfilment Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Fulfilment Number:</strong></div>
+                    <div class="col-md-8">{{ fulfilment.fulfilment_number }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Needs List:</strong></div>
+                    <div class="col-md-8">
+                        <a href="{{ url_for('needs_list.view', needs_list_id=fulfilment.needs_list.id) }}">
+                            {{ fulfilment.needs_list.list_number }}
+                        </a>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Status:</strong></div>
+                    <div class="col-md-8">{{ render_status_badge(fulfilment.status, 'fulfilment') }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Partial Fulfilment:</strong></div>
+                    <div class="col-md-8">{{ 'Yes' if fulfilment.is_partial else 'No' }}</div>
+                </div>
+                {% if fulfilment.notes %}
+                <div class="row mb-2">
+                    <div class="col-md-4"><strong>Notes:</strong></div>
+                    <div class="col-md-8">{{ fulfilment.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-green); color: white;">
+                <h5 class="mb-0">Line Items</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Source Warehouse</th>
+                                <th>Allocated</th>
+                                <th>Dispatched</th>
+                                <th>Received</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in fulfilment.line_items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ line.item.item_name }}</strong><br>
+                                    <small class="text-muted">{{ line.item.item_catg_name }}</small>
+                                </td>
+                                <td>{{ line.warehouse.warehouse_name }}</td>
+                                <td>{{ "%.2f"|format(line.allocated_qty) }}</td>
+                                <td>{{ "%.2f"|format(line.dispatched_qty) }}</td>
+                                <td>{{ "%.2f"|format(line.received_qty) }}</td>
+                                <td><span class="badge bg-secondary">{{ line.status }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: var(--goj-gold);">
+                <h6 class="mb-0">Actions</h6>
+            </div>
+            <div class="card-body">
+                {% if fulfilment.status == 'In Preparation' %}
+                <form method="POST" action="{{ url_for('fulfilment.mark_ready', fulfilment_id=fulfilment.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check2"></i> Mark as Ready
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if fulfilment.status == 'Ready' %}
+                <form method="POST" action="{{ url_for('fulfilment.dispatch', fulfilment_id=fulfilment.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-truck"></i> Dispatch
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if fulfilment.status == 'Dispatched' %}
+                <form method="POST" action="{{ url_for('fulfilment.confirm_receipt', fulfilment_id=fulfilment.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-info w-100">
+                        <i class="bi bi-box-arrow-in-down"></i> Confirm Receipt
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if fulfilment.status == 'Received' %}
+                <form method="POST" action="{{ url_for('fulfilment.complete', fulfilment_id=fulfilment.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Complete
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="background-color: var(--goj-gold);">
+                <h6 class="mb-0">Timeline</h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Created:</strong><br>{{ fulfilment.created_at.strftime('%Y-%m-%d %H:%M') if fulfilment.created_at else 'N/A' }}</p>
+                    
+                    {% if fulfilment.prepared_at %}
+                    <p><strong>Prepared:</strong><br>{{ fulfilment.prepared_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                    <small class="text-muted">by {{ fulfilment.prepared_by }}</small></p>
+                    {% endif %}
+                    
+                    {% if fulfilment.dispatched_at %}
+                    <p><strong>Dispatched:</strong><br>{{ fulfilment.dispatched_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                    <small class="text-muted">by {{ fulfilment.dispatched_by }}</small></p>
+                    {% endif %}
+                    
+                    {% if fulfilment.received_at %}
+                    <p><strong>Received:</strong><br>{{ fulfilment.received_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                    <small class="text-muted">by {{ fulfilment.received_by }}</small></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
