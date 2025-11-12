@@ -509,10 +509,13 @@
                 }
             }
             
+            {% if current_user.is_authenticated %}
             loadNotifications();
             setInterval(loadNotifications, 30000);
+            {% endif %}
         });
         
+        {% if current_user.is_authenticated %}
         function loadNotifications() {
             const badge = document.getElementById('notificationCount');
             
@@ -528,6 +531,7 @@
                 })
                 .catch(error => console.error('Error loading notifications:', error));
         }
+        {% endif %}
         
         document.querySelectorAll('.table-clickable tbody tr[data-href]').forEach(row => {
             row.addEventListener('click', function(e) {

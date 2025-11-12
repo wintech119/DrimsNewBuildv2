@@ -13,7 +13,7 @@ def unread_count():
     ).join(Inventory).filter(
         Item.status_code == 'A'
     ).group_by(Item.item_id).having(
-        func.sum(Inventory.usable_qty) <= Item.reorder_level
+        func.sum(Inventory.usable_qty) <= Item.reorder_qty
     ).count()
     
     pending_needs = NeedsList.query.filter_by(status='Submitted').count()
@@ -30,13 +30,13 @@ def index():
         Item.item_id, 
         Item.item_name,
         func.sum(Inventory.usable_qty).label('total_qty'),
-        Item.reorder_level
+        Item.reorder_qty
     ).join(Inventory).filter(
         Item.status_code == 'A'
     ).group_by(
-        Item.item_id, Item.item_name, Item.reorder_level
+        Item.item_id, Item.item_name, Item.reorder_qty
     ).having(
-        func.sum(Inventory.usable_qty) <= Item.reorder_level
+        func.sum(Inventory.usable_qty) <= Item.reorder_qty
     ).all()
     
     pending_needs = NeedsList.query.filter_by(status='Submitted').count()
@@ -50,7 +50,7 @@ def index():
                 'type': 'warning',
                 'icon': 'exclamation-triangle-fill',
                 'title': 'Low Stock Alert',
-                'message': f'{item.item_name} is below reorder level ({item.total_qty:.2f} / {item.reorder_level:.2f})',
+                'message': f'{item.item_name} is below reorder level ({item.total_qty:.2f} / {item.reorder_qty:.2f})',
                 'link': f'/items/{item.item_id}',
                 'timestamp': 'Just now'
             })
