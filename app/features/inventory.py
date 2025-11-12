@@ -1,7 +1,7 @@
 """
 Inventory Management Routes
 """
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 from sqlalchemy import func
 
@@ -9,6 +9,35 @@ from app.db import db
 from app.db.models import Inventory, Warehouse, Item
 
 inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
+
+@inventory_bp.route('/api/stock_check')
+@login_required
+def stock_check():
+    """API endpoint to check available stock for an item at a warehouse"""
+    warehouse_id = request.args.get('warehouse_id', type=int)
+    item_id = request.args.get('item_id', type=int)
+    
+    if not warehouse_id or not item_id:
+        return jsonify({'error': 'Missing warehouse_id or item_id'}), 400
+    
+    inventory = Inventory.query.filter_by(
+        warehouse_id=warehouse_id,
+        item_id=item_id,
+        status_code='A'
+    ).first()
+    
+    if inventory:
+        return jsonify({
+            'available_qty': float(inventory.usable_qty or 0),
+            'reserved_qty': float(inventory.reserved_qty or 0),
+            'defective_qty': float(inventory.defective_qty or 0)
+        })
+    else:
+        return jsonify({
+            'available_qty': 0,
+            'reserved_qty': 0,
+            'defective_qty': 0
+        })
 
 @inventory_bp.route('/')
 @login_required
