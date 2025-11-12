@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Custodians - DRIMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-person-badge"></i> Warehouse Custodians</h2>
+    <a href="{{ url_for('custodians.create') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Add New Custodian
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Custodian Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for custodian in custodians %}
+                    <tr>
+                        <td>{{ custodian.custodian_id }}</td>
+                        <td><strong>{{ custodian.custodian_name }}</strong></td>
+                        <td>
+                            <a href="{{ url_for('custodians.edit', custodian_id=custodian.custodian_id) }}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">No custodians found. <a href="{{ url_for('custodians.create') }}">Add the first custodian</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

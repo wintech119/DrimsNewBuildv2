@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Add Agency - DRIMS{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-plus-circle"></i> Add New Relief Agency</h2>
+<a href="{{ url_for('agencies.list_agencies') }}" class="btn btn-secondary mb-3">
+    <i class="bi bi-arrow-left"></i> Back to Agency List
+</a>
+
+<form method="POST">
+    <div class="card mb-3">
+        <div class="card-header card-header-goj">
+            <h5 class="mb-0">Agency Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="agency_name" class="form-label">Agency Name *</label>
+                    <input type="text" name="agency_name" id="agency_name" class="form-control" required>
+                    <small class="text-muted">Will be stored in UPPERCASE</small>
+                </div>
+                <div class="col-md-6">
+                    <label for="parish_code" class="form-label">Parish *</label>
+                    <select name="parish_code" id="parish_code" class="form-select" required>
+                        <option value="">Select Parish</option>
+                        {% for parish in parishes %}
+                        <option value="{{ parish.parish_code }}">{{ parish.parish_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="address1_text" class="form-label">Address Line 1 *</label>
+                <input type="text" name="address1_text" id="address1_text" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="address2_text" class="form-label">Address Line 2</label>
+                <input type="text" name="address2_text" id="address2_text" class="form-control">
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="contact_name" class="form-label">Contact Person *</label>
+                    <input type="text" name="contact_name" id="contact_name" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="phone_no" class="form-label">Phone Number *</label>
+                    <input type="text" name="phone_no" id="phone_no" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="email_text" class="form-label">Email</label>
+                    <input type="email" name="email_text" id="email_text" class="form-control">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn btn-success">
+        <i class="bi bi-save"></i> Save Agency
+    </button>
+    <a href="{{ url_for('agencies.list_agencies') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

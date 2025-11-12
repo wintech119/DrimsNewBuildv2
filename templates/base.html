@@ -94,7 +94,10 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ url_for('user_admin.index') }}"><i class="bi bi-people-fill"></i> User Administration</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('donors.list_donors') }}"><i class="bi bi-people"></i> Donor Management</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('donors.list_donors') }}"><i class="bi bi-people"></i> Donors</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('agencies.list_agencies') }}"><i class="bi bi-building"></i> Agencies</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('custodians.list_custodians') }}"><i class="bi bi-person-badge"></i> Custodians</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
