@@ -34,13 +34,27 @@
 <body>
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-5">
+            <div class="col-md-6 col-lg-5">
                 <div class="card login-card">
-                    <div class="card-body p-5">
+                    <div class="card-body p-4 p-md-5">
+                        <!-- Government Header with Both Logos -->
                         <div class="text-center mb-4">
-                            <h2 style="color: var(--goj-green)"><strong>DRIMS</strong></h2>
-                            <p class="text-muted">Disaster Relief Inventory Management System</p>
-                            <p class="text-muted small">Government of Jamaica - ODPEM</p>
+                            <div class="d-flex justify-content-center align-items-center gap-3 mb-3">
+                                <!-- Jamaica Coat of Arms -->
+                                <img src="/static/images/jamaica-coat-of-arms.png" 
+                                     alt="Government of Jamaica - Coat of Arms" 
+                                     style="height: 80px; width: auto;">
+                                
+                                <!-- ODPEM Logo -->
+                                <img src="/static/images/odpem-logo.png" 
+                                     alt="Office of Disaster Preparedness and Emergency Management" 
+                                     style="height: 80px; width: auto;">
+                            </div>
+                            
+                            <h2 style="color: var(--goj-green)" class="mb-2"><strong>DRIMS</strong></h2>
+                            <p class="text-muted mb-1">Disaster Relief Inventory Management System</p>
+                            <p class="text-muted small fw-semibold">Office of Disaster Preparedness and Emergency Management</p>
+                            <p class="text-muted small">Government of Jamaica</p>
                         </div>
 
                         {% with messages = get_flashed_messages(with_categories=true) %}

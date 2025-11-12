@@ -99,6 +99,12 @@ def status_label_filter(status_code, entity_type):
     """Return human-readable label for status codes"""
     return get_status_label(status_code, entity_type)
 
+@app.context_processor
+def inject_now():
+    """Inject current datetime for footer year and other templates"""
+    from datetime import datetime
+    return {'now': datetime.utcnow()}
+
 @app.route('/')
 @login_required
 def index():
