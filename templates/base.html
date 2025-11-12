@@ -474,24 +474,6 @@
             <span class="nav-label">Transfer Stock</span>
         </a>
         
-        <div class="nav-section-header">Workflows</div>
-        <a href="{{ url_for('needs_list.index') }}" class="nav-item-link {% if active_page == 'needs_lists' %}active{% endif %}">
-            <i class="bi bi-list-check"></i>
-            <span class="nav-label">Needs Lists</span>
-        </a>
-        <a href="{{ url_for('fulfilment.index') }}" class="nav-item-link {% if active_page == 'fulfilments' %}active{% endif %}">
-            <i class="bi bi-box-seam-fill"></i>
-            <span class="nav-label">Fulfilments</span>
-        </a>
-        <a href="{{ url_for('dispatch.index') }}" class="nav-item-link {% if active_page == 'dispatch' %}active{% endif %}">
-            <i class="bi bi-truck"></i>
-            <span class="nav-label">Dispatch</span>
-        </a>
-        <a href="{{ url_for('receipt.index') }}" class="nav-item-link {% if active_page == 'receipts' %}active{% endif %}">
-            <i class="bi bi-receipt"></i>
-            <span class="nav-label">Receipts</span>
-        </a>
-        
         <div class="nav-section-header">AIDMGMT</div>
         <a href="{{ url_for('requests.list_requests') }}" class="nav-item-link {% if active_page == 'requests' %}active{% endif %}">
             <i class="bi bi-file-text"></i>

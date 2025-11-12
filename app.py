@@ -32,10 +32,6 @@ from app.features.requests_aidmgmt import requests_bp
 from app.features.packages_aidmgmt import packages_bp
 from app.features.donations import donations_bp
 from app.features.intake_aidmgmt import bp as intake_bp
-from app.features.needs_list import needs_list_bp
-from app.features.fulfilment import fulfilment_bp
-from app.features.dispatch import dispatch_bp
-from app.features.receipt import receipt_bp
 from app.features.user_admin import user_admin_bp
 from app.features.donors import donors_bp
 from app.features.agencies import agencies_bp
@@ -49,8 +45,7 @@ from app.core.status import get_status_label, get_status_badge_class
 from app.core.rbac import (
     has_role, has_all_roles, has_warehouse_access,
     is_admin, is_logistics_manager, is_logistics_officer,
-    can_approve_needs_lists, can_prepare_fulfilments, can_manage_users,
-    can_submit_needs_lists, can_view_reports
+    can_manage_users, can_view_reports
 )
 
 app.jinja_env.globals.update(
@@ -60,10 +55,7 @@ app.jinja_env.globals.update(
     is_admin=is_admin,
     is_logistics_manager=is_logistics_manager,
     is_logistics_officer=is_logistics_officer,
-    can_approve_needs_lists=can_approve_needs_lists,
-    can_prepare_fulfilments=can_prepare_fulfilments,
     can_manage_users=can_manage_users,
-    can_submit_needs_lists=can_submit_needs_lists,
     can_view_reports=can_view_reports
 )
 
@@ -76,10 +68,6 @@ app.register_blueprint(requests_bp)
 app.register_blueprint(packages_bp)
 app.register_blueprint(donations_bp)
 app.register_blueprint(intake_bp)
-app.register_blueprint(needs_list_bp, url_prefix='/needs_list')
-app.register_blueprint(fulfilment_bp, url_prefix='/fulfilment')
-app.register_blueprint(dispatch_bp, url_prefix='/dispatch')
-app.register_blueprint(receipt_bp, url_prefix='/receipt')
 app.register_blueprint(user_admin_bp, url_prefix='/users')
 app.register_blueprint(donors_bp, url_prefix='/donors')
 app.register_blueprint(agencies_bp, url_prefix='/agencies')

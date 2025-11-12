@@ -151,26 +151,6 @@ def is_logistics_officer():
     return has_role('LOGISTICS_OFFICER')
 
 
-def can_approve_needs_lists():
-    """
-    Check if the current user can approve needs lists.
-    
-    Returns:
-        bool: True if user can approve needs lists
-    """
-    return has_role('LOGISTICS_MANAGER', 'SYSTEM_ADMINISTRATOR')
-
-
-def can_prepare_fulfilments():
-    """
-    Check if the current user can prepare fulfilments.
-    
-    Returns:
-        bool: True if user can prepare fulfilments
-    """
-    return has_role('LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'SYSTEM_ADMINISTRATOR')
-
-
 def can_manage_users():
     """
     Check if the current user can manage users.
@@ -179,16 +159,6 @@ def can_manage_users():
         bool: True if user can manage users
     """
     return has_role('SYSTEM_ADMINISTRATOR', 'SYS_ADMIN')
-
-
-def can_submit_needs_lists():
-    """
-    Check if the current user can submit needs lists.
-    
-    Returns:
-        bool: True if user can submit needs lists
-    """
-    return has_role('AGENCY_HUB', 'LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'SYSTEM_ADMINISTRATOR')
 
 
 def can_view_reports():
