@@ -40,8 +40,14 @@ from app.features.user_admin import user_admin_bp
 from app.features.donors import donors_bp
 from app.features.agencies import agencies_bp
 from app.features.custodians import custodians_bp
+from app.features.dashboard import dashboard_bp
+from app.features.transfers import transfers_bp
+from app.features.locations import locations_bp
+from app.features.notifications import notifications_bp
+from app.features.reports import reports_bp
 from app.core.status import get_status_label, get_status_badge_class
 
+app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 app.register_blueprint(events_bp)
 app.register_blueprint(warehouses_bp)
 app.register_blueprint(items_bp)
@@ -58,6 +64,10 @@ app.register_blueprint(user_admin_bp, url_prefix='/users')
 app.register_blueprint(donors_bp, url_prefix='/donors')
 app.register_blueprint(agencies_bp, url_prefix='/agencies')
 app.register_blueprint(custodians_bp, url_prefix='/custodians')
+app.register_blueprint(transfers_bp, url_prefix='/transfers')
+app.register_blueprint(locations_bp, url_prefix='/locations')
+app.register_blueprint(notifications_bp, url_prefix='/notifications')
+app.register_blueprint(reports_bp, url_prefix='/reports')
 
 @app.template_filter('status_badge')
 def status_badge_filter(status_code, entity_type):

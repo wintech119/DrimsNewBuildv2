@@ -1,0 +1,95 @@
+from flask import Blueprint, render_template, Response
+from flask_login import login_required
+from sqlalchemy import func
+from app.db.models import db, Inventory, Item, Warehouse, Event, NeedsList, Fulfilment, Donor, Donation
+from datetime import datetime
+import csv
+from io import StringIO
+
+reports_bp = Blueprint('reports', __name__)
+
+@reports_bp.route('/')
+@login_required
+def index():
+    return render_template('reports/index.html')
+
+@reports_bp.route('/inventory_summary')
+@login_required
+def inventory_summary():
+    summary = db.session.query(
+        Warehouse.warehouse_name,
+        Item.item_name,
+        func.sum(Inventory.usable_qty).label('usable'),
+        func.sum(Inventory.reserved_qty).label('reserved'),
+        func.sum(Inventory.defective_qty).label('defective'),
+        func.sum(Inventory.expired_qty).label('expired')
+    ).join(
+        Inventory, Warehouse.warehouse_id == Inventory.warehouse_id
+    ).join(
+        Item, Inventory.item_id == Item.item_id
+    ).group_by(
+        Warehouse.warehouse_name, Item.item_name
+    ).all()
+    
+    return render_template('reports/inventory_summary.html', summary=summary)
+
+@reports_bp.route('/inventory_summary/export')
+@login_required
+def export_inventory():
+    summary = db.session.query(
+        Warehouse.warehouse_name,
+        Item.item_name,
+        func.sum(Inventory.usable_qty).label('usable'),
+        func.sum(Inventory.reserved_qty).label('reserved'),
+        func.sum(Inventory.defective_qty).label('defective'),
+        func.sum(Inventory.expired_qty).label('expired')
+    ).join(
+        Inventory, Warehouse.warehouse_id == Inventory.warehouse_id
+    ).join(
+        Item, Inventory.item_id == Item.item_id
+    ).group_by(
+        Warehouse.warehouse_name, Item.item_name
+    ).all()
+    
+    si = StringIO()
+    writer = csv.writer(si)
+    writer.writerow(['Warehouse', 'Item', 'Usable Qty', 'Reserved Qty', 'Defective Qty', 'Expired Qty'])
+    
+    for row in summary:
+        writer.writerow([row.warehouse_name, row.item_name, 
+                        float(row.usable or 0), float(row.reserved or 0),
+                        float(row.defective or 0), float(row.expired or 0)])
+    
+    output = si.getvalue()
+    si.close()
+    
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=inventory_summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+    )
+
+@reports_bp.route('/needs_fulfilment')
+@login_required
+def needs_fulfilment():
+    needs = NeedsList.query.order_by(NeedsList.create_dtime.desc()).limit(100).all()
+    fulfilments = Fulfilment.query.order_by(Fulfilment.create_dtime.desc()).limit(100).all()
+    
+    return render_template('reports/needs_fulfilment.html', needs=needs, fulfilments=fulfilments)
+
+@reports_bp.route('/donations_summary')
+@login_required
+def donations_summary():
+    donations = db.session.query(
+        Donor.donor_name,
+        func.count(Donation.donation_id).label('donation_count'),
+        func.sum(Donation.total_value).label('total_value')
+    ).join(
+        Donation, Donor.donor_id == Donation.donor_id
+    ).group_by(
+        Donor.donor_name
+    ).order_by(
+        func.sum(Donation.total_value).desc()
+    ).all()
+    
+    return render_template('reports/donations_summary.html', donations=donations)

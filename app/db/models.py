@@ -582,3 +582,86 @@ class DistributionPackageItem(db.Model):
     
     package = db.relationship('DistributionPackage', backref='items')
     item = db.relationship('Item', backref='distribution_package_items')
+
+class Transfer(db.Model):
+    """Transfer between warehouses"""
+    __tablename__ = 'transfer'
+    
+    transfer_id = db.Column(db.Integer, primary_key=True)
+    fr_inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
+    to_inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
+    transfer_date = db.Column(db.Date, nullable=False)
+    transport_mode = db.Column(db.String(255))
+    comments_text = db.Column(db.String(255))
+    status_code = db.Column(db.CHAR(1), nullable=False)
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False)
+    verify_by_id = db.Column(db.String(20), nullable=False)
+    verify_dtime = db.Column(db.DateTime, nullable=False)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    from_inventory = db.relationship('Inventory', foreign_keys=[fr_inventory_id])
+    to_inventory = db.relationship('Inventory', foreign_keys=[to_inventory_id])
+
+class TransferItem(db.Model):
+    """Transfer item details"""
+    __tablename__ = 'transfer_item'
+    
+    transfer_id = db.Column(db.Integer, db.ForeignKey('transfer.transfer_id'), primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), primary_key=True)
+    item_qty = db.Column(db.Numeric(12,2), nullable=False)
+    uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=False)
+    reason_text = db.Column(db.String(255))
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    transfer = db.relationship('Transfer', backref='items')
+    item = db.relationship('Item')
+    unit_of_measure = db.relationship('UnitOfMeasure')
+
+class TransferRequest(db.Model):
+    """Transfer request workflow (DRIMS extension)"""
+    __tablename__ = 'transfer_request'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    from_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
+    to_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), nullable=False)
+    quantity = db.Column(db.Numeric(12,2), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='PENDING')
+    requested_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    reviewed_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    
+    from_warehouse = db.relationship('Warehouse', foreign_keys=[from_warehouse_id])
+    to_warehouse = db.relationship('Warehouse', foreign_keys=[to_warehouse_id])
+    item = db.relationship('Item')
+    requester = db.relationship('User', foreign_keys=[requested_by])
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+
+class Location(db.Model):
+    """Warehouse bin/shelf locations"""
+    __tablename__ = 'location'
+    
+    location_id = db.Column(db.Integer, primary_key=True)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), nullable=False)
+    aisle_no = db.Column(db.String(20))
+    bin_no = db.Column(db.String(20))
+    qty = db.Column(db.Numeric(15,4), nullable=False, default=0)
+    status_code = db.Column(db.CHAR(1), nullable=False)
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    warehouse = db.relationship('Warehouse', backref='locations')
+    item = db.relationship('Item', backref='locations')
