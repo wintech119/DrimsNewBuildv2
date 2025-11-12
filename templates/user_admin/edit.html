@@ -44,7 +44,25 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="organization" class="form-label">Organization</label>
-                    <input type="text" name="organization" id="organization" class="form-control" value="{{ user.organization or '' }}">
+                    <select name="organization" id="organization" class="form-select">
+                        <option value="">-- Select Organization --</option>
+                        <optgroup label="Agencies">
+                            {% for agency in agencies %}
+                            <option value="AGENCY:{{ agency.agency_id }}" 
+                                    {% if current_org_value == 'AGENCY:' ~ agency.agency_id %}selected{% endif %}>
+                                {{ agency.agency_name }}
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Custodians">
+                            {% for custodian in custodians %}
+                            <option value="CUSTODIAN:{{ custodian.custodian_id }}"
+                                    {% if current_org_value == 'CUSTODIAN:' ~ custodian.custodian_id %}selected{% endif %}>
+                                {{ custodian.custodian_name }}
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label for="job_title" class="form-label">Job Title</label>

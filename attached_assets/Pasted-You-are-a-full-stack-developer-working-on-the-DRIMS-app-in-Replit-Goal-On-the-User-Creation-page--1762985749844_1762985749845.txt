@@ -1,0 +1,145 @@
+You are a full-stack developer working on the DRIMS app in Replit.
+
+Goal
+
+On the User Creation page, replace the current “Organization” field (currently a free-text input or static field) with a dropdown list whose options are populated from the existing agency and custodian tables.
+
+Hard Constraints
+
+✅ Do NOT create or alter any database tables or columns.
+
+✅ Use only existing tables: agency, custodian, and user. 
+
+DRIMS_DATABASE_SCHEMA
+
+✅ Respect existing patterns for:
+
+Loading reference lists from the DB.
+
+RBAC / permissions (only admins can create users).
+
+✅ Keep all existing user-creation behaviour (validation, saving, notifications) unchanged except for how the “organization” option set is built.
+
+Behaviour to Implement
+
+Server-side: fetch organizations for dropdown
+
+Add a service/repository function that loads:
+
+Active Agencies from agency
+
+Include at least: agency_id, agency_name, status_code
+
+Filter: status_code = 'A'. 
+
+DRIMS_DATABASE_SCHEMA
+
+Custodians from custodian
+
+Include: custodian_id, custodian_name. 
+
+DRIMS_DATABASE_SCHEMA
+
+Return them to the user-creation view model as two lists, for example:
+
+agencies: [{ id, name }]
+
+custodians: [{ id, name }]
+
+Do not change any schema or add new relations.
+
+UI: organization dropdown
+
+In the User Creation form/template (where “Organization” is currently shown):
+
+Replace the input with a <select> dropdown.
+
+Use two groups inside the dropdown:
+
+One labelled “Agencies” with all active agencies.
+
+One labelled “Custodians” with all custodians.
+
+For each option:
+
+value should encode both the source type and id, e.g.:
+
+AGENCY:<agency_id>
+
+CUSTODIAN:<custodian_id>
+
+label should be the corresponding agency_name or custodian_name.
+
+Example structure (don’t hardcode values; populate from backend):
+
+<select name="organization" id="organization" required>
+  <optgroup label="Agencies">
+    <!-- loop agencies -->
+    <option value="AGENCY:{{ agency_id }}">{{ agency_name }}</option>
+  </optgroup>
+  <optgroup label="Custodians">
+    <!-- loop custodians -->
+    <option value="CUSTODIAN:{{ custodian_id }}">{{ custodian_name }}</option>
+  </optgroup>
+</select>
+
+
+Form submission handling
+
+Keep the existing user creation logic intact (password, roles, email, etc.).
+
+For the organization field, parse the submitted value:
+
+Split on : → org_type, org_id.
+
+If org_type == 'AGENCY':
+
+Set the user’s agency_id (if that is already part of the user model), or
+
+Map it to the existing server-side “organization” attribute as currently used.
+
+If org_type == 'CUSTODIAN':
+
+Do not alter the database schema:
+
+Either store the chosen name in whatever application-level “organization” attribute already exists in code (if any), or
+
+Use it to drive role/warehouse assignment logic without adding new columns.
+
+The exact mapping must:
+
+Respect the current user table definition (no new columns).
+
+Not break existing code that expects the organization field.
+
+Validation
+
+Ensure “Organization” is required for new users (if that is already the case).
+
+Validate that the submitted value:
+
+Matches the expected AGENCY:<id> or CUSTODIAN:<id> pattern.
+
+References an existing, active agency or a custodian in the database.
+
+RBAC / permissions
+
+Only users with the appropriate role (e.g. System Admin / ODPEM Admin) can:
+
+Access the User Creation screen,
+
+View the organization dropdown,
+
+Submit new users.
+
+If your current code already has role checks, reuse those checks; do not change the authorization model.
+
+Explicit “Do Not” List
+
+❌ Do not add organization columns to user or any other table.
+
+❌ Do not change any constraints or FKs.
+
+❌ Do not add new tables for organizations or mappings.
+
+❌ Do not touch the DRIMS schema beyond read-only SELECTs from agency and custodian.
