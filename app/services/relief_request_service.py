@@ -223,8 +223,14 @@ def submit_request(reliefrqst_id: int, current_version: int, user_email: str) ->
 
 def _create_odpem_notifications(relief_request: ReliefRqst) -> None:
     """Create in-app notifications for ODPEM staff about new request submission"""
-    # Get all admin users
-    admin_users = User.query.filter_by(is_superuser=True, is_active=True).all()
+    # Get all ODPEM director users (roles: ODPEM_DIR_PEOD, ODPEM_DDG, ODPEM_DG)
+    odpem_director_roles = Role.query.filter(
+        Role.code.in_(['ODPEM_DIR_PEOD', 'ODPEM_DDG', 'ODPEM_DG'])
+    ).all()
+    
+    admin_users = []
+    for role in odpem_director_roles:
+        admin_users.extend([u for u in role.users if u.is_active])
     
     event_name = relief_request.eligible_event.event_name if relief_request.eligible_event else "N/A"
     agency_name = relief_request.agency.agency_name if relief_request.agency else "Unknown"
