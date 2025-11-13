@@ -203,10 +203,12 @@ def submit_request(reliefrqst_id: int, current_version: int, user_email: str) ->
             "This request was modified by another user. Please refresh and try again."
         )
     
-    # Update status
-    relief_request.status_code = STATUS_SUBMITTED
-    relief_request.action_by_id = user_email[:20]
-    relief_request.action_dtime = datetime.now()
+    # Update status to AWAITING_APPROVAL (status = 1)
+    # Constraint c_reliefrqst_4a allows review_by_id to be null when status < 2
+    # ODPEM eligibility review will later move it to SUBMITTED (3) and set review_by_id
+    # Review fields (review_by_id/review_dtime) capture ODPEM eligibility decisions
+    # Action fields (action_by_id/action_dtime) are reserved for fulfillment (status >= 4)
+    relief_request.status_code = STATUS_AWAITING_APPROVAL
     relief_request.version_nbr += 1
     
     db.session.flush()
@@ -411,14 +413,14 @@ def delete_request_item(reliefrqst_id: int, item_id: int) -> Tuple[bool, str]:
 def get_pending_eligibility_requests() -> List[ReliefRqst]:
     """
     Get all relief requests pending eligibility review.
-    Returns requests that are SUBMITTED (status_code=3) without eligibility decision.
+    Returns requests that are AWAITING_APPROVAL (status_code=1) without eligibility decision.
     
     Returns:
         List of ReliefRqst instances pending eligibility review
     """
-    # A request is pending eligibility if it's SUBMITTED and review_by_id is NULL
+    # A request is pending eligibility if it's AWAITING_APPROVAL and review_by_id is NULL
     return ReliefRqst.query.filter_by(
-        status_code=STATUS_SUBMITTED
+        status_code=STATUS_AWAITING_APPROVAL
     ).filter(
         ReliefRqst.review_by_id.is_(None)
     ).order_by(
@@ -472,9 +474,9 @@ def submit_eligibility_decision(reliefrqst_id: int, decision: str, reason: Optio
     """
     relief_request = ReliefRqst.query.get_or_404(reliefrqst_id)
     
-    # Validate status - must be SUBMITTED
-    if relief_request.status_code != STATUS_SUBMITTED:
-        return False, f"Cannot review request with status {relief_request.status_code}. Must be SUBMITTED."
+    # Validate status - must be AWAITING_APPROVAL
+    if relief_request.status_code != STATUS_AWAITING_APPROVAL:
+        return False, f"Cannot review request with status {relief_request.status_code}. Must be AWAITING_APPROVAL."
     
     # Check if decision already made
     if relief_request.review_by_id is not None:
@@ -493,7 +495,7 @@ def submit_eligibility_decision(reliefrqst_id: int, decision: str, reason: Optio
     relief_request.review_dtime = datetime.now()
     
     if decision == 'N':
-        # Mark as INELIGIBLE
+        # Mark as INELIGIBLE and set review fields
         relief_request.status_code = STATUS_INELIGIBLE
         relief_request.status_reason_desc = reason.strip()
         relief_request.version_nbr += 1
@@ -506,7 +508,8 @@ def submit_eligibility_decision(reliefrqst_id: int, decision: str, reason: Optio
         return True, f"Request #{reliefrqst_id} marked as INELIGIBLE. Requester has been notified."
     
     else:  # decision == 'Y'
-        # Keep status as SUBMITTED - it will move to fulfillment workflow
+        # Mark as SUBMITTED (eligible) and set review fields
+        relief_request.status_code = STATUS_SUBMITTED
         relief_request.version_nbr += 1
         
         db.session.flush()
