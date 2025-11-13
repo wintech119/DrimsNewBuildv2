@@ -460,7 +460,7 @@ def get_request_eligibility_details(reliefrqst_id: int) -> Optional[Dict]:
         'request': relief_request,
         'items': relief_request.items,
         'decision_made': decision_made,
-        'can_edit': not decision_made and relief_request.status_code == STATUS_SUBMITTED
+        'can_edit': not decision_made and relief_request.status_code == STATUS_AWAITING_APPROVAL
     }
 
 
