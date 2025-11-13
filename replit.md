@@ -21,6 +21,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 13, 2025 - Relief Request Item Status Code Standardization
+- **Database Constraint Update**: Added default value 'R' (Requested) to `reliefrqst_item.status_code` column
+  - **SQL Migration**: `ALTER TABLE reliefrqst_item ALTER COLUMN status_code SET DEFAULT 'R'`
+  - **Constraint**: `c_reliefrqst_item_6a` validates status codes: R, U, W, D, P, L, F
+- **Status Code Constants**: Created comprehensive status code dictionary in `relief_request_service.py`
+  - **Constants**: `ITEM_STATUS_REQUESTED`, `ITEM_STATUS_UNAVAILABLE`, `ITEM_STATUS_WAITING`, `ITEM_STATUS_DENIED`, `ITEM_STATUS_PARTLY_FILLED`, `ITEM_STATUS_LIMIT_ALLOWED`, `ITEM_STATUS_FILLED`
+  - **Labels Dictionary**: `ITEM_STATUS_LABELS` maps codes to human-readable labels (e.g., 'R': 'Requested', 'U': 'Unavailable')
+- **Model Update**: Updated `ReliefRqstItem` model with `server_default='R'` for consistency
+- **Code Standardization**: Updated item creation logic to use `ITEM_STATUS_REQUESTED` constant instead of hardcoded 'R'
+- **Template Fixes**: Corrected UOM field access patterns across all templates
+  - Fixed: `item.uom.uom_code` → `item.item.default_uom_code` (ReliefRqstItem → Item → default_uom_code)
+  - Updated templates: `requests/edit_items.html`, `agency_requests/edit_items.html`, `agency_requests/view.html`
+
 ### November 13, 2025 - Eligibility Approval Workflow Implementation
 - **RBAC Extension**: Enhanced role-based access control with permission-based authorization
   - Added `has_permission(resource, action)` function to check user permissions via role_permission table

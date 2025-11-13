@@ -383,7 +383,7 @@ class ReliefRqstItem(db.Model):
     urgency_ind = db.Column(db.CHAR(1), nullable=False)
     rqst_reason_desc = db.Column(db.String(255))
     required_by_date = db.Column(db.Date)
-    status_code = db.Column(db.CHAR(1), nullable=False)
+    status_code = db.Column(db.CHAR(1), nullable=False, server_default='R')
     status_reason_desc = db.Column(db.String(255))
     action_by_id = db.Column(db.String(20))
     action_dtime = db.Column(db.DateTime)

@@ -26,6 +26,26 @@ STATUS_CLOSED = 6             # CLOSED - Request closed
 STATUS_FILLED = 7             # FILLED - Request completely fulfilled
 STATUS_INELIGIBLE = 8         # INELIGIBLE - Request marked ineligible
 
+# Relief Request Item status codes (from reliefrqst_item.status_code constraint)
+ITEM_STATUS_REQUESTED = 'R'       # Requested
+ITEM_STATUS_UNAVAILABLE = 'U'     # Unavailable
+ITEM_STATUS_WAITING = 'W'         # Waiting availability
+ITEM_STATUS_DENIED = 'D'          # Denied
+ITEM_STATUS_PARTLY_FILLED = 'P'   # Partly filled
+ITEM_STATUS_LIMIT_ALLOWED = 'L'   # Limit allowed
+ITEM_STATUS_FILLED = 'F'          # Filled
+
+# Relief Request Item status code labels
+ITEM_STATUS_LABELS = {
+    'R': 'Requested',
+    'U': 'Unavailable',
+    'W': 'Waiting availability',
+    'D': 'Denied',
+    'P': 'Partly filled',
+    'L': 'Limit allowed',
+    'F': 'Filled'
+}
+
 URGENCY_HIGH = 'H'
 URGENCY_MEDIUM = 'M'
 URGENCY_LOW = 'L'
@@ -138,7 +158,7 @@ def add_or_update_request_item(reliefrqst_id: int, item_id: int, request_qty: De
         request_item.issue_qty = Decimal('0.00')  # Initially 0, filled by ODPEM
         request_item.urgency_ind = urgency_ind
         request_item.rqst_reason_desc = rqst_reason_desc
-        request_item.status_code = 'R'  # Requested
+        request_item.status_code = ITEM_STATUS_REQUESTED  # Requested (default 'R')
         request_item.version_nbr = 1
         
         db.session.add(request_item)
