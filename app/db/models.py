@@ -395,6 +395,19 @@ class ReliefRqstItem(db.Model):
     relief_request = db.relationship('ReliefRqst', backref='items')
     item = db.relationship('Item', backref='request_items')
 
+class ReliefRequestFulfillmentLock(db.Model):
+    """Fulfillment lock to ensure single fulfiller per relief request"""
+    __tablename__ = 'relief_request_fulfillment_lock'
+    
+    reliefrqst_id = db.Column(db.Integer, db.ForeignKey('reliefrqst.reliefrqst_id', ondelete='CASCADE'), primary_key=True)
+    fulfiller_user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'), nullable=False)
+    fulfiller_email = db.Column(db.String(100), nullable=False)
+    acquired_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+    
+    relief_request = db.relationship('ReliefRqst', backref=db.backref('fulfillment_lock', uselist=False))
+    fulfiller = db.relationship('User', backref='fulfillment_locks')
+
 class ReliefPkg(db.Model):
     """Relief Package / Fulfilment (AIDMGMT workflow)"""
     __tablename__ = 'reliefpkg'
