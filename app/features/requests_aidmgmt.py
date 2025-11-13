@@ -28,14 +28,6 @@ def list_requests():
     # Support both 'filter' and 'status' params for backward compatibility
     status_filter = request.args.get('filter') or request.args.get('status', 'submitted')
     
-    # Map legacy status values to new filter values
-    legacy_mapping = {
-        'processing': 'awaiting',
-        'dispatched': 'completed',
-        'all': 'all'
-    }
-    status_filter = legacy_mapping.get(status_filter, status_filter)
-    
     # Base query for current user's agency
     base_query = ReliefRqst.query.filter_by(agency_id=current_user.agency_id)
     
@@ -49,11 +41,19 @@ def list_requests():
         'completed': base_query.filter_by(status_code=rr_service.STATUS_FILLED).count()
     }
     
-    # Apply status filter
+    # Apply status filter with full backward compatibility
     if status_filter == 'draft':
         query = base_query.filter_by(status_code=rr_service.STATUS_DRAFT)
     elif status_filter == 'awaiting':
         query = base_query.filter_by(status_code=rr_service.STATUS_AWAITING_APPROVAL)
+    elif status_filter == 'processing':
+        # Legacy: processing includes both awaiting-approval and part-filled
+        query = base_query.filter(ReliefRqst.status_code.in_([
+            rr_service.STATUS_AWAITING_APPROVAL, rr_service.STATUS_PART_FILLED
+        ]))
+    elif status_filter == 'dispatched':
+        # Legacy: dispatched maps to closed/filled
+        query = base_query.filter_by(status_code=rr_service.STATUS_CLOSED)
     elif status_filter == 'completed':
         query = base_query.filter_by(status_code=rr_service.STATUS_FILLED)
     elif status_filter == 'all':
