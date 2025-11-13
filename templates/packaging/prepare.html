@@ -585,7 +585,6 @@
                             <td>
                                 <div class="hub-allocation-inline">
                                     {% for warehouse in warehouses %}
-                                    {% set existing_value = existing_allocations.get(item.item_id, {}).get(warehouse.warehouse_id, 0) %}
                                     <div class="warehouse-allocation-row">
                                         <i class="bi bi-geo-alt-fill" style="color: #6c757d;"></i>
                                         <span class="warehouse-name">{{ warehouse.warehouse_name }}</span>
@@ -597,9 +596,9 @@
                                             class="form-control form-control-sm qty-input allocation-input"
                                             id="allocation_{{ item.item_id }}_{{ warehouse.warehouse_id }}"
                                             name="allocation_{{ item.item_id }}_{{ warehouse.warehouse_id }}"
-                                            value="{{ existing_value }}"
+                                            value="0"
                                             min="0"
-                                            step="0.01"
+                                            step="1"
                                             data-item-id="{{ item.item_id }}"
                                             data-warehouse-id="{{ warehouse.warehouse_id }}"
                                             data-requested-qty="{{ item.request_qty }}"
