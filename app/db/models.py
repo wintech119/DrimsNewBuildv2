@@ -89,6 +89,32 @@ class UserRole(db.Model):
     update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
 
+class Permission(db.Model):
+    """Permission definitions for RBAC"""
+    __tablename__ = 'permission'
+    
+    perm_id = db.Column(db.Integer, primary_key=True)
+    resource = db.Column(db.String(50), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+
+class RolePermission(db.Model):
+    """Role-Permission assignment (many-to-many)"""
+    __tablename__ = 'role_permission'
+    
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
+    perm_id = db.Column(db.Integer, db.ForeignKey('permission.perm_id'), primary_key=True)
+    scope_json = db.Column(db.JSON)
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+
 class UserWarehouse(db.Model):
     """User-Warehouse access control"""
     __tablename__ = 'user_warehouse'

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Eligibility Review - Pending Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-goj-green mb-1"><i class="bi bi-clipboard-check"></i> Relief Requests Pending Eligibility Review</h2>
+                    <p class="text-muted mb-0">Review and approve/deny relief requests from agencies</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if requests %}
+    <div class="drims-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table drims-table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tracking #</th>
+                            <th>Agency</th>
+                            <th>Event</th>
+                            <th>Request Date</th>
+                            <th>Items</th>
+                            <th>Urgency</th>
+                            <th>Notes</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in requests %}
+                        <tr>
+                            <td><strong>{{ request.tracking_no if request.tracking_no else request.reliefrqst_id }}</strong></td>
+                            <td>
+                                {% if request.agency %}
+                                    {{ request.agency.agency_name }}
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.eligible_event %}
+                                    {{ request.eligible_event.event_name }}
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ request.request_date.strftime('%Y-%m-%d') if request.request_date else '-' }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ request.items|length }} item(s)</span>
+                            </td>
+                            <td>
+                                {% if request.urgency_ind == 'C' %}
+                                    <span class="badge bg-danger">Critical</span>
+                                {% elif request.urgency_ind == 'H' %}
+                                    <span class="badge bg-danger">High</span>
+                                {% elif request.urgency_ind == 'M' %}
+                                    <span class="badge bg-warning text-dark">Medium</span>
+                                {% elif request.urgency_ind == 'L' %}
+                                    <span class="badge bg-info text-dark">Low</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.rqst_notes_text %}
+                                    <i class="bi bi-file-text text-info" title="{{ request.rqst_notes_text[:100] }}"></i>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('eligibility.review_request', request_id=request.reliefrqst_id) }}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-clipboard-check"></i> Review
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No relief requests are currently pending eligibility review.
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.drims-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table-clickable tbody tr {
+    cursor: pointer;
+}
+
+.table-clickable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.text-goj-green {
+    color: #006838;
+}
+</style>
+{% endblock %}

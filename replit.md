@@ -21,6 +21,40 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 13, 2025 - Eligibility Approval Workflow Implementation
+- **RBAC Extension**: Enhanced role-based access control with permission-based authorization
+  - Added `has_permission(resource, action)` function to check user permissions via role_permission table
+  - Added `@permission_required(resource, action)` decorator for route protection
+  - Added `Permission` and `RolePermission` SQLAlchemy models mapping to existing RBAC tables
+  - Database-agnostic implementation using SQLAlchemy ORM (works with both SQLite and PostgreSQL)
+- **Eligibility Service Layer**: Created comprehensive service methods in `relief_request_service.py`
+  - `get_pending_eligibility_requests()` - Lists requests awaiting review (status=SUBMITTED, no review_by_id)
+  - `get_request_eligibility_details()` - Gets full request details with decision status
+  - `submit_eligibility_decision()` - Handles Yes/No decisions with validation and notifications
+  - `can_process_request()` - Blocks fulfillment of ineligible requests
+  - Added STATUS_INELIGIBLE = 8 constant
+- **Eligibility Blueprint**: New `/eligibility` routes for Directors to review relief requests
+  - HTML routes: `/eligibility/pending` (worklist), `/eligibility/review/<id>` (review form)
+  - JSON API: `/eligibility/api/pending`, `/eligibility/api/<id>`, `/eligibility/api/decision/<id>`
+  - Permission-protected with `reliefrqst.approve_eligibility` permission
+- **Frontend Templates**: Professional eligibility review interface
+  - `pending.html` - Worklist showing tracking number, agency, event, urgency, items count
+  - `review.html` - Detailed review form with radio buttons (Eligible/Ineligible), conditional reason textarea
+  - JavaScript validation ensures reason is required for ineligible decisions
+  - Read-only view when decision already made
+- **Navigation Integration**: Added "Eligibility Review" link to AIDMGMT section in sidebar
+  - Only visible to users with `reliefrqst.approve_eligibility` permission
+  - Uses Bootstrap Icons clipboard-check icon
+- **Business Logic**:
+  - Pending: Requests with status_code=3 (SUBMITTED) and review_by_id IS NULL
+  - Eligible: Sets review_by_id/review_dtime, keeps status=SUBMITTED, notifies logistics team (LO/LM roles)
+  - Ineligible: Sets status_code=8, requires reason in status_reason_desc, notifies agency users
+  - Blocks processing of ineligible requests in fulfillment workflow
+- **Notifications**: Automatic in-app notifications
+  - Ineligible: Notifies all active agency users with reason
+  - Eligible: Notifies logistics officers and managers for fulfillment processing
+- **Schema Compliance**: Uses existing columns (review_by_id, review_dtime, status_reason_desc) - zero schema changes required
+
 ### November 12, 2025 - Relief Request Status Lookup Table Migration
 - **Database Migration**: Created `reliefrqst_status` lookup table for standardized status management
   - **Table Structure**: status_code (smallint PK), status_desc (varchar 20), is_active_flag (boolean)

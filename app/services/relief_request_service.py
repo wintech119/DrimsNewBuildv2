@@ -24,10 +24,12 @@ STATUS_DENIED = 4             # DENIED - Request denied by ODPEM
 STATUS_PART_FILLED = 5        # PART FILLED - Partially fulfilled
 STATUS_CLOSED = 6             # CLOSED - Request closed
 STATUS_FILLED = 7             # FILLED - Request completely fulfilled
+STATUS_INELIGIBLE = 8         # INELIGIBLE - Request marked ineligible
 
 URGENCY_HIGH = 'H'
 URGENCY_MEDIUM = 'M'
 URGENCY_LOW = 'L'
+URGENCY_CRITICAL = 'C'
 
 
 def get_workflow_steps(status_code: int) -> Dict:
@@ -379,3 +381,221 @@ def delete_request_item(reliefrqst_id: int, item_id: int) -> Tuple[bool, str]:
     
     db.session.delete(request_item)
     return True, "Item removed successfully"
+
+
+# ============================================================================
+# ELIGIBILITY APPROVAL WORKFLOW
+# ============================================================================
+
+def get_pending_eligibility_requests() -> List[ReliefRqst]:
+    """
+    Get all relief requests pending eligibility review.
+    Returns requests that are SUBMITTED (status_code=3) without eligibility decision.
+    
+    Returns:
+        List of ReliefRqst instances pending eligibility review
+    """
+    # A request is pending eligibility if it's SUBMITTED and review_by_id is NULL
+    return ReliefRqst.query.filter_by(
+        status_code=STATUS_SUBMITTED
+    ).filter(
+        ReliefRqst.review_by_id.is_(None)
+    ).order_by(
+        ReliefRqst.request_date.asc(),
+        ReliefRqst.urgency_ind.desc()
+    ).all()
+
+
+def get_request_eligibility_details(reliefrqst_id: int) -> Optional[Dict]:
+    """
+    Get full details of a relief request for eligibility review.
+    
+    Args:
+        reliefrqst_id: Relief request ID
+        
+    Returns:
+        Dict with request details, items, and eligibility decision status
+    """
+    relief_request = ReliefRqst.query.get(reliefrqst_id)
+    if not relief_request:
+        return None
+    
+    # Check if eligibility decision has been made
+    # Decision made if review_by_id is set OR status is INELIGIBLE/DENIED
+    decision_made = (
+        relief_request.review_by_id is not None or
+        relief_request.status_code in [STATUS_INELIGIBLE, STATUS_DENIED]
+    )
+    
+    return {
+        'request': relief_request,
+        'items': relief_request.items,
+        'decision_made': decision_made,
+        'can_edit': not decision_made and relief_request.status_code == STATUS_SUBMITTED
+    }
+
+
+def submit_eligibility_decision(reliefrqst_id: int, decision: str, reason: Optional[str],
+                                reviewer_email: str) -> Tuple[bool, str]:
+    """
+    Submit eligibility decision for a relief request.
+    
+    Args:
+        reliefrqst_id: Relief request ID
+        decision: 'Y' for eligible, 'N' for ineligible
+        reason: Reason for ineligibility (required if decision='N')
+        reviewer_email: Email of the reviewing director
+        
+    Returns:
+        Tuple of (success: bool, message: str)
+    """
+    relief_request = ReliefRqst.query.get_or_404(reliefrqst_id)
+    
+    # Validate status - must be SUBMITTED
+    if relief_request.status_code != STATUS_SUBMITTED:
+        return False, f"Cannot review request with status {relief_request.status_code}. Must be SUBMITTED."
+    
+    # Check if decision already made
+    if relief_request.review_by_id is not None:
+        return False, "Eligibility decision has already been recorded for this request."
+    
+    # Validate decision
+    if decision not in ['Y', 'N']:
+        return False, "Decision must be 'Y' (eligible) or 'N' (ineligible)."
+    
+    # Validate reason for ineligible decision
+    if decision == 'N' and (not reason or not reason.strip()):
+        return False, "Reason is required when marking a request as ineligible."
+    
+    # Record the decision
+    relief_request.review_by_id = reviewer_email[:20]
+    relief_request.review_dtime = datetime.now()
+    
+    if decision == 'N':
+        # Mark as INELIGIBLE
+        relief_request.status_code = STATUS_INELIGIBLE
+        relief_request.status_reason_desc = reason.strip()
+        relief_request.version_nbr += 1
+        
+        db.session.flush()
+        
+        # Notify the requester (agency)
+        _create_ineligible_notification(relief_request, reason.strip())
+        
+        return True, f"Request #{reliefrqst_id} marked as INELIGIBLE. Requester has been notified."
+    
+    else:  # decision == 'Y'
+        # Keep status as SUBMITTED - it will move to fulfillment workflow
+        relief_request.version_nbr += 1
+        
+        db.session.flush()
+        
+        # Notify logistics team (LO and LM) that request is eligible and ready for fulfillment
+        _create_eligible_notification(relief_request)
+        
+        return True, f"Request #{reliefrqst_id} marked as ELIGIBLE. Logistics team has been notified."
+
+
+def _create_ineligible_notification(relief_request: ReliefRqst, reason: str) -> None:
+    """Create notifications for agency users when request is marked ineligible"""
+    agency_users = User.query.filter_by(
+        agency_id=relief_request.agency_id,
+        is_active=True
+    ).all()
+    
+    event_name = relief_request.eligible_event.event_name if relief_request.eligible_event else "N/A"
+    tracking_no = relief_request.tracking_no if hasattr(relief_request, 'tracking_no') else str(relief_request.reliefrqst_id)
+    
+    for user in agency_users:
+        notification = Notification(
+            user_id=user.user_id,
+            reliefrqst_id=relief_request.reliefrqst_id,
+            title='Relief Request Marked Ineligible',
+            message=f'Your relief request {tracking_no} (Event: {event_name}) has been marked ineligible. Reason: {reason}',
+            type='reliefrqst_ineligible',
+            status='unread',
+            link_url=url_for('requests.view_request', request_id=relief_request.reliefrqst_id, _external=False),
+            is_archived=False
+        )
+        db.session.add(notification)
+        
+        # TODO: Send email notification
+        # send_email(
+        #     to=user.email,
+        #     subject=f'DRIMS – Relief Request {tracking_no} Marked Ineligible',
+        #     body=f'Dear {user.first_name or user.email},\n\n'
+        #          f'Your relief request {tracking_no} for event "{event_name}" has been reviewed '
+        #          f'and marked as INELIGIBLE by ODPEM.\n\n'
+        #          f'Reason: {reason}\n\n'
+        #          f'If you have questions, please contact ODPEM.\n\n'
+        #          f'View request: {url_for("requests.view_request", request_id=relief_request.reliefrqst_id, _external=True)}'
+        # )
+
+
+def _create_eligible_notification(relief_request: ReliefRqst) -> None:
+    """Create notifications for logistics team when request is marked eligible"""
+    from app.db.models import Role
+    
+    # Get all users with Logistics Officer or Logistics Manager roles
+    logistics_roles = Role.query.filter(
+        Role.code.in_(['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER'])
+    ).all()
+    
+    logistics_users = []
+    for role in logistics_roles:
+        logistics_users.extend([user for user in role.users if user.is_active])
+    
+    # Remove duplicates
+    logistics_users = list({user.user_id: user for user in logistics_users}.values())
+    
+    event_name = relief_request.eligible_event.event_name if relief_request.eligible_event else "N/A"
+    agency_name = relief_request.agency.agency_name if relief_request.agency else "Unknown"
+    tracking_no = relief_request.tracking_no if hasattr(relief_request, 'tracking_no') else str(relief_request.reliefrqst_id)
+    
+    for user in logistics_users:
+        notification = Notification(
+            user_id=user.user_id,
+            reliefrqst_id=relief_request.reliefrqst_id,
+            title='Relief Request Ready for Fulfillment',
+            message=f'Relief request {tracking_no} from {agency_name} (Event: {event_name}) has been approved and is ready for fulfillment planning.',
+            type='reliefrqst_eligible',
+            status='unread',
+            link_url=url_for('requests.view_request', request_id=relief_request.reliefrqst_id, _external=False),
+            is_archived=False
+        )
+        db.session.add(notification)
+        
+        # TODO: Send email notification
+        # send_email(
+        #     to=user.email,
+        #     subject=f'DRIMS – New Relief Request Ready for Fulfillment',
+        #     body=f'Dear {user.first_name or user.email},\n\n'
+        #          f'Relief request {tracking_no} from {agency_name} for event "{event_name}" '
+        #          f'has been reviewed and approved for fulfillment.\n\n'
+        #          f'Please review the request and plan fulfillment accordingly.\n\n'
+        #          f'View request: {url_for("requests.view_request", request_id=relief_request.reliefrqst_id, _external=True)}'
+        # )
+
+
+def can_process_request(reliefrqst_id: int) -> Tuple[bool, str]:
+    """
+    Check if a relief request can be processed for fulfillment/dispatch.
+    Blocks processing of ineligible requests.
+    
+    Args:
+        reliefrqst_id: Relief request ID
+        
+    Returns:
+        Tuple of (can_process: bool, message: str)
+    """
+    relief_request = ReliefRqst.query.get(reliefrqst_id)
+    if not relief_request:
+        return False, "Request not found"
+    
+    if relief_request.status_code == STATUS_INELIGIBLE:
+        return False, "This relief request is marked ineligible and cannot be processed."
+    
+    if relief_request.status_code in [STATUS_CANCELLED, STATUS_DENIED]:
+        return False, f"This relief request has been {relief_request.status_code} and cannot be processed."
+    
+    return True, "Request can be processed"

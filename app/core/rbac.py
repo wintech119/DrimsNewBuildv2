@@ -4,6 +4,8 @@ Role-Based Access Control (RBAC) utilities
 from functools import wraps
 from flask import flash, redirect, url_for, abort
 from flask_login import current_user
+from app.db import db
+from sqlalchemy import text
 
 
 def role_required(*role_codes):
@@ -206,3 +208,67 @@ def can_view_reports():
         bool: True if user can view reports
     """
     return current_user.is_authenticated
+
+
+def has_permission(resource, action):
+    """
+    Check if the current user has a specific permission based on their roles.
+    
+    Args:
+        resource: The resource name (e.g., 'reliefrqst', 'inventory')
+        action: The action name (e.g., 'approve_eligibility', 'view_all')
+        
+    Returns:
+        bool: True if user has the permission
+    """
+    if not current_user.is_authenticated:
+        return False
+    
+    # Get user's role IDs
+    user_role_ids = [role.id for role in current_user.roles]
+    
+    if not user_role_ids:
+        return False
+    
+    # Use SQLAlchemy ORM instead of raw SQL for database compatibility
+    from app.db.models import Permission, RolePermission
+    
+    # Query for permission through role_permission join using ORM
+    permission_count = db.session.query(Permission).join(
+        RolePermission, Permission.perm_id == RolePermission.perm_id
+    ).filter(
+        RolePermission.role_id.in_(user_role_ids),
+        Permission.resource == resource,
+        Permission.action == action
+    ).count()
+    
+    return permission_count > 0
+
+
+def permission_required(resource, action):
+    """
+    Decorator to restrict access to routes based on permissions.
+    
+    Usage:
+        @permission_required('reliefrqst', 'approve_eligibility')
+        def my_route():
+            ...
+    
+    Args:
+        resource: The resource name (e.g., 'reliefrqst')
+        action: The action name (e.g., 'approve_eligibility')
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Please log in to access this page.', 'warning')
+                return redirect(url_for('login'))
+            
+            if not has_permission(resource, action):
+                flash('You do not have permission to perform this action.', 'danger')
+                abort(403)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator

@@ -42,11 +42,12 @@ from app.features.locations import locations_bp
 from app.features.notifications import notifications_bp
 from app.features.reports import reports_bp
 from app.features.account_requests import account_requests_bp
+from app.features.eligibility import eligibility_bp
 from app.core.status import get_status_label, get_status_badge_class
 from app.core.rbac import (
     has_role, has_all_roles, has_warehouse_access,
     is_admin, is_logistics_manager, is_logistics_officer,
-    can_manage_users, can_view_reports
+    can_manage_users, can_view_reports, has_permission
 )
 
 app.jinja_env.globals.update(
@@ -57,7 +58,8 @@ app.jinja_env.globals.update(
     is_logistics_manager=is_logistics_manager,
     is_logistics_officer=is_logistics_officer,
     can_manage_users=can_manage_users,
-    can_view_reports=can_view_reports
+    can_view_reports=can_view_reports,
+    has_permission=has_permission
 )
 
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -78,6 +80,7 @@ app.register_blueprint(locations_bp, url_prefix='/locations')
 app.register_blueprint(notifications_bp, url_prefix='/notifications')
 app.register_blueprint(reports_bp, url_prefix='/reports')
 app.register_blueprint(account_requests_bp)
+app.register_blueprint(eligibility_bp)
 
 @app.template_filter('status_badge')
 def status_badge_filter(status_code, entity_type):
