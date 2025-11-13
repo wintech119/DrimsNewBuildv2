@@ -311,6 +311,36 @@ def delete_item(request_id, item_id):
         return redirect(url_for('requests.edit_items', request_id=request_id))
 
 
+@requests_bp.route('/<int:request_id>/save_draft', methods=['POST'])
+@login_required
+@agency_user_required
+def save_draft(request_id):
+    """Save current state of draft relief request (allows user to return later)"""
+    relief_request = ReliefRqst.query.get_or_404(request_id)
+    
+    # Verify ownership
+    if relief_request.agency_id != current_user.agency_id:
+        flash('You do not have permission to save this request.', 'danger')
+        abort(403)
+    
+    # Verify it's still a draft
+    if relief_request.status_code != rr_service.STATUS_DRAFT:
+        flash('Only draft requests can be saved.', 'warning')
+        return redirect(url_for('requests.view_request', request_id=request_id))
+    
+    try:
+        # The draft is already saved (items are added/updated via edit_items route)
+        # This route just provides feedback to the user that their work is saved
+        db.session.commit()
+        flash('Draft saved successfully. You can return later to complete this request.', 'success')
+        return redirect(url_for('requests.edit_items', request_id=request_id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error saving draft: {str(e)}', 'danger')
+        return redirect(url_for('requests.edit_items', request_id=request_id))
+
+
 @requests_bp.route('/<int:request_id>/submit', methods=['POST'])
 @login_required
 @agency_user_required

@@ -1,156 +1,473 @@
 {% extends 'base.html' %}
 
-{% block title %}Edit Items - Request #{{ request.reliefrqst_id }}{% endblock %}
+{% block title %}Edit Items - Request #{{ request.tracking_no }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.request-summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-left: 4px solid #009b3a;
+    padding: 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.request-summary-card .summary-item {
+    display: inline-block;
+    margin-right: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.request-summary-card .summary-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.request-summary-card .summary-value {
+    font-size: 1rem;
+    color: #212529;
+    font-weight: 500;
+}
+
+.workflow-stepper {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 20px;
+}
+
+.workflow-stepper h5 {
+    margin-bottom: 1.5rem;
+    color: #009b3a;
+    font-size: 1.1rem;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.workflow-step:last-child {
+    margin-bottom: 0;
+}
+
+.workflow-step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 35px;
+    bottom: -15px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.workflow-step.active:not(:last-child)::before {
+    background: #009b3a;
+}
+
+.workflow-step.completed:not(:last-child)::before {
+    background: #009b3a;
+}
+
+.step-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #6c757d;
+    position: relative;
+    z-index: 1;
+}
+
+.workflow-step.active .step-icon {
+    background: #009b3a;
+    border-color: #009b3a;
+    color: white;
+}
+
+.workflow-step.completed .step-icon {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.step-content {
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.step-title {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.workflow-step.active .step-title {
+    color: #009b3a;
+}
+
+.step-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e9ecef;
+}
+
+.items-form-section {
+    background: #ffffff;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-draft {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-submitted {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.status-filled {
+    background-color: #28a745;
+    color: #fff;
+}
+
+@media (max-width: 992px) {
+    .workflow-stepper {
+        position: static;
+        margin-top: 2rem;
+    }
+    
+    .request-summary-card .summary-item {
+        margin-right: 1rem;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Page Header -->
     <div class="row mb-3">
         <div class="col-12">
             <h2 class="text-goj-green mb-1">
-                <i class="bi bi-pencil-square"></i> Edit Request Items
+                <i class="bi bi-pencil-square"></i> Edit Relief Request Items
             </h2>
-            <p class="text-muted mb-0">Request #{{ request.reliefrqst_id }} - {{ request.agency.agency_name }}</p>
+            <p class="text-muted mb-0">Request #{{ request.tracking_no }}</p>
         </div>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i>
-                <strong>Step 2 of 2:</strong> Add items to your request with quantities and justifications. You can submit the request to ODPEM after adding all required items.
+    <!-- Main Two-Column Layout -->
+    <div class="row">
+        <!-- LEFT COLUMN: Main Content (~70%) -->
+        <div class="col-lg-8">
+            <!-- Request Summary Card -->
+            <div class="request-summary-card">
+                <div class="row">
+                    <div class="col-md-3 summary-item">
+                        <span class="summary-label">Agency</span>
+                        <span class="summary-value">{{ request.agency.agency_name }}</span>
+                    </div>
+                    <div class="col-md-3 summary-item">
+                        <span class="summary-label">Request Date</span>
+                        <span class="summary-value">{{ request.request_date|format_date }}</span>
+                    </div>
+                    <div class="col-md-3 summary-item">
+                        <span class="summary-label">Tracking No.</span>
+                        <span class="summary-value"><strong>{{ request.tracking_no }}</strong></span>
+                    </div>
+                    <div class="col-md-3 summary-item">
+                        <span class="summary-label">Status</span>
+                        <span class="summary-value">
+                            {% if request.status_code == 0 %}
+                                <span class="status-badge status-draft">Draft</span>
+                            {% elif request.status_code == 3 %}
+                                <span class="status-badge status-submitted">Submitted</span>
+                            {% elif request.status_code == 7 %}
+                                <span class="status-badge status-filled">Filled</span>
+                            {% else %}
+                                <span class="status-badge">{{ request.status.status_desc }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ url_for('requests.view_request', request_id=request.reliefrqst_id) }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Request
-            </a>
-        </div>
-    </div>
 
-    <div class="drims-card">
-        <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Add New Item</h5>
-        <form method="POST" action="{{ url_for('requests.edit_items', request_id=request.reliefrqst_id) }}" id="addItemForm">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="item_id" class="form-label">Item *</label>
-                    <select class="form-select" id="item_id" name="item_id" required>
-                        <option value="">Select item...</option>
-                        {% for item in active_items %}
-                        <option value="{{ item.item_id }}" data-sku="{{ item.sku_code }}" data-uom="{{ item.uom_code }}">
-                            {{ item.item_name }} ({{ item.sku_code }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="request_qty" class="form-label">Quantity *</label>
-                    <input type="number" class="form-control" id="request_qty" name="request_qty" step="0.01" min="0.01" required>
-                    <small class="text-muted" id="uom_hint">Unit: <span id="selected_uom">—</span></small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="urgency_ind" class="form-label">Urgency *</label>
-                    <select class="form-select" id="urgency_ind" name="urgency_ind" required>
-                        <option value="">Select...</option>
-                        <option value="H">High</option>
-                        <option value="M">Medium</option>
-                        <option value="L">Low</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="rqst_reason_desc" class="form-label">Justification / Notes <span id="justification_required_indicator" class="text-danger" style="display: none;">*</span></label>
-                    <textarea class="form-control" id="rqst_reason_desc" name="rqst_reason_desc" rows="2" placeholder="Explain why this item is needed and how it will be used..."></textarea>
-                    <small class="text-muted" id="justification_hint">Required for High urgency items only</small>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="required_by_date" class="form-label">Required By Date <span id="required_date_indicator" class="text-muted">(Optional)</span></label>
-                    <input type="date" class="form-control" id="required_by_date" name="required_by_date" placeholder="YYYY-MM-DD">
-                    <small class="text-muted">Date when this item must be delivered (format: YYYY-MM-DD)</small>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-goj">
-                <i class="bi bi-plus-circle"></i> Add Item to Request
-            </button>
-        </form>
-    </div>
-
-    <div class="drims-card mt-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Current Items ({{ request.items|length }})</h5>
-            {% if request.items|length > 0 %}
-                <form method="POST" action="{{ url_for('requests.submit_request', request_id=request.reliefrqst_id) }}" style="display: inline;" onsubmit="return confirm('Submit this request to ODPEM? You will not be able to edit it after submission.');">
+            <!-- Add New Item Form -->
+            <div class="drims-card items-form-section">
+                <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Add New Item</h5>
+                <form method="POST" action="{{ url_for('requests.edit_items', request_id=request.reliefrqst_id) }}" id="addItemForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="item_id" class="form-label">Item <span class="text-danger">*</span></label>
+                            <select class="form-select" id="item_id" name="item_id" required>
+                                <option value="">Select item...</option>
+                                {% for item in active_items %}
+                                <option value="{{ item.item_id }}" data-sku="{{ item.sku_code }}" data-uom="{{ item.default_uom_code }}">
+                                    {{ item.item_name }} ({{ item.sku_code }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="request_qty" class="form-label">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="request_qty" name="request_qty" step="0.01" min="0.01" required>
+                            <small class="text-muted" id="uom_hint">Unit: <span id="selected_uom">—</span></small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="urgency_ind" class="form-label">Urgency <span class="text-danger">*</span></label>
+                            <select class="form-select" id="urgency_ind" name="urgency_ind" required>
+                                <option value="">Select...</option>
+                                <option value="H">High</option>
+                                <option value="M">Medium</option>
+                                <option value="L">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="rqst_reason_desc" class="form-label">
+                                Justification / Notes 
+                                <span id="justification_required_indicator" class="text-danger" style="display: none;">*</span>
+                            </label>
+                            <textarea class="form-control" id="rqst_reason_desc" name="rqst_reason_desc" rows="3" placeholder="Explain why this item is needed and how it will be used..."></textarea>
+                            <small class="text-muted" id="justification_hint">Required for High urgency items only</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="required_by_date" class="form-label">
+                                Required By Date 
+                                <span class="text-muted">(Optional)</span>
+                            </label>
+                            <input type="date" class="form-control" id="required_by_date" name="required_by_date">
+                            <small class="text-muted">Date when this item must be delivered</small>
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-goj">
-                        <i class="bi bi-send"></i> Submit Request to ODPEM
+                        <i class="bi bi-plus-circle"></i> Add Item to Request
                     </button>
                 </form>
-            {% endif %}
+            </div>
+
+            <!-- Current Items List -->
+            <div class="drims-card mt-3 items-form-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-list-ul"></i> Current Items 
+                    <span class="badge bg-secondary">{{ request.items|length }}</span>
+                </h5>
+
+                {% if request.items %}
+                <div class="table-responsive">
+                    <table class="table drims-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>SKU</th>
+                                <th class="text-end">Quantity</th>
+                                <th>Urgency</th>
+                                <th>Required By</th>
+                                <th>Justification</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in request.items %}
+                            <tr>
+                                <td><strong>{{ item.item.item_name }}</strong></td>
+                                <td><code>{{ item.item.sku_code }}</code></td>
+                                <td class="text-end">
+                                    <strong>{{ "%.2f"|format(item.request_qty) }}</strong>
+                                    {{ item.item.default_uom_code }}
+                                </td>
+                                <td>
+                                    {% if item.urgency_ind == 'H' %}
+                                        <span class="badge bg-danger">High</span>
+                                    {% elif item.urgency_ind == 'M' %}
+                                        <span class="badge bg-warning text-dark">Medium</span>
+                                    {% elif item.urgency_ind == 'L' %}
+                                        <span class="badge bg-info text-dark">Low</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.required_by_date %}
+                                        <span class="text-muted">
+                                            <i class="bi bi-calendar-event"></i> 
+                                            {{ item.required_by_date|format_date }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.rqst_reason_desc %}
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ item.rqst_reason_desc }}">
+                                            {{ item.rqst_reason_desc }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('requests.delete_item', request_id=request.reliefrqst_id, item_id=item.item_id) }}" style="display: inline;" onsubmit="return confirm('Remove this item from the request?');">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    {% if request.status_code == 0 %}
+                        <!-- Save Draft Button -->
+                        <form method="POST" action="{{ url_for('requests.save_draft', request_id=request.reliefrqst_id) }}" style="display: inline;">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="bi bi-floppy"></i> Save Draft
+                            </button>
+                        </form>
+                        
+                        <!-- Submit to ODPEM Button -->
+                        {% if request.items|length > 0 %}
+                        <form method="POST" action="{{ url_for('requests.submit_request', request_id=request.reliefrqst_id) }}" style="display: inline;" id="submitForm">
+                            <input type="hidden" name="version_nbr" value="{{ request.version_nbr }}">
+                            <button type="submit" class="btn btn-goj">
+                                <i class="bi bi-send"></i> Submit to ODPEM
+                            </button>
+                        </form>
+                        {% else %}
+                        <button type="button" class="btn btn-goj" disabled title="Add at least one item before submitting">
+                            <i class="bi bi-send"></i> Submit to ODPEM
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Back/Cancel Button -->
+                    <a href="{{ url_for('requests.view_request', request_id=request.reliefrqst_id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Request
+                    </a>
+                </div>
+
+                {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3.5rem; color: #dee2e6;"></i>
+                    <p class="text-muted mt-3 mb-0">No items added yet.</p>
+                    <p class="text-muted">Use the form above to add items to this request.</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
-        {% if request.items %}
-        <div class="table-responsive">
-            <table class="table drims-table">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>SKU</th>
-                        <th class="text-end">Quantity</th>
-                        <th>Urgency</th>
-                        <th>Required By</th>
-                        <th>Justification</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in request.items %}
-                    <tr>
-                        <td>{{ item.item.item_name }}</td>
-                        <td><code>{{ item.item.sku_code }}</code></td>
-                        <td class="text-end">
-                            <strong>{{ "%.2f"|format(item.request_qty) }}</strong>
-                            {{ item.item.default_uom_code }}
-                        </td>
-                        <td>
-                            {% if item.urgency_ind == 'H' %}
-                                <span class="badge bg-danger">High</span>
-                            {% elif item.urgency_ind == 'M' %}
-                                <span class="badge bg-warning text-dark">Medium</span>
-                            {% elif item.urgency_ind == 'L' %}
-                                <span class="badge bg-info text-dark">Low</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if item.required_by_date %}
-                                <span class="text-muted"><i class="bi bi-calendar-event"></i> {{ item.required_by_date|format_date }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if item.rqst_reason_desc %}
-                                {{ item.rqst_reason_desc[:100] }}{% if item.rqst_reason_desc|length > 100 %}...{% endif %}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <form method="POST" action="{{ url_for('requests.delete_item', request_id=request.reliefrqst_id, item_id=item.item_id) }}" style="display: inline;" onsubmit="return confirm('Remove this item from the request?');">
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    <i class="bi bi-trash"></i> Remove
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- RIGHT COLUMN: Workflow Stepper (~30%) -->
+        <div class="col-lg-4">
+            <div class="workflow-stepper">
+                <h5><i class="bi bi-signpost-2"></i> Request Workflow</h5>
+                
+                <!-- Step 1: Create Request -->
+                <div class="workflow-step completed">
+                    <div class="step-icon">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">1. Create Relief Request</div>
+                        <div class="step-description">Request created and saved.</div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Add/Edit Items (Current) -->
+                <div class="workflow-step active">
+                    <div class="step-icon">2</div>
+                    <div class="step-content">
+                        <div class="step-title">2. Add / Edit Items</div>
+                        <div class="step-description">
+                            Add items with quantities, urgency levels, and justifications. 
+                            Save as draft to return later, or submit when ready.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Review & Confirm -->
+                <div class="workflow-step {% if request.status_code >= 3 %}completed{% endif %}">
+                    <div class="step-icon">
+                        {% if request.status_code >= 3 %}
+                            <i class="bi bi-check-lg"></i>
+                        {% else %}
+                            3
+                        {% endif %}
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">3. Review & Confirm</div>
+                        <div class="step-description">
+                            Review your request details before final submission.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Submit to ODPEM -->
+                <div class="workflow-step {% if request.status_code >= 3 %}completed{% endif %}">
+                    <div class="step-icon">
+                        {% if request.status_code >= 3 %}
+                            <i class="bi bi-check-lg"></i>
+                        {% else %}
+                            4
+                        {% endif %}
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">4. Submit to ODPEM</div>
+                        <div class="step-description">
+                            Request submitted to ODPEM for eligibility review and processing.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: ODPEM Review & Decision -->
+                <div class="workflow-step {% if request.status_code >= 5 %}active{% elif request.status_code == 3 %}active{% endif %}">
+                    <div class="step-icon">5</div>
+                    <div class="step-content">
+                        <div class="step-title">5. ODPEM Review & Decision</div>
+                        <div class="step-description">
+                            ODPEM reviews eligibility and processes approved requests.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="text-center py-4">
-            <i class="bi bi-inbox" style="font-size: 3rem; color: #dee2e6;"></i>
-            <p class="text-muted mt-2 mb-0">No items added yet. Use the form above to add items to this request.</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -191,5 +508,16 @@ document.getElementById('urgency_ind').addEventListener('change', function() {
         hint.classList.add('text-muted');
     }
 });
+
+// Validate submit form
+const submitForm = document.getElementById('submitForm');
+if (submitForm) {
+    submitForm.addEventListener('submit', function(e) {
+        if (!confirm('Submit this request to ODPEM? You will not be able to edit items after submission.')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+}
 </script>
 {% endblock %}
