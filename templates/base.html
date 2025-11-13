@@ -476,25 +476,26 @@
         
         <div class="nav-section-header">AIDMGMT</div>
         {% if current_user.agency_id %}
+        {# Agency users see their own requests #}
         <a href="{{ url_for('requests.list_requests') }}" class="nav-item-link {% if active_page == 'agency_requests' %}active{% endif %}">
             <i class="bi bi-file-earmark-person"></i>
             <span class="nav-label">My Relief Requests</span>
         </a>
         {% endif %}
-        <a href="{{ url_for('requests.list_requests') }}" class="nav-item-link {% if active_page == 'requests' %}active{% endif %}">
-            <i class="bi bi-file-text"></i>
-            <span class="nav-label">All Relief Requests</span>
-        </a>
         {% if is_director_level() %}
-        <a href="{{ url_for('eligibility.pending_list') }}" class="nav-item-link {% if active_page == 'eligibility' %}active{% endif %}">
-            <i class="bi bi-clipboard-check"></i>
-            <span class="nav-label">Relief Request Review</span>
+        {# Directors see unified dashboard for all requests, review, and fulfillment #}
+        <a href="{{ url_for('director.dashboard') }}" class="nav-item-link {% if active_page == 'director_dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i>
+            <span class="nav-label">Relief Request Management</span>
         </a>
         {% endif %}
+        {% if not is_director_level() and not current_user.agency_id %}
+        {# LO/LM and other staff see individual pages #}
         <a href="{{ url_for('packages.pending_fulfillment') }}" class="nav-item-link {% if active_page == 'pending_fulfillment' %}active{% endif %}">
             <i class="bi bi-box-arrow-in-down"></i>
             <span class="nav-label">Pending Fulfillment</span>
         </a>
+        {% endif %}
         <a href="{{ url_for('packages.list_packages') }}" class="nav-item-link {% if active_page == 'packages' %}active{% endif %}">
             <i class="bi bi-box"></i>
             <span class="nav-label">Packages</span>
