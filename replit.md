@@ -35,7 +35,13 @@ Preferred communication style: Simple, everyday language.
 - **Needs Lists Design Pattern**: Unified modern UI across Relief Requests and Eligibility workflows:
   - **Summary Metric Cards**: 3-card dashboard showing key metrics (total, high priority, items)
   - **Filter Tabs**: Functional tabs with live count badges for filtering by priority
-  - **Workflow Sidebar**: 5-step visual progress indicator showing request lifecycle
+  - **Workflow Sidebar**: 5-step visual progress indicator with clean modern design:
+    - White card background with blue header bar (#007bff)
+    - Green checkmarks (#28a745) for completed steps with vertical connecting lines
+    - Blue active step indicator, white circles with green borders for pending steps
+    - Sticky positioning (`position: sticky; top: 1.25rem`) - sidebar doesn't move when scrolling on desktop
+    - Optional completion message box at bottom for workflow status updates
+    - Backward compatible macro supporting both global completion flag and step-by-step completion
   - **Status Badges**: Color-coded badges for status and priority levels
   - **Standardized Tables**: `relief-requests-table` class with consistent styling, row hover states
   - **Action Buttons**: `btn-relief-primary` and `btn-relief-secondary` for consistent CTA styling
