@@ -35,7 +35,7 @@
                     <label for="item_id" class="form-label">Item *</label>
                     <select class="form-select" id="item_id" name="item_id" required>
                         <option value="">Select item...</option>
-                        {% for item in available_items %}
+                        {% for item in active_items %}
                         <option value="{{ item.item_id }}" data-sku="{{ item.sku_code }}" data-uom="{{ item.uom_code }}">
                             {{ item.item_name }} ({{ item.sku_code }})
                         </option>
