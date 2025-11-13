@@ -1,0 +1,159 @@
+DRIMS PROMPT – PREPARE RELIEF PACKAGE (MATCH PREPARE FULFILMENT UI)
+
+You are working on the Disaster Relief Inventory Management System (DRIMS).
+
+Implement / update the “Prepare Relief Package” page so that it:
+
+Looks and navigates exactly like the existing “Prepare Fulfilment” page for Needs Lists (same layout, cards, workflow sidebar, lock banner, etc.).
+
+Works for relief requests and relief packages (based on reliefrqst, reliefrqst_item, inventory & warehouse tables).
+
+Shows all warehouses that hold the item and allows the Logistics Officer/Manager to allocate quantities from each.
+
+Updates remaining and usable quantities in real time.
+
+Use the same styling system as the current UI.
+Do not make destructive DB changes – only use existing relief, item, warehouse and stock tables.
+
+1. Navigation & Routing
+
+Add or wire up a route such as:
+/relief-requests/<reliefrqst_id>/prepare-package
+
+This route is opened when:
+
+A Logistics Officer/Manager clicks a notification for a new relief request to be filled, or
+
+They click a request in the “Awaiting to be Filled” queue.
+
+In the left sidebar under OPERATIONS, add/ensure a Relief Packages entry, mirroring Needs Lists.
+
+2. Page Layout (Match “Prepare Fulfilment”)
+
+Copy the structure of the existing Prepare Fulfilment screen:
+
+Header bar:
+
+Title: Prepare Relief Package
+
+Subtitle: <Tracking No> • <Agency Name>
+
+Green lock banner: “You are currently editing this relief request…”
+
+Summary cards row:
+
+Total Items / Fully Allocated / Partial / Unallocated
+
+Search + filter row:
+
+Search by name/SKU, filter dropdown, “Jump to First Unallocated” button.
+
+Items table:
+
+Columns: Item | Requested | Allocate from Warehouses | Allocated | Remaining | Status
+
+Right-hand workflow sidebar:
+
+Steps: Submitted → Prepare → Approval → Execute (or similar), current step highlighted.
+
+Notes panel plus Save as Draft and Submit for Approval / Send for Dispatch buttons at bottom, same style as Needs Lists.
+
+3. Warehouse Allocation UI (MUST MATCH THIS PATTERN)
+
+For each item row, under “Allocate from Warehouses”, show one line per warehouse using this exact visual pattern:
+
+📍 location icon WarehouseName UsableQty [ input box ]
+
+Example:
+
+📍 Pimento 189 [ 0 ]
+
+Implementation details:
+
+Left: a small location pin icon.
+
+Next: the warehouse name (e.g. “Pimento”).
+
+Next: the usable quantity as a bold/strong number immediately to the right of the name (like 189 in the sample).
+
+Far right: a numeric input field where the user types the quantity to allocate from that warehouse.
+
+Rules:
+
+Show all warehouses where the usable quantity for that item is ≥ 0.
+
+The input must not allow a value greater than the warehouse’s usable quantity.
+
+Multiple warehouse rows are stacked vertically under the item, exactly like the Needs Lists prepare screen.
+
+4. Real-Time Quantity Updates
+
+As the user edits any warehouse input for an item:
+
+Recalculate:
+
+total_allocated = sum of quantities entered across all warehouses for that item.
+
+remaining = requested_qty - total_allocated.
+
+Update the UI instantly:
+
+The Allocated column shows total_allocated.
+
+The Remaining column shows remaining.
+
+The usable quantity badge for each warehouse displays
+current_usable = original_usable - allocated_from_that_warehouse.
+
+Enforce limits both in the front-end and back-end:
+
+allocated_from_warehouse ≤ original_usable.
+
+total_allocated ≤ requested_qty.
+
+If a rule is violated, show an inline error and prevent saving/submission.
+
+Use unobtrusive JS (or the project’s existing JS framework) to keep behaviour consistent with the Needs Lists page.
+
+5. Status Dropdown per Item
+
+Status dropdown options come from reliefrqstitem_status (active rows).
+
+Auto-update logic:
+
+If 0 < total_allocated < requested_qty → set status to Partly Filled.
+
+If total_allocated == requested_qty → set status to Filled.
+
+If total_allocated == 0 → allow only Denied / Unavailable / Awaiting Availability.
+
+Disable or restrict manual changes according to those rules, and mirror any existing status behaviour from Needs Lists.
+
+6. Save, Submit, Send for Dispatch
+
+Save as Draft: persists current allocations & statuses, stays on page, show success banner.
+
+Submit for Approval (Logistics Officer):
+
+Validates allocations & statuses, moves package into “Awaiting Approval”, fires email + in-app notification to Logistics Manager and puts package into their “Awaiting Approval” queue.
+
+Send for Dispatch (Logistics Manager):
+
+No approval step; on click, validates then moves to “Awaiting Dispatch”, notifies Inventory Clerk and adds to their “Awaiting Dispatch” queue.
+
+Reuse the notification and queue patterns already used for Needs Lists.
+
+7. Accessibility & Responsiveness
+
+All controls must be keyboard accessible.
+
+Inputs have labels or aria-labels.
+
+On smaller screens, the table horizontally scrolls; sidebar stacks below.
+
+Deliverable:
+Updated routes, templates and JS so that Prepare Relief Package uses the same UI and navigation as Prepare Fulfilment, and each warehouse allocation row uses the pattern:
+
+📍 WarehouseName UsableQty [ editable quantity input ]
+
+with live remaining and usable quantity recalculation.

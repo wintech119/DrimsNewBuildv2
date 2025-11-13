@@ -250,9 +250,42 @@
 
 .hub-allocation-inline {
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
+}
+
+.warehouse-allocation-row {
+    display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.warehouse-allocation-row .bi-geo-alt-fill {
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.warehouse-allocation-row .warehouse-name {
+    font-size: 0.875rem;
+    color: #495057;
+    flex-shrink: 0;
+}
+
+.warehouse-allocation-row .warehouse-stock {
+    font-size: 0.875rem;
+    color: #212529;
+    min-width: 50px;
+}
+
+.warehouse-allocation-row .warehouse-stock .bi-hourglass-split {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.warehouse-allocation-row .allocation-input {
+    width: 100px;
+    margin-left: auto;
 }
 
 .hub-select {
@@ -433,10 +466,10 @@
                 <div>
                     <h1 class="page-title">
                         <i class="bi bi-box-seam"></i>
-                        Prepare Fulfillment
+                        Prepare Relief Package
                     </h1>
                     <p class="page-subtitle">
-                        NL-{{ '%06d'|format(relief_request.reliefrqst_id) }} • {{ relief_request.agency.agency_name if relief_request.agency else 'Unknown Agency' }}
+                        {{ relief_request.tracking_no if relief_request.tracking_no else 'RR-' + '%06d'|format(relief_request.reliefrqst_id) }} • {{ relief_request.agency.agency_name if relief_request.agency else 'Unknown Agency' }}
                     </p>
                 </div>
             </div>
@@ -447,7 +480,7 @@
                 <div class="lock-info-content">
                     <i class="bi bi-lock-fill"></i>
                     <div class="lock-info-text">
-                        <h6>You are currently editing this Needs List</h6>
+                        <h6>You are currently editing this relief package</h6>
                         <p>Editing session started 0 minutes ago. Your lock will automatically expire after 15 minutes of inactivity.</p>
                     </div>
                 </div>
@@ -553,24 +586,24 @@
                                 <div class="hub-allocation-inline">
                                     {% for warehouse in warehouses %}
                                     {% set existing_value = existing_allocations.get(item.item_id, {}).get(warehouse.warehouse_id, 0) %}
-                                    <div>
-                                        <label class="form-label mb-1" style="font-size: 0.8125rem; color: #6c757d;">{{ warehouse.warehouse_name }}</label>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <input 
-                                                type="number" 
-                                                class="form-control form-control-sm qty-input allocation-input"
-                                                id="allocation_{{ item.item_id }}_{{ warehouse.warehouse_id }}"
-                                                name="allocation_{{ item.item_id }}_{{ warehouse.warehouse_id }}"
-                                                value="{{ existing_value }}"
-                                                min="0"
-                                                step="0.01"
-                                                data-item-id="{{ item.item_id }}"
-                                                data-warehouse-id="{{ warehouse.warehouse_id }}"
-                                                data-requested-qty="{{ item.request_qty }}">
-                                        </div>
-                                        <div class="stock-info" id="stock_{{ item.item_id }}_{{ warehouse.warehouse_id }}">
-                                            <i class="bi bi-hourglass-split"></i> Loading stock...
-                                        </div>
+                                    <div class="warehouse-allocation-row">
+                                        <i class="bi bi-geo-alt-fill" style="color: #6c757d;"></i>
+                                        <span class="warehouse-name">{{ warehouse.warehouse_name }}</span>
+                                        <strong class="warehouse-stock" id="stock_{{ item.item_id }}_{{ warehouse.warehouse_id }}" data-usable-qty="0">
+                                            <i class="bi bi-hourglass-split"></i>
+                                        </strong>
+                                        <input 
+                                            type="number" 
+                                            class="form-control form-control-sm qty-input allocation-input"
+                                            id="allocation_{{ item.item_id }}_{{ warehouse.warehouse_id }}"
+                                            name="allocation_{{ item.item_id }}_{{ warehouse.warehouse_id }}"
+                                            value="{{ existing_value }}"
+                                            min="0"
+                                            step="0.01"
+                                            data-item-id="{{ item.item_id }}"
+                                            data-warehouse-id="{{ warehouse.warehouse_id }}"
+                                            data-requested-qty="{{ item.request_qty }}"
+                                            aria-label="Allocate from {{ warehouse.warehouse_name }}">
                                     </div>
                                     {% endfor %}
                                 </div>
@@ -716,15 +749,21 @@ function loadInventory(itemId, warehouseId) {
         .then(response => response.json())
         .then(data => {
             const usable = parseFloat(data.usable_qty || 0);
-            stockElement.innerHTML = `<i class="bi bi-box"></i> Available: ${usable.toFixed(2)}`;
+            stockElement.textContent = usable.toFixed(0);
             stockElement.dataset.usableQty = usable;
             
             if (usable === 0) {
-                stockElement.innerHTML = `<i class="bi bi-exclamation-triangle text-danger"></i> No stock available`;
+                stockElement.style.color = '#dc3545';
+                stockElement.title = 'No stock available';
+            } else {
+                stockElement.style.color = '#212529';
+                stockElement.title = '';
             }
         })
         .catch(error => {
-            stockElement.innerHTML = `<i class="bi bi-exclamation-triangle text-danger"></i> Error loading`;
+            stockElement.textContent = '?';
+            stockElement.style.color = '#dc3545';
+            stockElement.title = 'Error loading stock';
             console.error('Inventory load error:', error);
         });
 }
