@@ -25,35 +25,51 @@ def list_requests():
     List all relief requests for the current user's agency.
     Agency users only see their own agency's requests.
     """
-    status_filter = request.args.get('status', 'all')
+    # Support both 'filter' and 'status' params for backward compatibility
+    status_filter = request.args.get('filter') or request.args.get('status', 'submitted')
     
-    # Filter by current user's agency
-    query = ReliefRqst.query.filter_by(agency_id=current_user.agency_id)
+    # Map legacy status values to new filter values
+    legacy_mapping = {
+        'processing': 'awaiting',
+        'dispatched': 'completed',
+        'all': 'all'
+    }
+    status_filter = legacy_mapping.get(status_filter, status_filter)
+    
+    # Base query for current user's agency
+    base_query = ReliefRqst.query.filter_by(agency_id=current_user.agency_id)
+    
+    # Calculate counts for filter tabs
+    counts = {
+        'submitted': base_query.filter(ReliefRqst.status_code.in_([
+            rr_service.STATUS_SUBMITTED, rr_service.STATUS_PART_FILLED
+        ])).count(),
+        'draft': base_query.filter_by(status_code=rr_service.STATUS_DRAFT).count(),
+        'awaiting': base_query.filter_by(status_code=rr_service.STATUS_AWAITING_APPROVAL).count(),
+        'completed': base_query.filter_by(status_code=rr_service.STATUS_FILLED).count()
+    }
     
     # Apply status filter
     if status_filter == 'draft':
-        query = query.filter_by(status_code=rr_service.STATUS_DRAFT)
-    elif status_filter == 'submitted':
-        query = query.filter_by(status_code=rr_service.STATUS_SUBMITTED)
-    elif status_filter == 'processing':
-        query = query.filter(ReliefRqst.status_code.in_([
-            rr_service.STATUS_AWAITING_APPROVAL,
-            rr_service.STATUS_PART_FILLED
-        ]))
-    elif status_filter == 'dispatched':
-        query = query.filter_by(status_code=rr_service.STATUS_CLOSED)
+        query = base_query.filter_by(status_code=rr_service.STATUS_DRAFT)
+    elif status_filter == 'awaiting':
+        query = base_query.filter_by(status_code=rr_service.STATUS_AWAITING_APPROVAL)
     elif status_filter == 'completed':
-        query = query.filter_by(status_code=rr_service.STATUS_FILLED)
+        query = base_query.filter_by(status_code=rr_service.STATUS_FILLED)
+    elif status_filter == 'all':
+        query = base_query  # Show all requests
+    else:
+        # Default to submitted/part-filled
+        query = base_query.filter(ReliefRqst.status_code.in_([
+            rr_service.STATUS_SUBMITTED, rr_service.STATUS_PART_FILLED
+        ]))
     
     requests_list = query.order_by(ReliefRqst.request_date.desc()).all()
     
-    # Add workflow metadata for each request
-    for req in requests_list:
-        req.workflow_step = rr_service.get_workflow_steps(req.status_code)
-    
-    return render_template('requests/list.html',
+    return render_template('relief_requests/list.html',
                          requests=requests_list,
-                         status_filter=status_filter,
+                         current_filter=status_filter,
+                         counts=counts,
                          STATUS_DRAFT=rr_service.STATUS_DRAFT,
                          STATUS_SUBMITTED=rr_service.STATUS_SUBMITTED,
                          STATUS_CLOSED=rr_service.STATUS_CLOSED,

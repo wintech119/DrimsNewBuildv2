@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% from 'relief_requests/_status_badge.html' import status_badge %}
+{% from 'relief_requests/_summary_cards.html' import render_summary_cards %}
+{% from 'relief_requests/_workflow_sidebar.html' import render_workflow_sidebar %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
+{% endblock %}
+
+{% block title %}Relief Request - {{ request.tracking_no or request.reliefrqst_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Success Message -->
+    {% if show_success %}
+    <div class="alert-banner alert-banner-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-banner-content">
+            Relief request {{ request.tracking_no or 'RR-' + '%06d'|format(request.reliefrqst_id) }} created successfully.
+        </div>
+        <button type="button" class="alert-banner-close" onclick="this.parentElement.remove()" aria-label="Close">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="{{ url_for('relief_requests.list') }}" class="btn-back">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="page-title">
+                    <i class="bi bi-clipboard-check page-title-icon"></i>
+                    <h1 class="page-title-text">
+                        {{ request.tracking_no or 'RR-' + '%06d'|format(request.reliefrqst_id) }}
+                    </h1>
+                    <span class="page-title-badge">
+                        {{ status_badge(request.status_cd) }}
+                    </span>
+                </div>
+                <p class="page-subtitle">
+                    {{ request.agency.name if request.agency else 'Unknown Agency' }}
+                    {% if request.agency and request.agency.agency_type_cd %}
+                    ({{ request.agency.agency_type_cd }})
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Info Panel -->
+            {% if request.status_cd == 0 %}
+            <div class="info-panel" role="region" aria-label="Draft status information">
+                <div class="info-panel-title">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Review Your Relief Request
+                </div>
+                <div class="info-panel-content">
+                    <p class="mb-2">Your relief request is currently in <strong>Draft</strong> status. Please review the items and quantities below.</p>
+                    <p class="mb-0"><strong>Next Steps:</strong> You can edit this draft to make changes, or submit it to ODPEM for processing when ready.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Summary Cards -->
+            {% set summary_metrics = [
+                {
+                    'icon': 'box-seam',
+                    'label': 'Total Items',
+                    'value': request.items|length if request.items else 0,
+                    'variant': 'default'
+                },
+                {
+                    'icon': 'check-circle',
+                    'label': 'Fully Allocated',
+                    'value': allocated_count,
+                    'variant': 'success'
+                },
+                {
+                    'icon': 'exclamation-triangle',
+                    'label': 'Partial',
+                    'value': partial_count,
+                    'variant': 'warning'
+                },
+                {
+                    'icon': 'x-circle',
+                    'label': 'Unallocated',
+                    'value': unallocated_count,
+                    'variant': 'danger'
+                }
+            ] %}
+            {{ render_summary_cards(summary_metrics) }}
+
+            <!-- Items Table -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Requested Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if request.items %}
+                    <table class="relief-requests-table mb-0" role="table" aria-label="Requested items">
+                        <thead>
+                            <tr>
+                                <th scope="col">Item</th>
+                                <th scope="col">Requested</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in request.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.item.name if item.item else 'Unknown Item' }}</strong>
+                                    {% if item.item and item.item.sku %}
+                                    <div class="table-sku">SKU: {{ item.item.sku }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ item.qty_rqst }}</strong>
+                                    {{ item.item.unit_of_measure if item.item else '' }}
+                                </td>
+                                <td>
+                                    {{ status_badge(0, 'Draft') }}
+                                    <div class="table-sku">Awaiting submission</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+                        <p class="mt-3 text-muted">No items added yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-4 d-flex gap-2">
+                {% if request.status_cd == 0 %}
+                <form method="POST" action="{{ url_for('relief_requests.submit', request_id=request.reliefrqst_id) }}">
+                    <button type="submit" class="btn-relief-primary">
+                        <i class="bi bi-send"></i>
+                        Submit to ODPEM
+                    </button>
+                </form>
+                <a href="{{ url_for('relief_requests.edit_items', request_id=request.reliefrqst_id) }}" class="btn-relief-secondary">
+                    <i class="bi bi-pencil"></i>
+                    Edit Items
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Workflow Sidebar -->
+        <div class="col-lg-3">
+            {% set workflow_steps = [
+                {'number': 1, 'title': 'Create Request', 'description': 'Add items you need', 'completed': True},
+                {'number': 2, 'title': 'Submit to ODPEM', 'description': 'Send request for review', 'completed': request.status_cd >= 1},
+                {'number': 3, 'title': 'ODPEM Processing', 'description': 'Awaiting review', 'completed': request.status_cd >= 3},
+                {'number': 4, 'title': 'Receive Items', 'description': 'Awaiting dispatch', 'completed': request.status_cd >= 7}
+            ] %}
+            {{ render_workflow_sidebar(1 if request.status_cd == 0 else 2, workflow_steps) }}
+        </div>
+    </div>
+</div>
+{% endblock %}

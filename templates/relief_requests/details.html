@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% from 'relief_requests/_status_badge.html' import status_badge %}
+{% from 'relief_requests/_summary_cards.html' import render_summary_cards %}
+{% from 'relief_requests/_workflow_sidebar.html' import render_workflow_sidebar %}
+{% from 'relief_requests/_timeline.html' import render_timeline %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
+{% endblock %}
+
+{% block title %}Relief Request - {{ request.tracking_no or request.reliefrqst_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Completion Success Banner -->
+    {% if request.status_cd == 7 %}
+    <div class="alert-banner alert-banner-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-banner-content">
+            Receipt confirmed for relief request {{ request.tracking_no or 'RR-' + '%06d'|format(request.reliefrqst_id) }}. Request is now completed.
+        </div>
+        <button type="button" class="alert-banner-close" onclick="this.parentElement.remove()" aria-label="Close">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="{{ url_for('relief_requests.list') }}" class="btn-back">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="page-title">
+                    <i class="bi bi-clipboard-check page-title-icon"></i>
+                    <h1 class="page-title-text">
+                        {{ request.tracking_no or 'RR-' + '%06d'|format(request.reliefrqst_id) }}
+                    </h1>
+                    <span class="page-title-badge">
+                        {% if request.status_cd == 7 %}
+                        {{ status_badge('completed') }}
+                        {% else %}
+                        {{ status_badge(request.status_cd) }}
+                        {% endif %}
+                    </span>
+                </div>
+                <p class="page-subtitle">
+                    {{ request.agency.name if request.agency else 'Unknown Agency' }}
+                    {% if request.agency and request.agency.agency_type_cd %}
+                    ({{ request.agency.agency_type_cd }})
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Workflow Completed Message -->
+            {% if request.status_cd == 7 %}
+            <div class="workflow-completed">
+                <div class="workflow-completed-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="workflow-completed-content">
+                    <h4>Workflow Completed</h4>
+                    <p>All approved items have been dispatched and received</p>
+                </div>
+                <a href="{{ url_for('reports.relief_request', request_id=request.reliefrqst_id) }}" 
+                   class="btn btn-outline-primary"
+                   aria-label="Download report for {{ request.tracking_no or request.reliefrqst_id }}">
+                    <i class="bi bi-download"></i>
+                    Download Report
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Summary Metrics -->
+            {% set summary_metrics = [
+                {
+                    'icon': 'box-seam',
+                    'label': 'Total Items',
+                    'value': request.items|length if request.items else 0,
+                    'variant': 'default'
+                },
+                {
+                    'icon': 'check-circle',
+                    'label': 'Fulfilled',
+                    'value': fulfilled_count,
+                    'sublabel': 'of ' + total_requested|string,
+                    'variant': 'success'
+                },
+                {
+                    'icon': 'percent',
+                    'label': 'Rate',
+                    'value': fulfillment_rate|string + '%',
+                    'variant': 'info'
+                },
+                {
+                    'icon': 'exclamation-triangle',
+                    'label': 'Shortfall',
+                    'value': shortfall_count,
+                    'sublabel': 'units',
+                    'variant': 'warning'
+                },
+                {
+                    'icon': 'truck',
+                    'label': 'Dispatched',
+                    'value': dispatch_date.strftime('%b %d') if dispatch_date else 'N/A',
+                    'sublabel': dispatch_date.strftime('%H:%M') if dispatch_date else '',
+                    'variant': 'default'
+                },
+                {
+                    'icon': 'clipboard-check',
+                    'label': 'Received',
+                    'value': receive_date.strftime('%b %d') if receive_date else 'N/A',
+                    'sublabel': receive_date.strftime('%H:%M') if receive_date else '',
+                    'variant': 'default'
+                }
+            ] %}
+            <div class="row">
+                {% for metric in summary_metrics %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="metric-card metric-card-{{ metric.variant }}">
+                        <div class="metric-icon">
+                            <i class="bi bi-{{ metric.icon }}"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">{{ metric.label }}</div>
+                            <div class="metric-value">{{ metric.value }}</div>
+                            {% if metric.sublabel %}
+                            <div class="metric-sublabel">{{ metric.sublabel }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Confirmed By Panel -->
+            {% if confirmed_by %}
+            <div class="confirmed-panel">
+                <div class="confirmed-panel-content">
+                    <i class="bi bi-person-check-fill"></i>
+                    <span><strong>Confirmed by:</strong> {{ confirmed_by }} ({{ confirmed_agency }})</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Timeline -->
+            {% if timeline_events %}
+            {{ render_timeline(timeline_events) }}
+            {% endif %}
+
+            <!-- Items Table -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Request Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if request.items %}
+                    <table class="relief-requests-table mb-0" role="table" aria-label="Relief request items">
+                        <thead>
+                            <tr>
+                                <th scope="col">Item</th>
+                                <th scope="col">Requested</th>
+                                <th scope="col">Fulfilled</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in request.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.item.name if item.item else 'Unknown Item' }}</strong>
+                                    {% if item.item and item.item.sku %}
+                                    <div class="table-sku">SKU: {{ item.item.sku }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ item.qty_rqst }}</strong>
+                                    {{ item.item.unit_of_measure if item.item else '' }}
+                                </td>
+                                <td>
+                                    <strong>{{ item.qty_filled or 0 }}</strong>
+                                    {{ item.item.unit_of_measure if item.item else '' }}
+                                </td>
+                                <td>
+                                    {% if item.qty_filled and item.qty_filled >= item.qty_rqst %}
+                                    {{ status_badge('completed', 'Fulfilled') }}
+                                    {% elif item.qty_filled and item.qty_filled > 0 %}
+                                    {{ status_badge('part-filled', 'Partial') }}
+                                    {% else %}
+                                    {{ status_badge('urgent', 'Unfilled') }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Sidebar -->
+        <div class="col-lg-3">
+            {% set workflow_steps = [
+                {'number': 1, 'title': 'Create Request', 'description': 'Add items you need', 'completed': True},
+                {'number': 2, 'title': 'Submit to ODPEM', 'description': 'Send request for review', 'completed': True},
+                {'number': 3, 'title': 'ODPEM Processing', 'description': 'Awaiting review', 'completed': True},
+                {'number': 4, 'title': 'Receive Items', 'description': 'Items received and confirmed', 'completed': request.status_cd >= 7}
+            ] %}
+            {{ render_workflow_sidebar(4, workflow_steps, completed=(request.status_cd >= 7)) }}
+            
+            <!-- Info Panel -->
+            {% if request.status_cd == 7 %}
+            <div class="info-panel mt-3">
+                <div class="info-panel-title">
+                    <i class="bi bi-info-circle-fill"></i>
+                </div>
+                <div class="info-panel-content">
+                    Your items have been received and confirmed. Request is complete!
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Details Section -->
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Status:</small><br>
+                        {% if request.status_cd == 7 %}
+                        {{ status_badge('completed') }}
+                        {% else %}
+                        {{ status_badge(request.status_cd) }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Priority:</small><br>
+                        {% if request.priority_cd %}
+                        {{ status_badge(request.priority_cd.lower() if request.priority_cd else 'medium') }}
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                    {% if request.create_dtime %}
+                    <div class="mb-2">
+                        <small class="text-muted">Created:</small><br>
+                        {{ request.create_dtime.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    {% endif %}
+                    {% if request.submit_dtime %}
+                    <div>
+                        <small class="text-muted">Submitted:</small><br>
+                        {{ request.submit_dtime.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
