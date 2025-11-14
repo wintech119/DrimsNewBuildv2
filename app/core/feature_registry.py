@@ -85,11 +85,11 @@ class FeatureRegistry:
         'reports_donations': 'reports.donations_summary',
         
         # Admin
-        'users_list': 'user_admin.list_users',
+        'users_list': 'user_admin.index',
         'account_requests_list': 'account_requests.list_requests',
         
         # Notifications
-        'notifications_list': 'notifications.list_notifications',
+        'notifications_list': 'notifications.index',
         
         # Dashboards
         'director_dashboard': 'director.dashboard',
@@ -358,7 +358,7 @@ class FeatureRegistry:
             'name': 'Manage Users',
             'description': 'Create and manage user accounts',
             'roles': ['SYSTEM_ADMINISTRATOR'],
-            'route': 'user_admin.list_users',
+            'route': 'user_admin.index',
             'url': '/users',
             'icon': 'bi-person-gear',
             'category': 'admin',
@@ -385,7 +385,7 @@ class FeatureRegistry:
             'name': 'Notifications',
             'description': 'View system notifications',
             'roles': ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'AGENCY_DISTRIBUTOR', 'AGENCY_SHELTER', 'INVENTORY_CLERK', 'SYSTEM_ADMINISTRATOR'],
-            'route': 'notifications.list_notifications',
+            'route': 'notifications.index',
             'url': '/notifications',
             'icon': 'bi-bell',
             'category': 'notifications',
