@@ -19,6 +19,7 @@ from app.core.rbac import has_permission, permission_required
 from app.services import relief_request_service as rr_service
 from app.services import fulfillment_lock_service as lock_service
 from app.services import item_status_service
+from app.services import inventory_reservation_service as reservation_service
 from app.core.audit import add_audit_fields
 from app.core.exceptions import OptimisticLockError
 
@@ -209,7 +210,21 @@ def prepare_package(reliefrqst_id):
 def _save_draft(relief_request):
     """Save packaging progress as draft (lock retained for continued editing)"""
     try:
-        _process_allocations(relief_request, validate_complete=False)
+        # Process and validate allocations
+        new_allocations = _process_allocations(relief_request, validate_complete=False)
+        
+        # Flush to persist allocations before calculating reservation deltas
+        db.session.flush()
+        
+        # Update inventory reservations (pass old allocations for delta calculation)
+        old_allocations = relief_request._old_allocations if hasattr(relief_request, '_old_allocations') else {}
+        success, error_msg = reservation_service.reserve_inventory(
+            relief_request.reliefrqst_id,
+            new_allocations,
+            old_allocations
+        )
+        if not success:
+            raise ValueError(f'Reservation failed: {error_msg}')
         
         db.session.commit()
         flash(f'Draft saved for relief request #{relief_request.reliefrqst_id}', 'success')
@@ -229,7 +244,21 @@ def _submit_for_approval(relief_request):
         return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
     
     try:
-        _process_allocations(relief_request, validate_complete=False)
+        # Process and validate allocations
+        new_allocations = _process_allocations(relief_request, validate_complete=False)
+        
+        # Flush to persist allocations before calculating reservation deltas
+        db.session.flush()
+        
+        # Update inventory reservations (pass old allocations for delta calculation)
+        old_allocations = relief_request._old_allocations if hasattr(relief_request, '_old_allocations') else {}
+        success, error_msg = reservation_service.reserve_inventory(
+            relief_request.reliefrqst_id,
+            new_allocations,
+            old_allocations
+        )
+        if not success:
+            raise ValueError(f'Reservation failed: {error_msg}')
         
         # Don't update relief_request action fields - they're for package dispatch
         # LO is just preparing allocations, not taking action on the request itself
@@ -255,8 +284,18 @@ def _send_for_dispatch(relief_request):
         return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
     
     try:
-        _process_allocations(relief_request, validate_complete=True)
+        # Process and validate allocations (must be complete)
+        new_allocations = _process_allocations(relief_request, validate_complete=True)
         
+        # Flush to persist allocations
+        db.session.flush()
+        
+        # Commit inventory: convert reservations to actual deductions
+        success, error_msg = reservation_service.commit_inventory(relief_request.reliefrqst_id)
+        if not success:
+            raise ValueError(f'Inventory commit failed: {error_msg}')
+        
+        # Update relief request status
         relief_request.action_by_id = current_user.email[:20]
         relief_request.action_dtime = datetime.now()
         relief_request.status_code = rr_service.STATUS_PART_FILLED
@@ -278,12 +317,30 @@ def _send_for_dispatch(relief_request):
 def _process_allocations(relief_request, validate_complete=False):
     """
     Process warehouse allocations from form data.
-    Updates issue_qty and item status codes.
+    Updates issue_qty and item status codes, and persists allocations to ReliefPkgItem.
     
     Args:
         relief_request: The ReliefRqst being packaged
         validate_complete: If True, ensures all items are fully allocated
+    
+    Returns:
+        List of new allocations for inventory reservation
     """
+    new_allocations = []
+    
+    # CRITICAL: Capture existing allocations BEFORE deletion for reservation delta calculation
+    existing_pkg_items = ReliefPkgItem.query.filter_by(reliefrqst_id=relief_request.reliefrqst_id).all()
+    existing_allocations_map = {
+        (pkg_item.item_id, pkg_item.warehouse_id): pkg_item.issue_qty
+        for pkg_item in existing_pkg_items
+    }
+    
+    # Store old allocations on relief_request object for access in save/submit functions
+    relief_request._old_allocations = existing_allocations_map
+    
+    # Now clear existing package items to rebuild from form data
+    ReliefPkgItem.query.filter_by(reliefrqst_id=relief_request.reliefrqst_id).delete()
+    
     for item in relief_request.items:
         item_id = item.item_id
         request_qty = item.request_qty
@@ -292,6 +349,9 @@ def _process_allocations(relief_request, validate_complete=False):
         warehouse_allocations = []
         
         allocation_keys = [k for k in request.form.keys() if k.startswith(f'allocation_{item_id}_')]
+        
+        # Sort keys to ensure deterministic locking order (prevent deadlocks)
+        allocation_keys = sorted(allocation_keys)
         
         for key in allocation_keys:
             parts = key.split('_')
@@ -313,7 +373,14 @@ def _process_allocations(relief_request, validate_complete=False):
                         raise ValueError(f'Allocated quantity ({allocated_qty}) exceeds usable quantity ({inventory.usable_qty}) for item {item.item.item_name} at warehouse {inventory.warehouse.warehouse_name}')
                     
                     total_allocated += allocated_qty
-                    warehouse_allocations.append((inventory, allocated_qty))
+                    warehouse_allocations.append((warehouse_id, allocated_qty))
+                    
+                    # Collect for reservation service
+                    new_allocations.append({
+                        'item_id': item_id,
+                        'warehouse_id': warehouse_id,
+                        'allocated_qty': allocated_qty
+                    })
         
         # Validate quantity limit using service
         is_valid, error_msg = item_status_service.validate_quantity_limit(
@@ -339,13 +406,50 @@ def _process_allocations(relief_request, validate_complete=False):
         if not is_valid:
             raise ValueError(error_msg)
         
-        # Update item fields
+        # Update relief request item fields
         item.issue_qty = total_allocated
         item.status_code = requested_status
-        
         item.action_by_id = current_user.email[:20]
         item.action_dtime = datetime.now()
         item.version_nbr += 1
+        
+        # Create/update ReliefPkgItem records for each warehouse allocation
+        for warehouse_id, allocated_qty in warehouse_allocations:
+            pkg_item = ReliefPkgItem(
+                reliefrqst_id=relief_request.reliefrqst_id,
+                item_id=item_id,
+                warehouse_id=warehouse_id,
+                issue_qty=allocated_qty,
+                create_by_id=current_user.email[:20],
+                create_dtime=datetime.now(),
+                version_nbr=1
+            )
+            db.session.add(pkg_item)
+    
+    return new_allocations
+
+
+@packaging_bp.route('/<int:reliefrqst_id>/cancel', methods=['POST'])
+@login_required
+def cancel_preparation(reliefrqst_id):
+    """
+    Cancel package preparation - releases inventory reservations and lock.
+    """
+    try:
+        # Release inventory reservations
+        success, error_msg = reservation_service.release_all_reservations(reliefrqst_id)
+        if not success:
+            flash(f'Warning: Failed to release reservations: {error_msg}', 'warning')
+        
+        # Release lock
+        lock_service.release_lock(reliefrqst_id, current_user.user_id, release_reservations=False)
+        
+        flash(f'Package preparation for relief request #{reliefrqst_id} has been cancelled', 'info')
+        return redirect(url_for('packaging.pending_fulfillment'))
+        
+    except Exception as e:
+        flash(f'Error canceling preparation: {str(e)}', 'danger')
+        return redirect(url_for('packaging.prepare_package', reliefrqst_id=reliefrqst_id))
 
 
 @packaging_bp.route('/api/inventory/<int:item_id>/<int:warehouse_id>')

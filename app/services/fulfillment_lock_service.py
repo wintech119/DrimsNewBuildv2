@@ -1,6 +1,7 @@
 """
 Fulfillment Lock Service
 Manages exclusive access to relief requests during packaging/fulfillment
+Integrated with inventory reservation service to release reservations on lock expiry/release
 """
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
@@ -66,7 +67,7 @@ def acquire_lock(reliefrqst_id: int, user_id: int, user_email: str, expiry_hours
         return False, f"Currently being prepared by {user_name}", existing_lock
 
 
-def release_lock(reliefrqst_id: int, user_id: int, force: bool = False) -> Tuple[bool, str]:
+def release_lock(reliefrqst_id: int, user_id: int, force: bool = False, release_reservations: bool = False) -> Tuple[bool, str]:
     """
     Release fulfillment lock for a relief request.
     
@@ -74,6 +75,7 @@ def release_lock(reliefrqst_id: int, user_id: int, force: bool = False) -> Tuple
         reliefrqst_id: Relief request ID to unlock
         user_id: User ID attempting to release lock
         force: If True, allows releasing another user's lock (for privileged workflows)
+        release_reservations: If True, also releases inventory reservations (for Cancel/Abandon scenarios)
         
     Returns:
         Tuple of (success: bool, message: str)
@@ -86,6 +88,14 @@ def release_lock(reliefrqst_id: int, user_id: int, force: bool = False) -> Tuple
     if lock.fulfiller_user_id != user_id and not force:
         return False, "You cannot release another user's lock"
     
+    # Release inventory reservations if requested (Cancel/Abandon scenarios)
+    if release_reservations:
+        from app.services import inventory_reservation_service as reservation_service
+        success, error_msg = reservation_service.release_all_reservations(reliefrqst_id)
+        if not success:
+            # Log error but continue with lock release
+            print(f"Warning: Failed to release reservations for request {reliefrqst_id}: {error_msg}")
+    
     db.session.delete(lock)
     db.session.commit()
     
@@ -95,6 +105,7 @@ def release_lock(reliefrqst_id: int, user_id: int, force: bool = False) -> Tuple
 def check_lock(reliefrqst_id: int, user_id: int) -> Tuple[bool, Optional[str], Optional[ReliefRequestFulfillmentLock]]:
     """
     Check if user can edit a relief request (has lock or no lock exists).
+    Automatically releases expired locks and their inventory reservations.
     
     Args:
         reliefrqst_id: Relief request ID to check
@@ -109,6 +120,9 @@ def check_lock(reliefrqst_id: int, user_id: int) -> Tuple[bool, Optional[str], O
         return True, None, None
     
     if lock.expires_at and lock.expires_at < datetime.utcnow():
+        # Lock expired - release reservations and delete lock
+        from app.services import inventory_reservation_service as reservation_service
+        reservation_service.release_all_reservations(reliefrqst_id)
         db.session.delete(lock)
         db.session.commit()
         return True, None, None
@@ -124,11 +138,14 @@ def check_lock(reliefrqst_id: int, user_id: int) -> Tuple[bool, Optional[str], O
 
 def cleanup_expired_locks() -> int:
     """
-    Remove all expired locks.
+    Remove all expired locks and release their inventory reservations.
+    Should be called periodically by a background job/cron.
     
     Returns:
         Number of locks removed
     """
+    from app.services import inventory_reservation_service as reservation_service
+    
     expired_locks = ReliefRequestFulfillmentLock.query.filter(
         ReliefRequestFulfillmentLock.expires_at < datetime.utcnow()
     ).all()
@@ -136,6 +153,8 @@ def cleanup_expired_locks() -> int:
     count = len(expired_locks)
     
     for lock in expired_locks:
+        # Release inventory reservations for this request
+        reservation_service.release_all_reservations(lock.reliefrqst_id)
         db.session.delete(lock)
     
     db.session.commit()

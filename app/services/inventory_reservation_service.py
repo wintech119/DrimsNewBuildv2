@@ -34,7 +34,7 @@ def get_current_reservations(reliefrqst_id: int) -> Dict[Tuple[int, int], Decima
     return reservations
 
 
-def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict]) -> Tuple[bool, str]:
+def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict], old_allocations: Dict[Tuple[int, int], Decimal] = None) -> Tuple[bool, str]:
     """
     Reserve inventory for package allocations.
     
@@ -45,13 +45,18 @@ def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict]) -> Tuple[
     Args:
         reliefrqst_id: Relief request ID
         new_allocations: List of {item_id, warehouse_id, allocated_qty}
+        old_allocations: Dict of {(item_id, warehouse_id): allocated_qty} from before update
+                        If None, queries database for current reservations
     
     Returns:
         (success, error_message)
     """
     try:
-        # Get current reservations from database
-        current_reservations = get_current_reservations(reliefrqst_id)
+        # Use provided old allocations or query from database
+        if old_allocations is None:
+            current_reservations = get_current_reservations(reliefrqst_id)
+        else:
+            current_reservations = old_allocations
         
         # Build new reservations map
         new_reservations = {}
