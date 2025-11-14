@@ -164,7 +164,7 @@ class DashboardService:
         """Build Notifications widget for all users."""
         unread_count = Notification.query.filter_by(
             user_id=user.user_id,
-            read_flag=False
+            status='unread'
         ).count()
         
         return {
@@ -175,7 +175,7 @@ class DashboardService:
                 'unread_count': unread_count,
                 'badge_variant': 'danger' if unread_count > 0 else 'secondary'
             },
-            'action_url': url_for('notifications.list_notifications'),
+            'action_url': url_for('notifications.index'),
             'action_label': 'View All',
             'priority': 5
         }
