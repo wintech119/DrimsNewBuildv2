@@ -204,9 +204,15 @@
     width: 100%;
     background: #fff;
     border-radius: 0.5rem;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     margin-bottom: 1.5rem;
+    table-layout: auto;
+}
+
+.items-table table {
+    width: 100%;
+    min-width: 100%;
 }
 
 .items-table thead {
@@ -214,16 +220,17 @@
 }
 
 .items-table th {
-    padding: 0.875rem 1rem;
+    padding: 0.875rem 0.75rem;
     font-weight: 600;
     color: #495057;
     font-size: 0.875rem;
     text-align: left;
     border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
 }
 
 .items-table td {
-    padding: 1rem;
+    padding: 0.875rem 0.75rem;
     vertical-align: middle;
     border-bottom: 1px solid #f1f3f5;
 }
@@ -464,9 +471,9 @@
         </a>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         <!-- Main Content -->
-        <div class="col-lg-9">
+        <div class="col-lg-9 col-xl-9">
             <!-- Page Header -->
             <div class="page-header">
                 <div>
@@ -661,7 +668,7 @@
         </div>
 
         <!-- Workflow Sidebar -->
-        <div class="col-lg-3">
+        <div class="col-lg-3 col-xl-3">
             <div class="workflow-sidebar-modern">
                 <div class="workflow-header">
                     <i class="bi bi-list-check"></i> Workflow
