@@ -1,69 +1,75 @@
 {#
 Dynamic Navigation Macro
 Uses FeatureRegistry to show only features the user has access to
+Renders clean sidebar with MAIN, INVENTORY, OPERATIONS, MANAGEMENT sections
 #}
 
 {% macro render_dynamic_nav(current_user, active_page='') %}
-{# Get user's features organized by category #}
+{# Get user's features #}
 {% set features = get_user_features() %}
-{% set features_by_category = {} %}
 
-{# Organize features by category #}
+{# Map navigation groups to display categories #}
+{% set category_map = {
+    'dashboard': 'MAIN',
+    'inventory': 'INVENTORY',
+    'relief_requests': 'OPERATIONS',
+    'eligibility': 'OPERATIONS',
+    'packaging': 'OPERATIONS',
+    'master_data': 'MANAGEMENT',
+    'admin': 'MANAGEMENT',
+    'reports': 'MANAGEMENT',
+    'notifications': 'MANAGEMENT',
+    'user': 'MANAGEMENT'
+} %}
+
+{# Define category display order #}
+{% set category_order = ['MAIN', 'INVENTORY', 'OPERATIONS', 'MANAGEMENT'] %}
+
+{# Organize features by display category #}
+{% set features_by_display_category = {'MAIN': [], 'INVENTORY': [], 'OPERATIONS': [], 'MANAGEMENT': []} %}
+{% set uncategorized_features = [] %}
+
 {% for feature in features %}
-    {% set category = feature.category %}
-    {% if category not in features_by_category %}
-        {% set _ = features_by_category.update({category: []}) %}
+    {% if feature.route %}
+        {% set nav_group = feature.get('navigation_group', 'other') %}
+        {% set display_category = category_map.get(nav_group, None) %}
+        
+        {% if display_category %}
+            {% set _ = features_by_display_category[display_category].append(feature) %}
+        {% else %}
+            {% set _ = uncategorized_features.append(feature) %}
+        {% endif %}
     {% endif %}
-    {% set _ = features_by_category[category].append(feature) %}
 {% endfor %}
-
-{# Define category order and display names #}
-{% set category_order = [
-    'Dashboard',
-    'Relief Requests', 
-    'Inventory',
-    'Management',
-    'Administration',
-    'System'
-] %}
 
 {# Render navigation sections by category #}
 {% for category_name in category_order %}
-    {% if category_name in features_by_category %}
-        {% set category_features = features_by_category[category_name] %}
+    {% set category_features = features_by_display_category[category_name] %}
+    {% if category_features|length > 0 %}
+        <div class="sidebar-section-header">{{ category_name }}</div>
         
-        {# Category header #}
-        <div class="nav-section-header">{{ category_name }}</div>
-        
-        {# Render features in this category #}
         {% for feature in category_features %}
-            {% if feature.route %}
-                <a href="{{ url_for(feature.route) }}" 
-                   class="nav-item-link {% if active_page == feature.id %}active{% endif %}"
-                   title="{{ feature.description }}">
-                    <i class="bi bi-{{ feature.icon }}"></i>
-                    <span class="nav-label">{{ feature.name }}</span>
-                </a>
-            {% endif %}
+            <a href="{{ url_for(feature.route) }}" 
+               class="sidebar-nav-item {% if active_page == feature.id %}active{% endif %}"
+               title="{{ feature.description }}">
+                <i class="bi {{ feature.icon }}"></i>
+                <span>{{ feature.name }}</span>
+            </a>
         {% endfor %}
     {% endif %}
 {% endfor %}
 
-{# Render any uncategorized features #}
-{% for category, category_features in features_by_category.items() %}
-    {% if category not in category_order %}
-        <div class="nav-section-header">{{ category }}</div>
-        {% for feature in category_features %}
-            {% if feature.route %}
-                <a href="{{ url_for(feature.route) }}" 
-                   class="nav-item-link {% if active_page == feature.id %}active{% endif %}"
-                   title="{{ feature.description }}">
-                    <i class="bi bi-{{ feature.icon }}"></i>
-                    <span class="nav-label">{{ feature.name }}</span>
-                </a>
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-{% endfor %}
+{# Render any uncategorized features under OTHER #}
+{% if uncategorized_features|length > 0 %}
+    <div class="sidebar-section-header">OTHER</div>
+    {% for feature in uncategorized_features %}
+        <a href="{{ url_for(feature.route) }}" 
+           class="sidebar-nav-item {% if active_page == feature.id %}active{% endif %}"
+           title="{{ feature.description }}">
+            <i class="bi {{ feature.icon }}"></i>
+            <span>{{ feature.name }}</span>
+        </a>
+    {% endfor %}
+{% endif %}
 
 {% endmacro %}

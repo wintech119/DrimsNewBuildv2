@@ -168,6 +168,82 @@
             border-radius: 3px;
         }
         
+        .sidebar-section-header {
+            padding: 20px 20px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            margin-top: 10px;
+        }
+        
+        .sidebar-section-header:first-child {
+            margin-top: 0;
+        }
+        
+        .sidebar.collapsed .sidebar-section-header {
+            opacity: 0;
+            padding: 8px 0;
+        }
+        
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #5a5a5a;
+            text-decoration: none;
+            transition: all 0.2s;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar-nav-item i {
+            font-size: 1.2rem;
+            width: 24px;
+            margin-right: 14px;
+            text-align: center;
+            color: #5a5a5a;
+        }
+        
+        .sidebar-nav-item span {
+            flex: 1;
+        }
+        
+        .sidebar.collapsed .sidebar-nav-item {
+            justify-content: center;
+            padding: 12px 0;
+        }
+        
+        .sidebar.collapsed .sidebar-nav-item span {
+            display: none;
+        }
+        
+        .sidebar-nav-item:hover {
+            background-color: #f0f0f0;
+            color: var(--goj-green);
+        }
+        
+        .sidebar-nav-item:hover i {
+            color: var(--goj-green);
+        }
+        
+        .sidebar-nav-item.active {
+            background-color: var(--goj-light-green);
+            color: var(--goj-green);
+            font-weight: 500;
+        }
+        
+        .sidebar-nav-item.active i {
+            color: var(--goj-green);
+        }
+        
+        .sidebar.collapsed .sidebar-nav-item.active {
+            border-left: none;
+            border-right: 4px solid var(--goj-green);
+        }
+        
         .nav-section-header {
             padding: 15px 20px 8px;
             font-size: 0.75rem;
