@@ -626,24 +626,23 @@ class TransferRequest(db.Model):
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
 
 class Location(db.Model):
-    """Warehouse bin/shelf locations"""
+    """Bin/shelf locations within inventory (AIDMGMT schema)"""
     __tablename__ = 'location'
     
     location_id = db.Column(db.Integer, primary_key=True)
-    warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), nullable=False)
-    aisle_no = db.Column(db.String(20))
-    bin_no = db.Column(db.String(20))
-    qty = db.Column(db.Numeric(15,4), nullable=False, default=0)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
+    location_desc = db.Column(db.String(100), nullable=False)
     status_code = db.Column(db.CHAR(1), nullable=False)
+    comments_text = db.Column(db.String(255))
     create_by_id = db.Column(db.String(20), nullable=False)
     create_dtime = db.Column(db.DateTime, nullable=False)
     update_by_id = db.Column(db.String(20), nullable=False)
     update_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
-    warehouse = db.relationship('Warehouse', backref='locations')
-    item = db.relationship('Item', backref='locations')
+    __mapper_args__ = {'version_id_col': version_nbr}
+    
+    inventory = db.relationship('Inventory', backref='locations')
 
 class ItemLocation(db.Model):
     """Item locations within inventory - tracks items at specific bin/shelf locations (AIDMGMT)"""

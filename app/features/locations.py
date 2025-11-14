@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from datetime import datetime
-from app.db.models import db, Location, Warehouse, Item
+from app.db.models import db, Location, Warehouse, Inventory
 from app.core.audit import add_audit_fields
 
 locations_bp = Blueprint('locations', __name__)
@@ -9,36 +9,31 @@ locations_bp = Blueprint('locations', __name__)
 @locations_bp.route('/')
 @login_required
 def list_locations():
-    warehouse_id = request.args.get('warehouse_id', type=int)
-    query = Location.query
-    if warehouse_id:
-        query = query.filter_by(warehouse_id=warehouse_id)
-    locations = query.order_by(Location.aisle_no, Location.bin_no).all()
-    warehouses = Warehouse.query.filter_by(status_code='A').all()
-    return render_template('locations/index.html', locations=locations, warehouses=warehouses, selected_warehouse=warehouse_id)
+    inventory_id = request.args.get('inventory_id', type=int)
+    query = Location.query.join(Inventory)
+    if inventory_id:
+        query = query.filter(Location.inventory_id == inventory_id)
+    locations = query.order_by(Location.location_desc).all()
+    inventories = db.session.query(Inventory).join(Warehouse).filter(Warehouse.status_code == 'A').all()
+    return render_template('locations/index.html', locations=locations, inventories=inventories, selected_inventory=inventory_id)
 
 @locations_bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
     if request.method == 'POST':
-        warehouse_id = request.form.get('warehouse_id', type=int)
-        item_id = request.form.get('item_id', type=int)
-        aisle_no = request.form.get('aisle_no', '').strip()
-        bin_no = request.form.get('bin_no', '').strip()
-        qty = float(request.form.get('qty', 0))
+        inventory_id = request.form.get('inventory_id', type=int)
+        location_desc = request.form.get('location_desc', '').strip()
+        comments_text = request.form.get('comments_text', '').strip()
         
-        if not warehouse_id or not item_id:
-            flash('Please select warehouse and item.', 'danger')
-            return render_template('locations/create.html', 
-                warehouses=Warehouse.query.filter_by(status_code='A').all(),
-                items=Item.query.filter_by(status_code='A').all())
+        if not inventory_id or not location_desc:
+            flash('Please select inventory and provide location description.', 'danger')
+            inventories = db.session.query(Inventory).join(Warehouse).filter(Warehouse.status_code == 'A').all()
+            return render_template('locations/create.html', inventories=inventories)
         
         new_location = Location(
-            warehouse_id=warehouse_id,
-            item_id=item_id,
-            aisle_no=aisle_no,
-            bin_no=bin_no,
-            qty=qty,
+            inventory_id=inventory_id,
+            location_desc=location_desc.upper(),
+            comments_text=comments_text,
             status_code='A'
         )
         
@@ -50,6 +45,5 @@ def create():
         flash('Location created successfully.', 'success')
         return redirect(url_for('locations.list_locations'))
     
-    warehouses = Warehouse.query.filter_by(status_code='A').all()
-    items = Item.query.filter_by(status_code='A').all()
-    return render_template('locations/create.html', warehouses=warehouses, items=items)
+    inventories = db.session.query(Inventory).join(Warehouse).filter(Warehouse.status_code == 'A').all()
+    return render_template('locations/create.html', inventories=inventories)
