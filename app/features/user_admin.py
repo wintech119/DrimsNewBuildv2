@@ -21,7 +21,7 @@ def index():
     mfa_percentage = round((mfa_enabled_users / total_users * 100) if total_users > 0 else 0, 1)
     
     admin_role_codes = ['SYSTEM_ADMINISTRATOR', 'SYS_ADMIN']
-    admin_users = sum(1 for u in users if any(r.role_code in admin_role_codes for r in u.roles))
+    admin_users = sum(1 for u in users if any(r.code in admin_role_codes for r in u.roles))
     
     metrics = {
         'total_users': total_users,
