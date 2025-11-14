@@ -395,13 +395,21 @@
                                     {% elif item.status_code == 'P' %}
                                     {{ status_badge('partial', 'Partly Filled') }}
                                     {% elif item.status_code == 'L' %}
-                                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{% if item.status_reason_desc %}Reason: {{ item.status_reason_desc }}{% else %}Limit allowed by Logistics Officer{% endif %}" style="cursor: help;">
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
                                         {{ status_badge('limit', 'Limit Allowed') }}
-                                    </span>
+                                        {% if item.status_reason_desc %}
+                                        <i class="bi bi-info-circle text-primary" style="cursor: help; font-size: 1rem;" 
+                                           title="Reason: {{ item.status_reason_desc }}"></i>
+                                        {% endif %}
+                                    </div>
                                     {% elif item.status_code == 'D' %}
-                                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{% if item.status_reason_desc %}Reason: {{ item.status_reason_desc }}{% else %}Denied by Logistics Officer{% endif %}" style="cursor: help;">
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
                                         {{ status_badge('denied', 'Denied') }}
-                                    </span>
+                                        {% if item.status_reason_desc %}
+                                        <i class="bi bi-info-circle text-danger" style="cursor: help; font-size: 1rem;" 
+                                           title="Reason: {{ item.status_reason_desc }}"></i>
+                                        {% endif %}
+                                    </div>
                                     {% elif item.status_code == 'U' %}
                                     {{ status_badge('unavailable', 'Unavailable') }}
                                     {% elif item.status_code == 'W' %}
@@ -504,12 +512,3 @@
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
-<script>
-// Initialize Bootstrap tooltips
-document.addEventListener('DOMContentLoaded', function() {
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-});
-</script>
-{% endblock %}

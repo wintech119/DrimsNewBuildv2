@@ -1,0 +1,120 @@
+You are a senior full-stack engineer working on the DRIMS app.
+
+We currently have two different versions of the workflow sidebar:
+
+Correct Sidebar – labeled “Workflow Progress” with:
+
+Blue header bar with icon + “Workflow Progress”
+
+Vertical green timeline line
+
+Green filled circles with ✓ for completed steps
+
+Blue circle for the current step
+
+Grey/outlined circle for upcoming steps
+
+Step title in bold, small subtitle below (e.g. “Approved by ODPEM Director”)
+
+Clean spacing and alignment
+
+Incorrect Sidebar – labeled “Workflow” with:
+
+Different header label (“Workflow”)
+
+Different icon/spacing
+
+Different circle styles and alignment
+
+Slightly different typography
+
+Goal
+
+All workflow sidebars across the app must look and behave like the “Correct Sidebar” version.
+The “Incorrect Sidebar” look should not appear anywhere.
+
+Requirements
+
+Create a single reusable Workflow Sidebar component
+
+Implement a shared component/partial (template, React/Vue component, etc., depending on the stack) for the workflow sidebar.
+
+This component must:
+
+Use the “Workflow Progress” header text.
+
+Render the timeline with:
+
+Vertical green connecting line.
+
+Green filled circles with checkmark for completed steps.
+
+Blue filled circle for the current step.
+
+Green outlined circle (or subtle style) for future steps.
+
+Accept a list of steps like:
+
+Submitted – PORTMORE COMMUNITY CENTER
+
+Eligibility Review – Approved by ODPEM Director
+
+Package Prepared – By Logistics Officer
+
+LM Approval – Awaiting your review
+
+Dispatch – To Inventory Clerk
+
+Support dynamic states: completed, current, upcoming.
+
+Unify styling
+
+Move all workflow sidebar CSS into a single place (e.g. workflow-sidebar.css or existing main stylesheet).
+
+Ensure:
+
+Same font sizes, weights, and line-height as the Correct Sidebar.
+
+Consistent padding, card radius, and shadows.
+
+Same icon in the header as the Correct Sidebar.
+
+Remove or override any old/legacy CSS that produces the Incorrect Sidebar appearance.
+
+Replace all existing workflow sidebars
+
+Find all pages where a workflow sidebar appears (e.g. relief request, eligibility review, packaging/prepare, approvals, dispatch, etc.).
+
+Replace their existing sidebar markup with the new shared Workflow Sidebar component.
+
+Make sure each page passes the correct steps and current step index to the component.
+
+Behavior
+
+The component should:
+
+Highlight the current step in blue.
+
+Mark earlier steps as completed with a green circle + checkmark.
+
+Show later steps as upcoming.
+
+Do not change backend logic; only use data that is already available in the view/context.
+
+Accessibility & UX
+
+Ensure the sidebar remains keyboard accessible.
+
+Use sufficient color contrast (WCAG AA) for text against the white background and for the blue/green states.
+
+Keep layout responsive so it still looks clean on narrower screens.
+
+Refactoring notes
+
+Do not change any database tables or backend workflow states.
+
+Only refactor templates/components and CSS/JS as needed to standardize the UI.
+
+Add brief comments in the shared component explaining how to use it (props/parameters for steps and current step).
+
+Implement this so that every workflow sidebar in the app uses the unified “Workflow Progress” design and no page shows the older “Workflow” sidebar style.
