@@ -99,14 +99,16 @@ def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict], old_alloc
                 
                 # Validate: reserved_qty + difference must not exceed usable_qty
                 if new_reserved < 0:
-                    return False, f'Cannot release {abs(difference)} units - only {inventory.reserved_qty} reserved'
-                
-                if new_reserved > inventory.usable_qty:
+                    # Handle inconsistency: trying to release more than is reserved
+                    # This can happen if reservations were released but package items still exist
+                    # Just set to 0 instead of failing
+                    inventory.reserved_qty = Decimal('0')
+                elif new_reserved > inventory.usable_qty:
                     available = inventory.usable_qty - inventory.reserved_qty
                     return False, f'Cannot reserve {difference} units at warehouse {inventory.warehouse.warehouse_name} - only {available} available'
-                
-                # Update reserved quantity
-                inventory.reserved_qty = new_reserved
+                else:
+                    # Normal case: update reserved quantity
+                    inventory.reserved_qty = new_reserved
         
         return True, ''
         
