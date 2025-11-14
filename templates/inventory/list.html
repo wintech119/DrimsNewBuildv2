@@ -26,11 +26,11 @@
     <!-- Filter Bar -->
     <div class="filter-bar">
         <form method="GET" class="d-flex align-items-center gap-3">
-            <label for="warehouse_id" class="form-label mb-0 font-semibold" style="white-space: nowrap;">
+            <label for="warehouse_id" class="form-label mb-0 font-semibold text-nowrap">
                 <i class="bi bi-building me-1"></i>
                 Warehouse:
             </label>
-            <select class="form-control" name="warehouse_id" id="warehouse_id" onchange="this.form.submit()" style="max-width: 300px;">
+            <select class="form-control filter-select" name="warehouse_id" id="warehouse_id" onchange="this.form.submit()">
                 <option value="">All Warehouses</option>
                 {% for warehouse in warehouses %}
                 <option value="{{ warehouse.warehouse_id }}" {% if selected_warehouse_id == warehouse.warehouse_id %}selected{% endif %}>

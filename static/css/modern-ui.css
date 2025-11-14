@@ -252,15 +252,6 @@
     color: var(--drims-info);
 }
 
-.metric-card-purple .metric-icon {
-    background: var(--drims-bg-purple-light);
-    color: #7b1fa2;
-}
-
-.metric-card-teal .metric-icon {
-    background: var(--drims-bg-teal-light);
-    color: #00796b;
-}
 
 .metric-content {
     flex: 1;
@@ -699,6 +690,19 @@
     color: var(--drims-primary-green) !important;
 }
 
+.text-brand-success {
+    color: var(--drims-success) !important;
+}
+
+.text-brand-danger {
+    color: var(--drims-danger) !important;
+}
+
+.text-brand-warning {
+    color: var(--drims-warning-darkest) !important;
+}
+
+/* Legacy Bootstrap compatibility - using GOJ design tokens */
 .text-success {
     color: var(--drims-success) !important;
 }
@@ -777,6 +781,11 @@
 
 .section-header i {
     color: var(--drims-primary-green);
+}
+
+/* === Filter Components === */
+.filter-select {
+    max-width: 300px;
 }
 
 /* ========================================
@@ -966,6 +975,10 @@
     padding: var(--drims-space-sm) var(--drims-space-xl);
     margin-bottom: var(--drims-space-lg);
     font-weight: var(--drims-font-medium);
+}
+
+.login-footer-badge i {
+    color: var(--drims-success);
 }
 
 .login-footer p {
