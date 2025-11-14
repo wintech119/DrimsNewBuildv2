@@ -417,6 +417,9 @@ def _process_allocations(relief_request, validate_complete=False):
         # Get requested status from form
         requested_status = request.form.get(f'status_{item_id}', item.status_code)
         
+        # Get custom reason if provided (for D/L statuses)
+        custom_reason = request.form.get(f'status_reason_{item_id}', '').strip()
+        
         # Validate status transition using service
         is_valid, error_msg = item_status_service.validate_status_transition(
             item_id,
@@ -434,8 +437,10 @@ def _process_allocations(relief_request, validate_complete=False):
         
         # Set status_reason_desc for statuses that require it (D, L)
         if requested_status in ['D', 'L']:
-            # Set a default reason if not manually provided
-            if requested_status == 'L':
+            # Use custom reason if provided, otherwise use defaults
+            if custom_reason:
+                item.status_reason_desc = custom_reason
+            elif requested_status == 'L':
                 item.status_reason_desc = f'Allocated {total_allocated} of {request_qty} based on available stock'
             elif requested_status == 'D':
                 item.status_reason_desc = 'Item denied due to logistics constraints'

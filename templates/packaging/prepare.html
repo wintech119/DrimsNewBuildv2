@@ -687,13 +687,25 @@
                                     data-item-id="{{ item.item_id }}"
                                     data-requested-qty="{{ item.request_qty }}"
                                     data-auto-status="{{ auto }}"
-                                    data-allowed-codes="{{ allowed|join(',') }}">
+                                    data-allowed-codes="{{ allowed|join(',') }}"
+                                    onchange="toggleReasonField({{ item.item_id }})">
                                     {% for code in allowed %}
                                     {% set label = status_map.get(code, {}).get('desc', code) %}
                                     <option value="{{ code }}" {% if code == item.status_code %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                                 <div class="invalid-feedback" id="status_error_{{ item.item_id }}" style="display: none;"></div>
+                                
+                                <!-- Reason field for D/L statuses -->
+                                <div class="status-reason-wrapper" id="reason_wrapper_{{ item.item_id }}" style="display: none; margin-top: 0.5rem;">
+                                    <textarea 
+                                        class="form-control form-control-sm" 
+                                        name="status_reason_{{ item.item_id }}"
+                                        id="status_reason_{{ item.item_id }}"
+                                        rows="2"
+                                        placeholder="Provide reason for this decision..."
+                                        style="font-size: 0.8125rem; resize: vertical;">{{ item.status_reason_desc or '' }}</textarea>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -990,6 +1002,37 @@ function validateQuantityLimit(itemId, allocated, requested) {
         return true;
     }
 }
+
+function toggleReasonField(itemId) {
+    const statusDropdown = document.getElementById(`status_${itemId}`);
+    const reasonWrapper = document.getElementById(`reason_wrapper_${itemId}`);
+    const reasonField = document.getElementById(`status_reason_${itemId}`);
+    
+    if (!statusDropdown || !reasonWrapper) return;
+    
+    const selectedStatus = statusDropdown.value;
+    
+    // Show reason field for D (Denied) or L (Allowed Limit)
+    if (selectedStatus === 'D' || selectedStatus === 'L') {
+        reasonWrapper.style.display = 'block';
+        reasonField.setAttribute('required', 'required');
+    } else {
+        reasonWrapper.style.display = 'none';
+        reasonField.removeAttribute('required');
+        reasonField.value = ''; // Clear the field when hidden
+    }
+}
+
+// Initialize reason fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const statusDropdowns = document.querySelectorAll('.status-dropdown');
+    statusDropdowns.forEach(dropdown => {
+        const itemId = dropdown.dataset.itemId;
+        if (itemId) {
+            toggleReasonField(itemId);
+        }
+    });
+});
 
 function updateMetrics() {
     const totalItems = document.querySelectorAll('.item-row').length;
