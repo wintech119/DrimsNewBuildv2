@@ -498,8 +498,12 @@
 <body>
     {% if current_user.is_authenticated %}
     <div class="top-header">
-        <button class="hamburger-menu" id="sidebarToggle">
-            <i class="bi bi-list"></i>
+        <button class="hamburger-menu" id="sidebarToggle" 
+                aria-controls="sidebar" 
+                aria-expanded="false" 
+                aria-label="Toggle navigation menu">
+            <i class="bi bi-list" aria-hidden="true"></i>
+            <span class="sr-only">Menu</span>
         </button>
         <a href="{{ url_for('index') }}" class="brand-logo">
             <img src="/static/images/odpem-logo.png" alt="ODPEM Logo">
@@ -531,8 +535,14 @@
         </div>
     </div>
 
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
     {% from 'components/_dynamic_navigation.html' import render_dynamic_nav %}
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+        <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation menu">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
         {{ render_dynamic_nav(current_user, active_page) }}
     </div>
 
@@ -858,6 +868,66 @@
             });
         }
         {% endif %}
+        
+        // Mobile Navigation Toggle
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarClose = document.getElementById('sidebarClose');
+        
+        function openSidebar() {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+            sidebarToggle.setAttribute('aria-expanded', 'true');
+            sidebarOverlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling when sidebar is open
+        }
+        
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            sidebarToggle.setAttribute('aria-expanded', 'false');
+            sidebarOverlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+        
+        // Toggle sidebar on button click
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                if (sidebar.classList.contains('active')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+        }
+        
+        // Close sidebar on close button click
+        if (sidebarClose) {
+            sidebarClose.addEventListener('click', closeSidebar);
+        }
+        
+        // Close sidebar on overlay click
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+        
+        // Close sidebar on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar && sidebar.classList.contains('active')) {
+                closeSidebar();
+            }
+        });
+        
+        // Close sidebar when clicking on a navigation link (mobile)
+        if (sidebar) {
+            sidebar.addEventListener('click', function(e) {
+                if (e.target.closest('a') && window.innerWidth < 992) {
+                    // Small delay to allow navigation to start
+                    setTimeout(closeSidebar, 150);
+                }
+            });
+        }
         
         document.querySelectorAll('.table-clickable tbody tr[data-href]').forEach(row => {
             row.addEventListener('click', function(e) {
