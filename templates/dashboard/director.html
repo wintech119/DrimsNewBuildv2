@@ -94,7 +94,8 @@
 
     <!-- Requests Table -->
     {% if requests %}
-    <table class="relief-requests-table">
+    <div class="table-responsive-mobile">
+        <table class="relief-requests-table">
         <thead>
             <tr>
                 <th>Request Number</th>
@@ -169,6 +170,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <div class="empty-state">
         <i class="bi bi-inbox empty-state-icon"></i>
