@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from app.db.models import db, Agency, Parish, Event, Warehouse
 from app.core.audit import add_audit_fields
+from app.core.phone_utils import validate_phone_format, get_phone_validation_error
 
 agencies_bp = Blueprint('agencies', __name__)
 
@@ -31,6 +32,14 @@ def create():
         
         if not agency_name or not agency_type or not address1_text or not parish_code or not contact_name or not phone_no or not status_code:
             flash('Please fill in all required fields.', 'danger')
+            parishes = Parish.query.all()
+            events = Event.query.filter_by(status_code='A').order_by(Event.event_name).all()
+            warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
+            return render_template('agencies/create.html', parishes=parishes, events=events, warehouses=warehouses)
+        
+        # Validate phone number format
+        if not validate_phone_format(phone_no):
+            flash(get_phone_validation_error('Phone number'), 'danger')
             parishes = Parish.query.all()
             events = Event.query.filter_by(status_code='A').order_by(Event.event_name).all()
             warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
@@ -102,6 +111,15 @@ def edit(agency_id):
     if request.method == 'POST':
         agency_type = request.form.get('agency_type')
         warehouse_id = request.form.get('warehouse_id') or None
+        phone_no = request.form.get('phone_no', '').strip()
+        
+        # Validate phone number format
+        if phone_no and not validate_phone_format(phone_no):
+            flash(get_phone_validation_error('Phone number'), 'danger')
+            parishes = Parish.query.all()
+            events = Event.query.filter_by(status_code='A').order_by(Event.event_name).all()
+            warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
+            return render_template('agencies/edit.html', agency=agency, parishes=parishes, events=events, warehouses=warehouses)
         
         if agency_type == 'DISTRIBUTOR' and not warehouse_id:
             flash('DISTRIBUTOR agencies must have an associated warehouse.', 'danger')
