@@ -45,7 +45,7 @@ def create_warehouse():
         if custodian:
             warehouse.custodian_id = custodian.custodian_id
         
-        add_audit_fields(warehouse, current_user.email, is_new=True)
+        add_audit_fields(warehouse, current_user, is_new=True)
         
         db.session.add(warehouse)
         db.session.commit()

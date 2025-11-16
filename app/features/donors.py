@@ -46,7 +46,7 @@ def create():
             email_text=email_text
         )
         
-        add_audit_fields(new_donor, current_user.email)
+        add_audit_fields(new_donor, current_user)
         
         db.session.add(new_donor)
         db.session.commit()

@@ -27,7 +27,7 @@ def create():
             return render_template('custodians/create.html')
         
         new_custodian = Custodian(custodian_name=custodian_name)
-        add_audit_fields(new_custodian, current_user.email)
+        add_audit_fields(new_custodian, current_user)
         
         db.session.add(new_custodian)
         db.session.commit()

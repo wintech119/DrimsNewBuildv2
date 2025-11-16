@@ -37,7 +37,7 @@ def create():
             status_code='A'
         )
         
-        add_audit_fields(new_location, current_user.email)
+        add_audit_fields(new_location, current_user)
         
         db.session.add(new_location)
         db.session.commit()

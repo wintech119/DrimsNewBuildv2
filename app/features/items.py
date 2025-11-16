@@ -103,7 +103,7 @@ def create_item():
             item.comments_text = request.form.get('comments_text')
             item.status_code = 'A'
             
-            add_audit_fields(item, current_user.email, is_new=True)
+            add_audit_fields(item, current_user, is_new=True)
             
             db.session.add(item)
             db.session.commit()

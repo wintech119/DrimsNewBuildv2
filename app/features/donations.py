@@ -34,7 +34,7 @@ def create_donation():
         if custodian:
             donation.custodian_id = custodian.custodian_id
         
-        add_audit_fields(donation, current_user.email, is_new=True)
+        add_audit_fields(donation, current_user, is_new=True)
         donation.verify_by_id = current_user.email
         donation.verify_dtime = datetime.now()
         

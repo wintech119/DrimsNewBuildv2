@@ -58,7 +58,7 @@ def create():
                 expired_qty=0,
                 status_code='A'
             )
-            add_audit_fields(to_inventory, current_user.email)
+            add_audit_fields(to_inventory, current_user)
             db.session.add(to_inventory)
             db.session.flush()
         
@@ -71,7 +71,7 @@ def create():
             status_code='P'
         )
         
-        add_audit_fields(new_transfer, current_user.email)
+        add_audit_fields(new_transfer, current_user)
         new_transfer.verify_by_id = current_user.email.upper()
         new_transfer.verify_dtime = datetime.utcnow()
         
@@ -85,7 +85,7 @@ def create():
             uom_code=uom_code,
             reason_text=comments_text or None
         )
-        add_audit_fields(transfer_item, current_user.email)
+        add_audit_fields(transfer_item, current_user)
         
         db.session.add(transfer_item)
         db.session.commit()

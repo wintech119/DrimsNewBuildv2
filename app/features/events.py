@@ -219,7 +219,7 @@ def create_event():
             event.reason_desc = None
             
             # Audit fields
-            add_audit_fields(event, current_user.email, is_new=True)
+            add_audit_fields(event, current_user, is_new=True)
             
             db.session.add(event)
             db.session.commit()

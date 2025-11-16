@@ -68,7 +68,7 @@ def create():
                 status_code=status_code
             )
             
-            add_audit_fields(new_agency, current_user.email)
+            add_audit_fields(new_agency, current_user)
             
             db.session.add(new_agency)
             db.session.commit()
