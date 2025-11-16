@@ -15,6 +15,7 @@ DRIMS (Disaster Relief Inventory Management System) is a web-based platform for 
 - ✅ **Modernized landing dashboard** (`index.html`) with modern metric cards, consistent layout, and quick action buttons
 - ✅ **Modernized inventory module** list page with filter bar, modern tables, code pills, and empty states
 - ✅ **Modernized items module** list page with filter tabs, modern tables, status badges, and empty states
+- ✅ **Items Create page** enhanced with "Other (specify)" UOM option: dropdown selection with automatic custom UOM field reveal, client-side validation (2-20 characters, alphanumeric + special chars), server-side validation, automatic `unitofmeasure` table entry creation for custom values, no database schema changes required
 - ✅ **Modernized warehouses module** list page with filter tabs, modern tables, and empty states
 - ✅ Notification system complete redesign with modern UI matching user management patterns: 6 metric cards, filter tabs (All/Unread/Read/Today/This Week/Low Stock), reusable macros for notification cards and icons, dedicated CSS file (notifications-ui.css), offcanvas bell dropdown with dynamic loading, clear all modal, individual delete functionality, and WCAG 2.1 AA accessibility features
 - ✅ User management complete redesign with modern UI, metrics dashboard, tabbed profiles, security indicators, and accessibility features

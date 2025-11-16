@@ -37,22 +37,28 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="default_uom_code" class="form-label">Unit of Measure (choose or type your own) *</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="default_uom_code" 
-                               name="default_uom_code" 
-                               list="uom_list"
-                               maxlength="20"
-                               pattern="^[A-Za-z0-9\s\-\.\/]{2,20}$"
-                               autocomplete="off"
-                               required>
-                        <datalist id="uom_list">
+                        <label for="uom_select" class="form-label">Unit of Measure *</label>
+                        <select class="form-select" id="uom_select" name="uom_select" required>
+                            <option value="">Select UOM...</option>
                             {% for uom in uoms %}
                             <option value="{{ uom.uom_code }}">{{ uom.uom_desc }}</option>
                             {% endfor %}
-                        </datalist>
-                        <small class="text-muted">Select from list or type a custom UOM (2-20 characters). Will be converted to UPPERCASE.</small>
+                            <option value="OTHER">Other (specify)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row" id="custom_uom_row" style="display: none;">
+                    <div class="col-md-6 mb-3">
+                        <label for="custom_uom" class="form-label">Custom UOM *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="custom_uom" 
+                               name="custom_uom"
+                               maxlength="20"
+                               pattern="^[A-Za-z0-9\s\-\.\/]{2,20}$"
+                               autocomplete="off">
+                        <small class="text-muted">Enter custom UOM (2-20 characters: letters, numbers, spaces, hyphens, dots, or slashes). Will be converted to UPPERCASE.</small>
                         <div class="invalid-feedback">
                             Please enter a valid UOM (2-20 characters, letters, numbers, spaces, hyphens, dots, or slashes only).
                         </div>
@@ -106,13 +112,29 @@
 
 {% block scripts %}
 <script>
-// Client-side validation for UOM field
+// UOM dropdown with "Other (specify)" functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const uomInput = document.getElementById('default_uom_code');
-    const form = uomInput.closest('form');
+    const uomSelect = document.getElementById('uom_select');
+    const customUomRow = document.getElementById('custom_uom_row');
+    const customUomInput = document.getElementById('custom_uom');
+    const form = uomSelect.closest('form');
     
-    // Real-time validation feedback
-    uomInput.addEventListener('input', function() {
+    // Show/hide custom UOM field based on selection
+    uomSelect.addEventListener('change', function() {
+        if (this.value === 'OTHER') {
+            customUomRow.style.display = 'block';
+            customUomInput.setAttribute('required', 'required');
+            customUomInput.focus();
+        } else {
+            customUomRow.style.display = 'none';
+            customUomInput.removeAttribute('required');
+            customUomInput.value = '';
+            customUomInput.classList.remove('is-invalid', 'is-valid');
+        }
+    });
+    
+    // Real-time validation feedback for custom UOM
+    customUomInput.addEventListener('input', function() {
         const value = this.value.trim();
         const isValid = /^[A-Za-z0-9\s\-\.\/]{2,20}$/.test(value);
         
@@ -129,20 +151,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission validation
     form.addEventListener('submit', function(e) {
-        const value = uomInput.value.trim();
-        
-        if (!value) {
-            e.preventDefault();
-            uomInput.classList.add('is-invalid');
-            uomInput.focus();
-            return false;
-        }
-        
-        if (!/^[A-Za-z0-9\s\-\.\/]{2,20}$/.test(value)) {
-            e.preventDefault();
-            uomInput.classList.add('is-invalid');
-            uomInput.focus();
-            return false;
+        if (uomSelect.value === 'OTHER') {
+            const value = customUomInput.value.trim();
+            
+            if (!value) {
+                e.preventDefault();
+                customUomInput.classList.add('is-invalid');
+                customUomInput.focus();
+                return false;
+            }
+            
+            if (!/^[A-Za-z0-9\s\-\.\/]{2,20}$/.test(value)) {
+                e.preventDefault();
+                customUomInput.classList.add('is-invalid');
+                customUomInput.focus();
+                return false;
+            }
         }
     });
 });

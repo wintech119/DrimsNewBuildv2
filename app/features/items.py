@@ -66,16 +66,28 @@ def create_item():
     """Create new item"""
     if request.method == 'POST':
         try:
-            # Get and validate UOM (creates new UOM if custom value entered)
-            uom_value = request.form.get('default_uom_code', '').strip()
-            if not uom_value:
+            # Get UOM selection
+            uom_select = request.form.get('uom_select', '').strip()
+            
+            # Determine the final UOM value
+            if uom_select == 'OTHER':
+                # User chose "Other (specify)", get custom UOM
+                uom_value = request.form.get('custom_uom', '').strip()
+                if not uom_value:
+                    flash('Custom UOM is required when "Other (specify)" is selected', 'danger')
+                    categories = ItemCategory.query.order_by(ItemCategory.category_desc).all()
+                    uoms = UnitOfMeasure.query.order_by(UnitOfMeasure.uom_desc).all()
+                    return render_template('items/create.html', categories=categories, uoms=uoms)
+                # Create new UOM entry
+                uom_code = get_or_create_uom(uom_value, current_user.email)
+            elif uom_select:
+                # User selected a standard UOM from dropdown
+                uom_code = uom_select
+            else:
                 flash('Unit of Measure is required', 'danger')
                 categories = ItemCategory.query.order_by(ItemCategory.category_desc).all()
                 uoms = UnitOfMeasure.query.order_by(UnitOfMeasure.uom_desc).all()
                 return render_template('items/create.html', categories=categories, uoms=uoms)
-            
-            # Get or create UOM (handles both dropdown selection and custom input)
-            uom_code = get_or_create_uom(uom_value, current_user.email)
             
             # Create item
             item = Item()
