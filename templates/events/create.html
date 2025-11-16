@@ -2,6 +2,7 @@
 
 {% block extra_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 {% endblock %}
 
 {% block title %}Create Event{% endblock %}
@@ -51,14 +52,14 @@
                     <div class="col-md-6">
                         <label for="start_date" class="form-label">Start Date (YYYY-MM-DD) *</label>
                         <input type="text" 
-                               class="form-control" 
+                               class="form-control datepicker" 
                                id="start_date" 
                                name="start_date" 
-                               pattern="\d{4}-\d{2}-\d{2}"
                                placeholder="YYYY-MM-DD"
                                value="{{ form_data.get('start_date') if form_data else '' }}"
-                               required>
-                        <small class="text-muted">Format: YYYY-MM-DD (e.g., 2025-11-16, cannot be in the future)</small>
+                               required
+                               readonly>
+                        <small class="text-muted">Click to select date (cannot be in the future)</small>
                         {% if errors and errors.get('start_date') %}
                         <div class="text-danger small mt-1">{{ errors.get('start_date') }}</div>
                         {% endif %}
@@ -127,4 +128,15 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#start_date", {
+        dateFormat: "Y-m-d",
+        maxDate: "{{ today }}",
+        allowInput: false,
+        clickOpens: true
+    });
+});
+</script>
 {% endblock %}
