@@ -49,6 +49,8 @@ All pages maintain a modern, consistent UI with a comprehensive design system:
     - **Optimistic Locking**: Implemented across all 40 tables using SQLAlchemy's `version_id_col`.
     - **User Management**: Enhanced `public.user` table with `user_name` field, MFA, lockout, password management, agency linkage, and `citext` for case-insensitive email.
     - **New Workflows**: `agency_account_request` and `agency_account_request_audit` tables for account creation workflows.
+    - **Phone Number Format**: System-wide standardization to `+1 (XXX) XXX-XXXX` format with centralized validation (`app/core/phone_utils.py`) and auto-formatting masked input (`static/js/phone-mask.js`).
+    - **Warehouse Types**: Simplified to two types only: `MAIN-HUB` (central/main warehouses) and `SUB-HUB` (sub-warehouses, agency warehouses). Database check constraint enforces these values only.
 
 ### Data Flow Patterns
 - **AIDMGMT Relief Workflow**: End-to-end process from request creation (agencies) to eligibility review (ODPEM directors), package preparation (logistics), and distribution.
