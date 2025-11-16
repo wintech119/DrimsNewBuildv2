@@ -897,21 +897,21 @@
     color: var(--drims-text-white);
 }
 
-/* Login page checkbox - WCAG compliant */
+/* Login page checkbox - WCAG compliant & responsive */
 .login-body .form-check {
     display: flex;
     align-items: center;
-    gap: var(--drims-space-sm);
+    gap: 0.5rem;
     padding-left: 0;
 }
 
 .login-body .form-check-input {
-    width: 1.125rem;
-    height: 1.125rem;
+    width: 0.875rem;
+    height: 0.875rem;
     margin: 0;
     flex-shrink: 0;
-    border: 2px solid var(--drims-border-medium);
-    border-radius: var(--drims-radius-sm);
+    border: 1.5px solid var(--drims-border-medium);
+    border-radius: 3px;
     cursor: pointer;
     transition: all var(--drims-transition-base);
     background-color: var(--drims-bg-white);
@@ -928,29 +928,41 @@
 }
 
 .login-body .form-check-input:focus {
-    outline: 3px solid var(--drims-primary-green);
+    outline: 2px solid var(--drims-primary-green);
     outline-offset: 2px;
     border-color: var(--drims-primary-green);
     box-shadow: none;
 }
 
 .login-body .form-check-input:focus-visible {
-    outline: 3px solid var(--drims-primary-green);
+    outline: 2px solid var(--drims-primary-green);
     outline-offset: 2px;
 }
 
 .login-body .form-check-label {
-    font-size: var(--drims-text-base);
+    font-size: 0.875rem;
     color: var(--drims-text-secondary);
     cursor: pointer;
     user-select: none;
     margin: 0;
-    padding: var(--drims-space-xs) 0;
+    padding: 0.25rem 0;
     line-height: 1.5;
 }
 
 .login-body .form-check-label:hover {
     color: var(--drims-text-primary);
+}
+
+/* Responsive sizing for mobile devices */
+@media (max-width: 480px) {
+    .login-body .form-check-input {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    .login-body .form-check-label {
+        font-size: 0.9375rem;
+    }
 }
 
 .agency-cta {
