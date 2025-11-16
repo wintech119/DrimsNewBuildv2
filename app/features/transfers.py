@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from datetime import datetime, date
 from app.db.models import db, Transfer, TransferItem, Warehouse, Inventory, Item, UnitOfMeasure
-from app.core.audit import add_audit_fields
+from app.core.audit import add_audit_fields, add_verify_fields
 from sqlalchemy import and_
 
 transfers_bp = Blueprint('transfers', __name__)
@@ -72,8 +72,7 @@ def create():
         )
         
         add_audit_fields(new_transfer, current_user)
-        new_transfer.verify_by_id = current_user.email.upper()
-        new_transfer.verify_dtime = datetime.utcnow()
+        add_verify_fields(new_transfer, current_user)
         
         db.session.add(new_transfer)
         db.session.flush()
@@ -124,20 +123,12 @@ def execute(transfer_id):
         from_inventory.usable_qty -= transfer_item.item_qty
         to_inventory.usable_qty += transfer_item.item_qty
         
-        from_inventory.update_by_id = current_user.email.upper()
-        from_inventory.update_dtime = datetime.utcnow()
-        from_inventory.version_nbr += 1
-        
-        to_inventory.update_by_id = current_user.email.upper()
-        to_inventory.update_dtime = datetime.utcnow()
-        to_inventory.version_nbr += 1
+        add_audit_fields(from_inventory, current_user, is_new=False)
+        add_audit_fields(to_inventory, current_user, is_new=False)
     
     transfer.status_code = 'C'
-    transfer.update_by_id = current_user.email.upper()
-    transfer.update_dtime = datetime.utcnow()
-    transfer.verify_by_id = current_user.email.upper()
-    transfer.verify_dtime = datetime.utcnow()
-    transfer.version_nbr += 1
+    add_audit_fields(transfer, current_user, is_new=False)
+    add_verify_fields(transfer, current_user)
     
     db.session.commit()
     

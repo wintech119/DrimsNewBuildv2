@@ -143,13 +143,13 @@ def review_approval(reliefrqst_id):
                 raise ValueError('Cannot dispatch package: no items have been allocated')
             
             # LM approval: set verify_by_id and verify_dtime
-            relief_pkg.verify_by_id = current_user.email[:20]
+            relief_pkg.verify_by_id = current_user.user_name
             relief_pkg.verify_dtime = datetime.now()
             
             # Mark package as dispatched
             relief_pkg.status_code = rr_service.PKG_STATUS_DISPATCHED
             relief_pkg.dispatch_dtime = datetime.now()
-            relief_pkg.update_by_id = current_user.email[:20]
+            relief_pkg.update_by_id = current_user.user_name
             relief_pkg.update_dtime = datetime.now()
             
             # Commit inventory: convert reservations to actual deductions
@@ -158,7 +158,7 @@ def review_approval(reliefrqst_id):
                 raise ValueError(f'Inventory commit failed: {error_msg}')
             
             # Update relief request status
-            relief_request.action_by_id = current_user.email[:20]
+            relief_request.action_by_id = current_user.user_name
             relief_request.action_dtime = datetime.now()
             relief_request.status_code = rr_service.STATUS_PART_FILLED
             relief_request.version_nbr += 1
@@ -440,7 +440,7 @@ def _submit_for_approval(relief_request):
         # Keep package as Pending - DO NOT modify verify_by_id (preserves audit trail)
         # "Pending LM approval" = status_code='P' + no lock + verify_by_id is NULL or non-NULL
         relief_pkg.status_code = rr_service.PKG_STATUS_PENDING
-        relief_pkg.update_by_id = current_user.email[:20]
+        relief_pkg.update_by_id = current_user.user_name
         relief_pkg.update_dtime = datetime.now()
         
         # Flush to persist allocations before calculating reservation deltas
@@ -504,13 +504,13 @@ def _send_for_dispatch(relief_request):
             raise ValueError('Failed to create relief package')
         
         # LM approval: set verify_by_id to current LM (bypasses LO approval step)
-        relief_pkg.verify_by_id = current_user.email[:20]
+        relief_pkg.verify_by_id = current_user.user_name
         relief_pkg.verify_dtime = datetime.now()
         
         # Mark package as dispatched
         relief_pkg.status_code = rr_service.PKG_STATUS_DISPATCHED
         relief_pkg.dispatch_dtime = datetime.now()
-        relief_pkg.update_by_id = current_user.email[:20]
+        relief_pkg.update_by_id = current_user.user_name
         relief_pkg.update_dtime = datetime.now()
         
         # Flush to persist allocations
@@ -522,7 +522,7 @@ def _send_for_dispatch(relief_request):
             raise ValueError(f'Inventory commit failed: {error_msg}')
         
         # Update relief request status
-        relief_request.action_by_id = current_user.email[:20]
+        relief_request.action_by_id = current_user.user_name
         relief_request.action_dtime = datetime.now()
         relief_request.status_code = rr_service.STATUS_PART_FILLED
         relief_request.version_nbr += 1
@@ -591,12 +591,12 @@ def _process_allocations(relief_request, validate_complete=False):
             to_inventory_id=1,  # Placeholder, will be updated on dispatch
             start_date=date.today(),
             status_code='P',  # Preparing
-            create_by_id=current_user.email[:20],
+            create_by_id=current_user.user_name,
             create_dtime=datetime.now(),
-            update_by_id=current_user.email[:20],
+            update_by_id=current_user.user_name,
             update_dtime=datetime.now(),
-            verify_by_id=current_user.email[:20],  # Required (NOT NULL) - tracks creator until LM approval
-            received_by_id=current_user.email[:20],  # Required (NOT NULL)
+            verify_by_id=current_user.user_name,  # Required (NOT NULL) - tracks creator until LM approval
+            received_by_id=current_user.user_name,  # Required (NOT NULL)
             version_nbr=1
         )
         db.session.add(relief_pkg)
@@ -702,7 +702,7 @@ def _process_allocations(relief_request, validate_complete=False):
             # Clear reason for other statuses
             item.status_reason_desc = None
         
-        item.action_by_id = current_user.email[:20]
+        item.action_by_id = current_user.user_name
         item.action_dtime = datetime.now()
         item.version_nbr += 1
         
@@ -722,9 +722,9 @@ def _process_allocations(relief_request, validate_complete=False):
                     item_id=item_id,
                     item_qty=allocated_qty,
                     uom_code=item.item.default_uom_code if item.item and item.item.default_uom_code else 'EA',
-                    create_by_id=current_user.email[:20],
+                    create_by_id=current_user.user_name,
                     create_dtime=datetime.now(),
-                    update_by_id=current_user.email[:20],
+                    update_by_id=current_user.user_name,
                     update_dtime=datetime.now(),
                     version_nbr=1
                 )

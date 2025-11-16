@@ -78,9 +78,7 @@ def edit(donor_id):
         donor.phone_no = request.form.get('phone_no', '').strip()
         donor.email_text = request.form.get('email_text', '').strip().lower() or None
         
-        donor.update_by_id = current_user.email.upper()
-        donor.update_dtime = datetime.utcnow()
-        donor.version_nbr += 1
+        add_audit_fields(donor, current_user, is_new=False)
         
         db.session.commit()
         

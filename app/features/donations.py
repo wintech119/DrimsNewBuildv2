@@ -7,7 +7,7 @@ from datetime import datetime, date
 
 from app.db import db
 from app.db.models import Donation, Donor, Event, Custodian
-from app.core.audit import add_audit_fields
+from app.core.audit import add_audit_fields, add_verify_fields
 
 donations_bp = Blueprint('donations', __name__, url_prefix='/donations')
 
@@ -35,8 +35,7 @@ def create_donation():
             donation.custodian_id = custodian.custodian_id
         
         add_audit_fields(donation, current_user, is_new=True)
-        donation.verify_by_id = current_user.email
-        donation.verify_dtime = datetime.now()
+        add_verify_fields(donation, current_user)
         
         db.session.add(donation)
         db.session.commit()

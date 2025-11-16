@@ -126,9 +126,7 @@ def edit(agency_id):
             agency.warehouse_id = int(warehouse_id) if warehouse_id else None
             agency.status_code = request.form.get('status_code')
             
-            agency.update_by_id = current_user.email.upper()
-            agency.update_dtime = datetime.utcnow()
-            agency.version_nbr += 1
+            add_audit_fields(agency, current_user, is_new=False)
             
             db.session.commit()
             

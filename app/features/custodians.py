@@ -59,9 +59,7 @@ def edit(custodian_id):
             return render_template('custodians/edit.html', custodian=custodian)
         
         custodian.custodian_name = new_name
-        custodian.update_by_id = current_user.email.upper()
-        custodian.update_dtime = datetime.utcnow()
-        custodian.version_nbr += 1
+        add_audit_fields(custodian, current_user, is_new=False)
         
         db.session.commit()
         

@@ -317,10 +317,8 @@ def edit_event(event_id):
             fresh_event.event_desc = request.form.get('event_desc').strip()
             fresh_event.impact_desc = request.form.get('impact_desc').strip()
             
-            # Update audit fields (version_nbr auto-increments via SQLAlchemy)
-            fresh_event.update_by_id = current_user.email
-            fresh_event.update_dtime = datetime.now()
-            fresh_event.version_nbr += 1
+            # Update audit fields
+            add_audit_fields(fresh_event, current_user, is_new=False)
             
             db.session.commit()
             
@@ -389,9 +387,7 @@ def close_event(event_id):
         event.status_code = 'C'
         event.closed_date = closed_date
         event.reason_desc = reason_desc
-        event.update_by_id = current_user.email
-        event.update_dtime = datetime.now()
-        event.version_nbr += 1
+        add_audit_fields(event, current_user, is_new=False)
         
         db.session.commit()
         
