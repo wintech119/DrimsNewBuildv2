@@ -1,0 +1,169 @@
+You are working in the existing DRIMS codebase.
+Do NOT modify any database tables or schema.
+This prompt applies to all phone number fields in DRIMS, including (but not limited to):
+
+Warehouse contact numbers
+
+Agency contact numbers
+
+Custodian contact numbers
+
+Relief request contact numbers
+
+User management phone fields
+
+Any table or form that captures or displays a phone number
+
+Your task is to enforce a consistent phone number format for all phone_no fields across the entire application (UI + backend).
+
+📞 1. New Standard Phone Number Format
+
+All phone numbers in DRIMS must follow this exact format:
+
++1 (XXX) XXX-XXXX
+
+
+Where:
+
++1 = country code (mandatory)
+
+(XXX) = 3-digit area code
+
+XXX-XXXX = 3-digit prefix, dash, then 4-digit line number
+
+Example:
+
++1 (876) 555-1234
++1 (658) 291-9980
+
+
+No other formats should be accepted or saved.
+
+🧩 2. UI Requirements
+2.1 Masked Input
+
+All phone number fields must use a masked input control that guides the user into the required format:
+
++1 (___) ___-____
+
+
+As the user types:
+
+The +1 prefix must always remain visible and cannot be deleted.
+
+The mask must automatically insert:
+
+brackets ( )
+
+space after the bracket
+
+dash - between the two number blocks
+
+2.2 Input Validation (Client-Side)
+
+Before allowing a save, the UI must validate that:
+
+Exactly 10 digits are provided (area code + 7-digit number).
+
+The field matches the full mask:
+
++1 (###) ###-####
+
+
+If invalid, show DRIMS-standard error messages.
+
+🔒 3. Backend Validation Rules
+
+Before saving to the database, the backend/API must:
+
+Validate that the incoming phone_no strictly matches the regex:
+
+^\+1 \(\d{3}\) \d{3}-\d{4}$
+
+
+If the format is incorrect, return a clear validation error:
+
+“Invalid phone number format. Use +1 (XXX) XXX-XXXX.”
+
+🔄 4. Storage Rules
+
+Phone numbers must be stored exactly as entered, including:
+
++1
+
+parentheses
+
+space
+
+dash
+
+No reformatting or stripping of characters should occur on save.
+
+📤 5. Display Rules
+
+Whenever phone numbers are displayed in:
+
+Tables
+
+Detail screens
+
+Cards
+
+Dropdowns
+
+Reports
+
+PDFs
+
+…they must appear exactly as stored:
+
++1 (876) 555-1234
+
+
+No alternative formatting.
+
+🛠 6. Migration of Existing Phone Numbers (if applicable)
+
+If existing phone numbers in the database do not follow the correct pattern:
+
+Implement transformation logic to convert any 10-digit or partially-formatted number to the new standard:
+
+Example:
+
+Existing Format	New Required Format
+8765551234	+1 (876) 555-1234
+(876)-555-1234	+1 (876) 555-1234
+876 555 1234	+1 (876) 555-1234
++1 876 555 1234	+1 (876) 555-1234
+
+If the number cannot be interpreted:
+
+Mark it invalid and alert the Custodian or administrator for correction.
+
+(If you want, I can generate SQL or Python scripts for bulk cleanup.)
+
+🔐 7. Errors & Messaging
+
+Follow existing DRIMS messaging patterns:
+
+Inline field-level errors
+
+Toast notifications for full-form errors
+
+Clear red validation messages with consistent styling
+
+Invalid entry example:
+
+“Phone number must follow the format +1 (XXX) XXX-XXXX.”
+
+📱 8. Mobile & Tablet UX
+
+Ensure the masked input behaves correctly on mobile:
+
+Works with numeric keypad
+
+Automatically formats as numbers are typed
+
+Prevents typing outside the mask
+
+Scales with DRIMS responsive layout

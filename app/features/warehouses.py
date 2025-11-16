@@ -33,6 +33,7 @@ from app.db import db
 from app.db.models import Warehouse, Parish, Custodian
 from app.core.decorators import feature_required
 from app.core.audit import add_audit_fields
+from app.core.phone_utils import validate_phone_format, get_phone_validation_error, PHONE_FORMAT_EXAMPLE
 
 warehouses_bp = Blueprint('warehouses', __name__, url_prefix='/warehouses')
 
@@ -48,11 +49,13 @@ def validate_email(email):
     return re.match(pattern, email) is not None
 
 def validate_phone(phone):
-    """Validate phone number format (digits, +, -, space only)"""
+    """
+    Validate phone number format: +1 (XXX) XXX-XXXX
+    Uses centralized phone validation from phone_utils
+    """
     if not phone:
         return False
-    pattern = r'^[0-9+\-\s]+$'
-    return re.match(pattern, phone) is not None
+    return validate_phone_format(phone)
 
 def validate_warehouse_data(form_data, is_update=False, warehouse_id=None):
     """
@@ -119,10 +122,8 @@ def validate_warehouse_data(form_data, is_update=False, warehouse_id=None):
     # Phone Number validation
     if not phone_no:
         errors['phone_no'] = 'Phone number is required'
-    elif len(phone_no) > 20:
-        errors['phone_no'] = 'Phone number must not exceed 20 characters'
     elif not validate_phone(phone_no):
-        errors['phone_no'] = 'Phone number can only contain digits, +, -, and spaces'
+        errors['phone_no'] = get_phone_validation_error('Phone number')
     
     # Email validation
     if email_text:

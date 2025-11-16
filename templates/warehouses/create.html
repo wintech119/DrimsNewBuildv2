@@ -4,6 +4,10 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
 {% endblock %}
 
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phone-mask.js') }}"></script>
+{% endblock %}
+
 {% block title %}Create Warehouse{% endblock %}
 
 {% block content %}
@@ -153,14 +157,12 @@
                     <div class="col-md-6">
                         <label for="phone_no" class="form-label">Phone Number *</label>
                         <input type="tel" 
-                               class="form-control" 
+                               class="form-control phone-mask" 
                                id="phone_no" 
                                name="phone_no" 
-                               maxlength="20"
                                value="{{ form_data.get('phone_no') if form_data else '' }}"
-                               required 
-                               placeholder="e.g., +1-876-123-4567">
-                        <small class="text-muted">Digits, +, -, and spaces only</small>
+                               required>
+                        <small class="text-muted">Format: +1 (XXX) XXX-XXXX</small>
                         {% if errors and errors.get('phone_no') %}
                         <div class="text-danger small mt-1">{{ errors.get('phone_no') }}</div>
                         {% endif %}
