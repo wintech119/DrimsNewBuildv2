@@ -94,6 +94,23 @@
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing Quill editor');
+    
+    // Check if Quill is loaded
+    if (typeof Quill === 'undefined') {
+        console.error('Quill library not loaded!');
+        alert('Rich text editor library failed to load. Please refresh the page.');
+        return;
+    }
+    
+    var editorElement = document.querySelector('#editor');
+    if (!editorElement) {
+        console.error('Editor element not found!');
+        return;
+    }
+    
+    console.log('Editor element found, creating Quill instance');
+    
     var toolbarOptions = [
         [{ 'header': [1, 2, 3, false] }],
         ['bold', 'italic', 'underline'],
@@ -110,8 +127,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    console.log('Quill initialized successfully');
+
     // Set minimum height for editor
-    document.querySelector('#editor').style.minHeight = '300px';
+    editorElement.style.minHeight = '300px';
+
+    // Verify toolbar exists
+    setTimeout(function() {
+        var toolbar = document.querySelector('.ql-toolbar');
+        if (toolbar) {
+            console.log('Toolbar found and visible');
+            toolbar.style.display = 'block';
+            toolbar.style.visibility = 'visible';
+        } else {
+            console.error('Toolbar not found after initialization!');
+        }
+    }, 100);
 
     document.getElementById('eventForm').onsubmit = function() {
         var impactContent = quill.root.innerHTML;
