@@ -10,20 +10,19 @@ def add_audit_fields(obj, user, is_new=True):
     
     Args:
         obj: SQLAlchemy model instance
-        user: User object (will use user.user_name for audit fields)
+        user: User object (must have user_name field populated)
         is_new: True if creating new record, False if updating
+    
+    Raises:
+        ValueError: If user does not have a valid user_name
     """
     now = datetime.now()
     
-    # Get user_name from User object, fallback to email if user_name not set
-    if hasattr(user, 'user_name') and user.user_name:
-        audit_id = user.user_name.upper()
-    elif hasattr(user, 'email'):
-        # Fallback to email (truncated) for backward compatibility
-        audit_id = user.email.upper()[:20]
-    else:
-        # If user is a string (for backward compatibility), use it directly
-        audit_id = str(user).upper()[:20]
+    # Require user_name field - no fallback to email
+    if not hasattr(user, 'user_name') or not user.user_name or not user.user_name.strip():
+        raise ValueError(f'User object must have a non-empty user_name field for audit tracking. Got: {user}')
+    
+    audit_id = user.user_name.upper().strip()
     
     if is_new:
         if hasattr(obj, 'create_by_id'):
@@ -48,19 +47,18 @@ def add_verify_fields(obj, user):
     
     Args:
         obj: SQLAlchemy model instance
-        user: User object (will use user.user_name for audit fields)
+        user: User object (must have user_name field populated)
+    
+    Raises:
+        ValueError: If user does not have a valid user_name
     """
     now = datetime.now()
     
-    # Get user_name from User object, fallback to email if user_name not set
-    if hasattr(user, 'user_name') and user.user_name:
-        audit_id = user.user_name.upper()
-    elif hasattr(user, 'email'):
-        # Fallback to email (truncated) for backward compatibility
-        audit_id = user.email.upper()[:20]
-    else:
-        # If user is a string (for backward compatibility), use it directly
-        audit_id = str(user).upper()[:20]
+    # Require user_name field - no fallback to email
+    if not hasattr(user, 'user_name') or not user.user_name or not user.user_name.strip():
+        raise ValueError(f'User object must have a non-empty user_name field for audit tracking. Got: {user}')
+    
+    audit_id = user.user_name.upper().strip()
     
     if hasattr(obj, 'verify_by_id'):
         obj.verify_by_id = audit_id
