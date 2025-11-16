@@ -53,7 +53,7 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="start_date" class="form-label">Start Date *</label>
+                        <label for="start_date" class="form-label">Start Date (YYYY-MM-DD) *</label>
                         <input type="date" 
                                class="form-control" 
                                id="start_date" 
@@ -62,7 +62,7 @@
                                max="{{ today }}" 
                                required 
                                {% if event.status_code == 'C' %}disabled{% endif %}>
-                        <small class="text-muted">Cannot be in the future</small>
+                        <small class="text-muted">Format: YYYY-MM-DD (Cannot be in the future)</small>
                     </div>
                 </div>
 

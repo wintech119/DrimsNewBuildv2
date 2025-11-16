@@ -49,7 +49,7 @@
                         {% endif %}
                     </div>
                     <div class="col-md-6">
-                        <label for="start_date" class="form-label">Start Date *</label>
+                        <label for="start_date" class="form-label">Start Date (YYYY-MM-DD) *</label>
                         <input type="date" 
                                class="form-control" 
                                id="start_date" 
@@ -57,7 +57,7 @@
                                max="{{ today }}" 
                                value="{{ form_data.get('start_date') if form_data else '' }}"
                                required>
-                        <small class="text-muted">Cannot be in the future</small>
+                        <small class="text-muted">Format: YYYY-MM-DD (Cannot be in the future)</small>
                         {% if errors and errors.get('start_date') %}
                         <div class="text-danger small mt-1">{{ errors.get('start_date') }}</div>
                         {% endif %}
