@@ -621,6 +621,85 @@
     color: var(--drims-text-secondary);
 }
 
+/* ========================================
+   CHECKBOX & RADIO INPUTS (Standardized)
+   ======================================== */
+
+/* Global checkbox styling - applies to all checkboxes */
+.form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding-left: 0;
+    margin-bottom: var(--drims-space-md);
+    min-height: 44px;
+}
+
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+    border: 2px solid var(--drims-border-medium);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--drims-transition-base);
+    background-color: var(--drims-bg-white);
+    position: relative;
+}
+
+.form-check-input:hover {
+    border-color: var(--drims-primary-green);
+    background-color: var(--drims-bg-light);
+}
+
+.form-check-input:checked {
+    background-color: var(--drims-primary-green);
+    border-color: var(--drims-primary-green);
+}
+
+.form-check-input:focus {
+    outline: 2px solid var(--drims-primary-green);
+    outline-offset: 2px;
+    border-color: var(--drims-primary-green);
+    box-shadow: none;
+}
+
+.form-check-input:focus-visible {
+    outline: 2px solid var(--drims-primary-green);
+    outline-offset: 2px;
+}
+
+.form-check-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--drims-bg-light);
+}
+
+.form-check-label {
+    font-size: var(--drims-text-base);
+    color: var(--drims-text-primary);
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+    padding: 0.25rem 0;
+    line-height: 1.5;
+    flex: 1;
+}
+
+.form-check-label small {
+    display: block;
+    color: var(--drims-text-secondary);
+    font-size: var(--drims-text-sm);
+    margin-top: 0.25rem;
+}
+
+/* Radio buttons - same sizing for consistency */
+.form-check-input[type="radio"] {
+    border-radius: 50%;
+}
+
 .form-error {
     color: var(--drims-danger);
     font-size: var(--drims-text-sm);
@@ -897,56 +976,15 @@
     color: var(--drims-text-white);
 }
 
-/* Login page checkbox - WCAG compliant & responsive */
+/* Login page checkbox - inherits global styles, with minor adjustments */
 .login-body .form-check {
-    display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding-left: 0;
-}
-
-.login-body .form-check-input {
-    width: 0.875rem;
-    height: 0.875rem;
-    margin: 0;
-    flex-shrink: 0;
-    border: 1.5px solid var(--drims-border-medium);
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all var(--drims-transition-base);
-    background-color: var(--drims-bg-white);
-}
-
-.login-body .form-check-input:hover {
-    border-color: var(--drims-primary-green);
-    background-color: var(--drims-bg-light);
-}
-
-.login-body .form-check-input:checked {
-    background-color: var(--drims-primary-green);
-    border-color: var(--drims-primary-green);
-}
-
-.login-body .form-check-input:focus {
-    outline: 2px solid var(--drims-primary-green);
-    outline-offset: 2px;
-    border-color: var(--drims-primary-green);
-    box-shadow: none;
-}
-
-.login-body .form-check-input:focus-visible {
-    outline: 2px solid var(--drims-primary-green);
-    outline-offset: 2px;
+    gap: 0.75rem;
 }
 
 .login-body .form-check-label {
     font-size: 0.875rem;
     color: var(--drims-text-secondary);
-    cursor: pointer;
-    user-select: none;
-    margin: 0;
-    padding: 0.25rem 0;
-    line-height: 1.5;
 }
 
 .login-body .form-check-label:hover {
@@ -1293,12 +1331,16 @@
 .btn,
 .form-control,
 .form-select,
-input[type="checkbox"],
-input[type="radio"],
 .filter-tab,
 .nav-link {
     min-height: 44px;
     min-width: 44px;
+}
+
+/* Checkboxes use the wrapper (.form-check) for the 44px touch target, 
+   not the input itself, to maintain visual appearance */
+.form-check {
+    min-height: 44px;
 }
 
 /* Small buttons can be smaller on desktop */
