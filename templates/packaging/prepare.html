@@ -617,7 +617,7 @@
 
             <!-- Items Table -->
             <div class="table-responsive-mobile">
-                <form method="POST" id="packagingForm">
+                <form method="POST" id="packagingForm" action="{{ url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id) }}">
                     <table class="items-table">
                     <thead>
                         <tr>
@@ -704,12 +704,6 @@
 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <form method="POST" action="{{ url_for('packaging.cancel_preparation', reliefrqst_id=relief_request.reliefrqst_id) }}" style="display: inline;" onsubmit="return confirm('Cancel package preparation? All unsaved changes and reservations will be released.');">
-                        <button type="submit" class="btn btn-secondary btn-sm">
-                            <i class="bi bi-x-circle"></i>
-                            Cancel
-                        </button>
-                    </form>
                     <button type="submit" name="action" value="save_draft" class="btn-relief-secondary">
                         <i class="bi bi-save"></i>
                         Save Draft
@@ -727,6 +721,14 @@
                     </button>
                     {% endif %}
                 </div>
+            </form>
+            
+            <!-- Cancel Button (separate form) -->
+            <form method="POST" action="{{ url_for('packaging.cancel_preparation', reliefrqst_id=relief_request.reliefrqst_id) }}" style="margin-top: 1rem;" onsubmit="return confirm('Cancel package preparation? All unsaved changes and reservations will be released.');">
+                <button type="submit" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i>
+                    Cancel Package Preparation
+                </button>
             </form>
             </div>
         </div>
