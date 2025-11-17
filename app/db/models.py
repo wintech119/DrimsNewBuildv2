@@ -274,17 +274,28 @@ class UnitOfMeasure(db.Model):
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
 
 class ItemCategory(db.Model):
-    """Item Category"""
-    __tablename__ = 'itemcatg'
+    """Item Category (Master Data - CUSTODIAN role only)
     
-    category_code = db.Column(db.String(30), primary_key=True)
+    Defines categories for relief items with identity PK and unique category codes.
+    Updated schema with category_id as primary key instead of category_code.
+    """
+    __tablename__ = 'itemcatg'
+    __table_args__ = {'extend_existing': True}
+    
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    category_code = db.Column(db.String(30), nullable=False, unique=True)
     category_desc = db.Column(db.String(60), nullable=False)
     comments_text = db.Column(db.Text)
+    status_code = db.Column(db.CHAR(1), nullable=False)
     create_by_id = db.Column(db.String(20), nullable=False)
     create_dtime = db.Column(db.DateTime, nullable=False)
     update_by_id = db.Column(db.String(20), nullable=False)
     update_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    __mapper_args__ = {
+        'version_id_col': version_nbr
+    }
 
 class Item(db.Model):
     """Relief Item (from aidmgmt-3.sql)"""
@@ -293,7 +304,8 @@ class Item(db.Model):
     item_id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(60), nullable=False, unique=True)
     sku_code = db.Column(db.String(30), nullable=False, unique=True)
-    category_code = db.Column(db.String(30), db.ForeignKey('itemcatg.category_code'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('itemcatg.category_id'))
+    category_code = db.Column(db.String(30))  # Legacy column, kept for compatibility
     item_desc = db.Column(db.Text, nullable=False)
     reorder_qty = db.Column(db.Numeric(12, 2), nullable=False)
     default_uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=False)
@@ -308,7 +320,7 @@ class Item(db.Model):
     update_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
-    category = db.relationship('ItemCategory', backref='items')
+    category = db.relationship('ItemCategory', foreign_keys=[category_id], backref='items')
     default_uom = db.relationship('UnitOfMeasure', backref='items')
 
 class Inventory(db.Model):

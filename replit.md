@@ -51,6 +51,7 @@ All pages maintain a modern, consistent UI with a comprehensive design system:
     - **New Workflows**: `agency_account_request` and `agency_account_request_audit` tables for account creation workflows.
     - **Phone Number Format**: System-wide standardization to `+1 (XXX) XXX-XXXX` format with centralized validation (`app/core/phone_utils.py`) and auto-formatting masked input (`static/js/phone-mask.js`).
     - **Warehouse Types**: Simplified to two types only: `MAIN-HUB` (central/main warehouses) and `SUB-HUB` (sub-warehouses, agency warehouses). Database check constraint enforces these values only.
+    - **Item Category Schema**: Updated `itemcatg` table to use `category_id` (integer identity) as primary key instead of `category_code`. The `category_code` remains as a unique business key with uppercase check constraint. Includes `status_code` ('A'/'I') and full optimistic locking support.
 
 ### Data Flow Patterns
 - **AIDMGMT Relief Workflow**: End-to-end process from request creation (agencies) to eligibility review (ODPEM directors), package preparation (logistics), and distribution.
@@ -67,7 +68,7 @@ All pages maintain a modern, consistent UI with a comprehensive design system:
 - **Smart Routing**: Automatic dashboard routing based on user's primary role.
 - **Role Priority**: SYSTEM_ADMINISTRATOR > ODPEM_DG/DDG/DIR_PEOD > CUSTODIAN > LOGISTICS_MANAGER > LOGISTICS_OFFICER > INVENTORY_CLERK > AGENCY_DISTRIBUTOR/SHELTER.
 - **Verified Database Roles**: SYSTEM_ADMINISTRATOR, LOGISTICS_MANAGER, LOGISTICS_OFFICER, ODPEM_DG, ODPEM_DDG, ODPEM_DIR_PEOD, INVENTORY_CLERK, AGENCY_DISTRIBUTOR, AGENCY_SHELTER, AUDITOR, CUSTODIAN.
-- **Master Data RBAC Restrictions**: Event and Warehouse table CRUD operations restricted to CUSTODIAN role only, with similar restrictions planned for other master data tables (itemcatg, unitofmeasure, item, custodian).
+- **Master Data RBAC Restrictions**: Event, Warehouse, and ItemCategory table CRUD operations restricted to CUSTODIAN role only, with similar restrictions planned for other master data tables (unitofmeasure, item, custodian).
 
 ## External Dependencies
 
