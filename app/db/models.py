@@ -904,7 +904,6 @@ class DonationIntakeItem(db.Model):
     __tablename__ = 'dnintake_item'
     __table_args__ = (
         db.ForeignKeyConstraint(['donation_id', 'inventory_id'], ['dnintake.donation_id', 'dnintake.inventory_id']),
-        db.ForeignKeyConstraint(['donation_id', 'item_id'], ['donation_item.donation_id', 'donation_item.item_id']),
         {'extend_existing': True}
     )
     
