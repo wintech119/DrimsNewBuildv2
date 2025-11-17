@@ -52,6 +52,7 @@ All pages maintain a modern, consistent UI with a comprehensive design system:
     - **Phone Number Format**: System-wide standardization to `+1 (XXX) XXX-XXXX` format with centralized validation (`app/core/phone_utils.py`) and auto-formatting masked input (`static/js/phone-mask.js`).
     - **Warehouse Types**: Simplified to two types only: `MAIN-HUB` (central/main warehouses) and `SUB-HUB` (sub-warehouses, agency warehouses). Database check constraint enforces these values only.
     - **Item Category Schema**: Updated `itemcatg` table to use `category_id` (integer identity) as primary key instead of `category_code`. The `category_code` remains as a unique business key with uppercase check constraint. Includes `status_code` ('A'/'I') and full optimistic locking support.
+    - **Custodian Table**: Migrated to DRIMS naming standards with constraints: `pk_custodian` (primary key), `uk_custodian_1` (unique custodian_name), `c_custodian_1` (uppercase custodian_name check), `c_custodian_3` (uppercase contact_name check), `fk_custodian_parish` (foreign key to parish). Identity column for `custodian_id`, timestamp(0) precision for audit fields.
 
 ### Data Flow Patterns
 - **AIDMGMT Relief Workflow**: End-to-end process from request creation (agencies) to eligibility review (ODPEM directors), package preparation (logistics), and distribution.
@@ -68,7 +69,7 @@ All pages maintain a modern, consistent UI with a comprehensive design system:
 - **Smart Routing**: Automatic dashboard routing based on user's primary role.
 - **Role Priority**: SYSTEM_ADMINISTRATOR > ODPEM_DG/DDG/DIR_PEOD > CUSTODIAN > LOGISTICS_MANAGER > LOGISTICS_OFFICER > INVENTORY_CLERK > AGENCY_DISTRIBUTOR/SHELTER.
 - **Verified Database Roles**: SYSTEM_ADMINISTRATOR, LOGISTICS_MANAGER, LOGISTICS_OFFICER, ODPEM_DG, ODPEM_DDG, ODPEM_DIR_PEOD, INVENTORY_CLERK, AGENCY_DISTRIBUTOR, AGENCY_SHELTER, AUDITOR, CUSTODIAN.
-- **Master Data RBAC Restrictions**: Event, Warehouse, ItemCategory, and UnitOfMeasure table CRUD operations restricted to CUSTODIAN role only, with similar restrictions planned for other master data tables (item, custodian).
+- **Master Data RBAC Restrictions**: Event, Warehouse, ItemCategory, UnitOfMeasure, and Custodian table CRUD operations restricted to CUSTODIAN role only. Master data tables follow consistent naming standards for constraints (pk_, uk_, c_, fk_ prefixes).
 
 ## External Dependencies
 
