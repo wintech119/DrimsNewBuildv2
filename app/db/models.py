@@ -942,7 +942,7 @@ class TransferIntake(db.Model):
     __tablename__ = 'xfintake'
     
     transfer_id = db.Column(db.Integer, db.ForeignKey('transfer.transfer_id'), primary_key=True)
-    inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), primary_key=True)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), primary_key=True)
     intake_date = db.Column(db.Date, nullable=False)
     comments_text = db.Column(db.String(255))
     status_code = db.Column(db.CHAR(1), nullable=False)
@@ -955,7 +955,7 @@ class TransferIntake(db.Model):
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
     transfer = db.relationship('Transfer', backref='intakes')
-    inventory = db.relationship('Inventory', backref='transfer_intakes')
+    warehouse = db.relationship('Warehouse', foreign_keys=[inventory_id], backref='transfer_intakes')
 
 class TransferIntakeItem(db.Model):
     """Items in transfer intake (AIDMGMT)"""
