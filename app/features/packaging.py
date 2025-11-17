@@ -818,7 +818,8 @@ def get_item_batches(item_id):
             return jsonify({'error': 'Item not found'}), 404
         
         # Use new method to get limited batches if remaining_qty provided
-        if remaining_qty is not None and remaining_qty > 0:
+        # Include remaining_qty=0 case for editing existing allocations
+        if remaining_qty is not None:
             limited_batches, total_available, shortfall = BatchAllocationService.get_limited_batches_for_drawer(
                 item_id,
                 Decimal(str(remaining_qty)),
