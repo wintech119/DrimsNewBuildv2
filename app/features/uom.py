@@ -17,6 +17,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
+from sqlalchemy import or_
 from app.db.models import db, UnitOfMeasure, Item, Inventory, DonationIntakeItem, ReliefPkgItem, TransferItem
 from app.core.decorators import feature_required
 from app.core.audit import add_audit_fields
@@ -94,34 +95,50 @@ def validate_uom_data(form_data, is_update=False, uom_code=None):
 @feature_required('uom_management')
 def list_uom():
     """
-    Display list of all units of measure with filtering by status.
+    Display list of all units of measure with filter and search capabilities.
     """
-    # Get status filter from query parameters
-    status_filter = request.args.get('status', 'all')
+    # Get filter parameter
+    filter_type = request.args.get('filter', 'all')
+    search_query = request.args.get('search', '').strip()
     
-    # Build query
+    # Base query
     query = UnitOfMeasure.query
     
-    # Apply status filter
-    if status_filter == 'active':
+    # Apply filters
+    if filter_type == 'active':
         query = query.filter(UnitOfMeasure.status_code == 'A')
-    elif status_filter == 'inactive':
+    elif filter_type == 'inactive':
         query = query.filter(UnitOfMeasure.status_code == 'I')
     
-    # Execute query and order by code
+    # Apply search
+    if search_query:
+        search_pattern = f'%{search_query}%'
+        query = query.filter(
+            or_(
+                UnitOfMeasure.uom_code.ilike(search_pattern),
+                UnitOfMeasure.uom_desc.ilike(search_pattern)
+            )
+        )
+    
+    # Order by UOM code
     uoms = query.order_by(UnitOfMeasure.uom_code).all()
     
-    # Calculate summary statistics
-    total_count = UnitOfMeasure.query.count()
-    active_count = UnitOfMeasure.query.filter(UnitOfMeasure.status_code == 'A').count()
-    inactive_count = UnitOfMeasure.query.filter(UnitOfMeasure.status_code == 'I').count()
+    # Calculate metrics
+    total_uoms = UnitOfMeasure.query.count()
+    active_uoms = UnitOfMeasure.query.filter_by(status_code='A').count()
+    inactive_uoms = UnitOfMeasure.query.filter_by(status_code='I').count()
     
-    return render_template('uom/list.html',
-                         uoms=uoms,
-                         status_filter=status_filter,
-                         total_count=total_count,
-                         active_count=active_count,
-                         inactive_count=inactive_count)
+    metrics = {
+        'total_uoms': total_uoms,
+        'active_uoms': active_uoms,
+        'inactive_uoms': inactive_uoms
+    }
+    
+    return render_template('uom/list.html', 
+                         uoms=uoms, 
+                         metrics=metrics,
+                         filter_type=filter_type,
+                         search_query=search_query)
 
 @uom_bp.route('/create', methods=['GET', 'POST'])
 @login_required
