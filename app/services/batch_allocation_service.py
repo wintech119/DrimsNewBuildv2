@@ -64,10 +64,11 @@ class BatchAllocationService:
         today = date.today()
         
         # Filter out expired batches if item can expire
+        # NULL expiry dates are treated as "never expires" and are allowed
         if item.can_expire_flag:
             active_batches = [
                 b for b in batches 
-                if b.expiry_date and b.expiry_date >= today
+                if not b.expiry_date or b.expiry_date >= today
             ]
         else:
             active_batches = batches
