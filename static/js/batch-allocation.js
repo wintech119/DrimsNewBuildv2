@@ -128,8 +128,11 @@ const BatchAllocation = (function() {
             }
             
             const url = `/packaging/api/item/${itemId}/batches?${params.toString()}`;
+            console.log('Fetching batches from:', url);
             const response = await fetch(url);
+            console.log('Response status:', response.status, response.statusText);
             const data = await response.json();
+            console.log('Response data:', data);
             
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to load batches');
