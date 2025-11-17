@@ -19,12 +19,9 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="donor_type" class="form-label">Donor Type *</label>
-                    <select name="donor_type" id="donor_type" class="form-select" required>
-                        <option value="">Select Type</option>
-                        <option value="I">Individual</option>
-                        <option value="O">Organization</option>
-                    </select>
+                    <label for="donor_code" class="form-label">Donor Code *</label>
+                    <input type="text" name="donor_code" id="donor_code" class="form-control" required maxlength="16" pattern="[A-Z0-9\-]+" placeholder="e.g., ORG-00001, IND-00001">
+                    <small class="text-muted">Must be uppercase (e.g., ORG-00001)</small>
                 </div>
                 <div class="col-md-6">
                     <label for="donor_name" class="form-label">Donor Name *</label>

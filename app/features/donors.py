@@ -17,7 +17,7 @@ def list_donors():
 @login_required
 def create():
     if request.method == 'POST':
-        donor_type = request.form.get('donor_type')
+        donor_code = request.form.get('donor_code', '').strip().upper()
         donor_name = request.form.get('donor_name', '').strip().upper()
         org_type_desc = request.form.get('org_type_desc', '').strip() or None
         address1_text = request.form.get('address1_text', '').strip()
@@ -26,7 +26,7 @@ def create():
         phone_no = request.form.get('phone_no', '').strip()
         email_text = request.form.get('email_text', '').strip().lower() or None
         
-        if not donor_name or not donor_type or not address1_text or not phone_no:
+        if not donor_name or not donor_code or not address1_text or not phone_no:
             flash('Please fill in all required fields.', 'danger')
             countries = db.session.execute(db.text("SELECT country_id, country_name FROM country ORDER BY country_name")).fetchall()
             return render_template('donors/create.html', countries=countries)
@@ -43,7 +43,7 @@ def create():
             return render_template('donors/create.html', countries=countries)
         
         new_donor = Donor(
-            donor_type=donor_type,
+            donor_code=donor_code,
             donor_name=donor_name,
             org_type_desc=org_type_desc,
             address1_text=address1_text,
@@ -85,7 +85,6 @@ def edit(donor_id):
             countries = db.session.execute(db.text("SELECT country_id, country_name FROM country ORDER BY country_name")).fetchall()
             return render_template('donors/edit.html', donor=donor, countries=countries)
         
-        donor.donor_type = request.form.get('donor_type')
         donor.org_type_desc = request.form.get('org_type_desc', '').strip() or None
         donor.address1_text = request.form.get('address1_text', '').strip()
         donor.address2_text = request.form.get('address2_text', '').strip() or None

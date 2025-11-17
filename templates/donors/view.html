@@ -27,14 +27,8 @@
                         <td>{{ donor.donor_id }}</td>
                     </tr>
                     <tr>
-                        <th>Type:</th>
-                        <td>
-                            {% if donor.donor_type == 'I' %}
-                                <span class="badge bg-info">Individual</span>
-                            {% else %}
-                                <span class="badge bg-primary">Organization</span>
-                            {% endif %}
-                        </td>
+                        <th>Donor Code:</th>
+                        <td><span class="badge bg-secondary">{{ donor.donor_code }}</span></td>
                     </tr>
                     <tr>
                         <th>Donor Name:</th>

@@ -495,13 +495,13 @@ class Donor(db.Model):
     """Donor"""
     __tablename__ = 'donor'
     
-    donor_id = db.Column(db.Integer, primary_key=True)
-    donor_type = db.Column(db.CHAR(1), nullable=False)
+    donor_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    donor_code = db.Column(db.String(16), nullable=False)
     donor_name = db.Column(db.String(255), nullable=False, unique=True)
     org_type_desc = db.Column(db.String(30))
     address1_text = db.Column(db.String(255), nullable=False)
     address2_text = db.Column(db.String(255))
-    country_id = db.Column(db.SmallInteger, default=388)
+    country_id = db.Column(db.SmallInteger, db.ForeignKey('country.country_id'), nullable=False, default=388)
     phone_no = db.Column(db.String(20), nullable=False)
     email_text = db.Column(db.String(100))
     create_by_id = db.Column(db.String(20), nullable=False)

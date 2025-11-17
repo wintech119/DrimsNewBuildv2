@@ -197,8 +197,8 @@ The DRIMS database contains 40 operational tables plus 2 supporting tables (coun
 
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
-| donor_id | integer | NO | | Primary key |
-| donor_type | char(1) | NO | | I=Individual, O=Organization |
+| donor_id | integer | NO | identity | Primary key (auto-generated) |
+| donor_code | varchar(16) | NO | | Donor code (e.g., ORG-00001, IND-00001) |
 | donor_name | varchar(255) | NO | | Donor name (unique, uppercase) |
 | org_type_desc | varchar(30) | YES | | Organization type |
 | address1_text | varchar(255) | NO | | Street address |
@@ -214,8 +214,14 @@ The DRIMS database contains 40 operational tables plus 2 supporting tables (coun
 
 **Constraints:**
 - PRIMARY KEY: donor_id
-- UNIQUE: donor_name
+- UNIQUE: donor_name (uk_donor_1)
 - FOREIGN KEY: country_id → country(country_id)
+- CHECK: donor_code must be uppercase (c_donor_1)
+- CHECK: donor_name must be uppercase (c_donor_2)
+
+**Migration Notes:**
+- donor_type column removed (2025-11-17) - replaced with donor_code
+- donor_code format: "ORG-XXXXX" for organizations, "IND-XXXXX" for individuals
 
 ---
 

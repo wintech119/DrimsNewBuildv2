@@ -16,7 +16,7 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Type</th>
+                        <th>Code</th>
                         <th>Donor Name</th>
                         <th>Organization Type</th>
                         <th>Phone</th>
@@ -28,13 +28,7 @@
                     {% for donor in donors %}
                     <tr>
                         <td>{{ donor.donor_id }}</td>
-                        <td>
-                            {% if donor.donor_type == 'I' %}
-                                <span class="badge bg-info">Individual</span>
-                            {% else %}
-                                <span class="badge bg-primary">Organization</span>
-                            {% endif %}
-                        </td>
+                        <td><span class="badge bg-secondary">{{ donor.donor_code }}</span></td>
                         <td>{{ donor.donor_name }}</td>
                         <td>{{ donor.org_type_desc or '-' }}</td>
                         <td>{{ donor.phone_no }}</td>
