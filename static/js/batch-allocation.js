@@ -1,6 +1,6 @@
 /**
  * Batch Allocation Module
- * Handles batch selection, FEFO/FIFO auto-allocation, and drawer UI
+ * Handles batch selection and drawer UI
  */
 
 const BatchAllocation = (function() {
@@ -17,13 +17,11 @@ const BatchAllocation = (function() {
         closeBtn: null,
         cancelBtn: null,
         applyBtn: null,
-        autoAllocateBtn: null,
         itemName: null,
         requestedQty: null,
         allocatedQty: null,
         remainingQty: null,
         issuanceOrder: null,
-        autoAllocateRule: null,
         batchList: null,
         emptyState: null,
         loadingState: null,
@@ -40,13 +38,11 @@ const BatchAllocation = (function() {
         elements.closeBtn = document.getElementById('batchDrawerClose');
         elements.cancelBtn = document.getElementById('batchDrawerCancel');
         elements.applyBtn = document.getElementById('batchDrawerApply');
-        elements.autoAllocateBtn = document.getElementById('batchAutoAllocateBtn');
         elements.itemName = document.getElementById('batchDrawerItemName');
         elements.requestedQty = document.getElementById('batchRequestedQty');
         elements.allocatedQty = document.getElementById('batchAllocatedQty');
         elements.remainingQty = document.getElementById('batchRemainingQty');
         elements.issuanceOrder = document.getElementById('batchIssuanceOrder');
-        elements.autoAllocateRule = document.getElementById('batchAutoAllocateRule');
         elements.batchList = document.getElementById('batchList');
         elements.emptyState = document.getElementById('batchEmptyState');
         elements.loadingState = document.getElementById('batchLoadingState');
@@ -56,7 +52,6 @@ const BatchAllocation = (function() {
         if (elements.closeBtn) elements.closeBtn.addEventListener('click', closeDrawer);
         if (elements.cancelBtn) elements.cancelBtn.addEventListener('click', closeDrawer);
         if (elements.applyBtn) elements.applyBtn.addEventListener('click', applyAllocations);
-        if (elements.autoAllocateBtn) elements.autoAllocateBtn.addEventListener('click', autoAllocate);
         if (elements.overlay) elements.overlay.addEventListener('click', closeDrawer);
         
         // Expose open function globally
@@ -150,7 +145,6 @@ const BatchAllocation = (function() {
             
             // Update issuance order display
             elements.issuanceOrder.textContent = data.issuance_order || 'FIFO';
-            elements.autoAllocateRule.textContent = data.issuance_order || 'FIFO';
             
             // Store batches (now a flat array with priority_group)
             currentBatches = {};
@@ -353,60 +347,6 @@ const BatchAllocation = (function() {
         }
         
         return container;
-    }
-    
-    /**
-     * Auto-allocate batches using FEFO/FIFO rules
-     */
-    async function autoAllocate() {
-        const requestedQty = currentItemData.requestedQty;
-        
-        try {
-            const response = await fetch(`/packaging/api/item/${currentItemId}/auto-allocate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    requested_qty: requestedQty
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Auto-allocation failed');
-            }
-            
-            // Clear existing allocations
-            currentAllocations = {};
-            
-            // Apply new allocations
-            data.allocations.forEach(allocation => {
-                currentAllocations[allocation.batch_id] = allocation.allocated_qty;
-            });
-            
-            // Update UI
-            const batchElements = elements.batchList.querySelectorAll('.batch-item');
-            batchElements.forEach(el => {
-                const batchId = parseInt(el.dataset.batchId);
-                const input = el.querySelector('[data-batch-allocation-input]');
-                
-                if (currentAllocations[batchId]) {
-                    input.value = currentAllocations[batchId];
-                    el.classList.add('has-allocation');
-                } else {
-                    input.value = '';
-                    el.classList.remove('has-allocation');
-                }
-            });
-            
-            updateTotals();
-            
-        } catch (error) {
-            console.error('Error auto-allocating:', error);
-            alert('Failed to auto-allocate: ' + error.message);
-        }
     }
     
     /**

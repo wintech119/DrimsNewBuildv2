@@ -73,6 +73,13 @@ class BatchAllocationService:
         else:
             active_batches = batches
         
+        # Filter out batches with zero available quantity
+        # Only show warehouses/batches that have actual usable stock
+        active_batches = [
+            b for b in active_batches 
+            if (b.usable_qty - b.reserved_qty) > 0
+        ]
+        
         # Sort based on issuance order with tie-breakers
         if item.issuance_order == 'FEFO' and item.can_expire_flag:
             # First Expired First Out - sort by earliest expiry date, then batch date, then qty DESC
