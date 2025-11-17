@@ -299,7 +299,7 @@ class BatchAllocationService:
     ) -> Tuple[List[ItemBatch], Decimal, Decimal]:
         """
         Get batches for the drawer display.
-        Shows ONE batch per warehouse (top FEFO/FIFO), minimum needed to fulfill.
+        Shows ONE top FEFO/FIFO batch per warehouse from ALL warehouses with stock.
         Always includes previously allocated batches for editing.
         
         Args:
@@ -310,7 +310,7 @@ class BatchAllocationService:
             
         Returns:
             Tuple of:
-                - List of limited batches (one per warehouse, minimum needed + allocated)
+                - List of batches (one per warehouse, all warehouses shown + allocated)
                 - Total available from these batches
                 - Shortfall (0 if can fulfill, positive if not)
         """
@@ -343,7 +343,7 @@ class BatchAllocationService:
                 warehouse_top_batches.append(batch)
                 seen_warehouses.add(warehouse_id)
         
-        # Accumulate warehouses until we can fulfill the request
+        # Show ALL warehouses, not just minimum needed
         cumulative_available = Decimal('0')
         limited_batches = []
         
@@ -353,15 +353,11 @@ class BatchAllocationService:
             available_qty = batch.usable_qty - batch.reserved_qty
             cumulative_available += available_qty
         
-        # Then add top batches from warehouses until fulfilled
+        # Then add top batches from ALL warehouses with stock
         for batch in warehouse_top_batches:
             available_qty = batch.usable_qty - batch.reserved_qty
             limited_batches.append(batch)
             cumulative_available += available_qty
-            
-            # Stop once we have enough to fulfill the request
-            if cumulative_available >= remaining_qty:
-                break
         
         # Calculate shortfall
         shortfall = max(Decimal('0'), remaining_qty - cumulative_available)
