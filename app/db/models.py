@@ -994,8 +994,8 @@ class TransferReturn(db.Model):
     __tablename__ = 'xfreturn'
     
     xfreturn_id = db.Column(db.Integer, primary_key=True)
-    fr_inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
-    to_inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
+    fr_inventory_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
+    to_inventory_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
     return_date = db.Column(db.Date, nullable=False)
     reason_text = db.Column(db.String(255))
     status_code = db.Column(db.CHAR(1), nullable=False)
@@ -1007,8 +1007,8 @@ class TransferReturn(db.Model):
     verify_dtime = db.Column(db.DateTime)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
-    from_inventory = db.relationship('Inventory', foreign_keys=[fr_inventory_id], backref='returns_sent')
-    to_inventory = db.relationship('Inventory', foreign_keys=[to_inventory_id], backref='returns_received')
+    from_warehouse = db.relationship('Warehouse', foreign_keys=[fr_inventory_id], backref='returns_sent')
+    to_warehouse = db.relationship('Warehouse', foreign_keys=[to_inventory_id], backref='returns_received')
 
 class TransferReturnItem(db.Model):
     """Items in transfer return (AIDMGMT)"""
