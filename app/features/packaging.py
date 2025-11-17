@@ -670,8 +670,17 @@ def _process_allocations(relief_request, validate_complete=False):
         if validate_complete and total_allocated < request_qty:
             raise ValueError(f'Item {item.item.item_name} is not fully allocated ({total_allocated} of {request_qty})')
         
-        # Get requested status from form
-        requested_status = request.form.get(f'status_{item_id}', item.status_code)
+        # Get requested status from form, or auto-calculate based on allocation
+        form_status = request.form.get(f'status_{item_id}')
+        if form_status:
+            # Explicit status provided in form (manual override)
+            requested_status = form_status
+        else:
+            # No explicit status - auto-calculate based on allocation
+            auto_status, _ = item_status_service.compute_allowed_statuses(
+                item.status_code, total_allocated, request_qty
+            )
+            requested_status = auto_status
         
         # Get custom reason if provided (for D/L statuses)
         custom_reason = request.form.get(f'status_reason_{item_id}', '').strip()
