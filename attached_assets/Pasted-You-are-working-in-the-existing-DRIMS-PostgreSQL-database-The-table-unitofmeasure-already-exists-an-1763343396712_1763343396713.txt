@@ -1,0 +1,130 @@
+You are working in the existing DRIMS PostgreSQL database.
+The table unitofmeasure already exists and must be updated to match the new schema below.
+
+IMPORTANT REQUIREMENTS:
+
+Do NOT break any foreign key references to unitofmeasure.uom_code.
+
+Do NOT break existing indexes or constraints unless replaced by updated ones.
+
+Preserve the primary key name pk_unitofmeasure.
+
+Preserve or recreate the CHECK constraints using the same names (c_unitofmeasure_1, c_unitofmeasure_2).
+
+Preserve any existing indexes; if dropped, recreate them with the same names.
+
+Implement using ALTER TABLE where possible.
+
+Only drop & recreate when necessary AND only after capturing/reapplying referencing FKs.
+
+The final structure must match the schema below exactly.
+
+📌 Target Schema for unitofmeasure
+
+Update the table so that it matches this exact structure:
+
+create table unitofmeasure
+(
+    uom_code varchar(25) not null
+        constraint c_unitofmeasure_1 check (uom_code = upper(uom_code))
+        constraint pk_unitofmeasure primary key,
+
+    -- Description of unit of measure
+    uom_desc varchar(60) not null,
+
+    -- Any comments related to this unit of measure
+    comments_text text,
+
+    status_code char(1) not null
+        constraint c_unitofmeasure_2 check (status_code in ('A','I')),
+
+    create_by_id varchar(20) not null,
+    create_dtime timestamp(0) without time zone not null,
+    update_by_id varchar(20) not null,
+    update_dtime timestamp(0) without time zone not null,
+    version_nbr integer not null
+);
+
+🛠️ Your Tasks
+
+Generate a single SQL migration script that:
+
+1. Analyzes the existing unitofmeasure table
+
+List existing columns
+
+List existing constraints
+
+Identify indexes
+
+Identify any foreign keys referencing unitofmeasure.uom_code from other tables
+
+2. Safely updates the table
+
+Use ALTER TABLE operations wherever possible to avoid breaking references.
+
+You may:
+
+Add missing columns
+
+Modify column types/lengths
+
+Add missing constraints
+
+Drop and recreate constraints if needed
+
+Ensure uom_code uses PK pk_unitofmeasure
+
+Ensure uppercase CHECK constraint c_unitofmeasure_1
+
+Ensure status_code CHECK constraint c_unitofmeasure_2
+
+If structural changes require dropping the table:
+
+First capture all foreign key definitions referencing unitofmeasure.uom_code
+
+Drop FKs temporarily
+
+Drop & recreate the table exactly using the schema
+
+Reapply all foreign keys with the same names and ON DELETE rules
+
+3. Recreate or preserve indexes
+
+For example, re-create:
+
+idx_unitofmeasure_uom_code
+
+
+if it exists, following DRIMS naming conventions.
+
+4. Ensure the final table conforms 100% to the target schema
+5. Comment your script
+
+Break into clearly labeled sections:
+
+Capture existing FKs
+
+Alter table structure / recreate table
+
+Reapply constraints
+
+Reapply indexes
+
+Reapply foreign keys
+
+📤 Final Output Expected
+
+Produce a final SQL migration script that:
+
+Can be safely executed once
+
+Does not corrupt or break references
+
+Leaves the system in a valid, consistent state
+
+Makes unitofmeasure match the new schema exactly
+
+Preserves all FK integrity and index performance
+
+Do not modify any other tables or schemas.
