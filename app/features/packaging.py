@@ -670,17 +670,26 @@ def _process_allocations(relief_request, validate_complete=False):
         if validate_complete and total_allocated < request_qty:
             raise ValueError(f'Item {item.item.item_name} is not fully allocated ({total_allocated} of {request_qty})')
         
-        # Get requested status from form, or auto-calculate based on allocation
+        # Determine the correct status based on allocation
+        # CRITICAL: Status must match issue_qty to satisfy database constraints
+        if total_allocated == Decimal('0'):
+            # No allocation -> Requested
+            calculated_status = 'R'
+        elif total_allocated >= request_qty:
+            # Fully allocated -> Filled
+            calculated_status = 'F'
+        else:
+            # Partially allocated -> Partly Filled
+            calculated_status = 'P'
+        
+        # Get requested status from form, or use calculated status
         form_status = request.form.get(f'status_{item_id}')
         if form_status:
             # Explicit status provided in form (manual override)
             requested_status = form_status
         else:
-            # No explicit status - auto-calculate based on allocation
-            auto_status, _ = item_status_service.compute_allowed_statuses(
-                item.status_code, total_allocated, request_qty
-            )
-            requested_status = auto_status
+            # No explicit status - use calculated status
+            requested_status = calculated_status
         
         # Get custom reason if provided (for D/L statuses)
         custom_reason = request.form.get(f'status_reason_{item_id}', '').strip()
@@ -696,9 +705,10 @@ def _process_allocations(relief_request, validate_complete=False):
         if not is_valid:
             raise ValueError(error_msg)
         
-        # Update relief request item fields
-        item.issue_qty = total_allocated
+        # Update relief request item fields - MUST be done atomically
+        # Set status first to ensure constraint satisfaction
         item.status_code = requested_status
+        item.issue_qty = total_allocated
         
         # Set status_reason_desc for statuses that require it (D, L)
         if requested_status in ['D', 'L']:
