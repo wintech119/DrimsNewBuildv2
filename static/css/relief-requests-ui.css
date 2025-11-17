@@ -782,3 +782,48 @@
     font-size: 0.875rem;
     opacity: 0.9;
 }
+
+/* ===== FORM FIELD WIDTHS ===== */
+/* Proportional input field widths based on database column sizes */
+/* Creates visual hierarchy and helps users understand field constraints */
+
+.field-xs {
+    max-width: 6rem; /* ~2-5 characters (e.g., parish code: char(2)) */
+}
+
+.field-sm {
+    max-width: 12rem; /* ~20-30 characters (e.g., category code, UOM code) */
+}
+
+.field-md {
+    max-width: 20rem; /* ~50-60 characters (e.g., descriptions, names) */
+}
+
+.field-lg {
+    max-width: 28rem; /* ~100-120 characters (e.g., custodian name) */
+}
+
+.field-xl {
+    max-width: 36rem; /* ~200-255 characters (e.g., addresses) */
+}
+
+.field-phone {
+    max-width: 14rem; /* Phone numbers: +1 (XXX) XXX-XXXX */
+}
+
+.field-email {
+    max-width: 24rem; /* Email addresses */
+}
+
+/* Ensure fields are responsive on smaller screens */
+@media (max-width: 768px) {
+    .field-xs,
+    .field-sm,
+    .field-md,
+    .field-lg,
+    .field-xl,
+    .field-phone,
+    .field-email {
+        max-width: 100%;
+    }
+}

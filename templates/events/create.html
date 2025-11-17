@@ -37,7 +37,7 @@
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <label for="event_type" class="form-label">Event Type *</label>
-                        <select class="form-select" id="event_type" name="event_type" required>
+                        <select class="form-select field-md" id="event_type" name="event_type" required>
                             <option value="">Select type...</option>
                             {% for type in event_types %}
                             <option value="{{ type }}" {% if form_data and form_data.get('event_type') == type %}selected{% endif %}>
