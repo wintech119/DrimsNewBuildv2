@@ -8,115 +8,126 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Back Button -->
-    <div class="mb-3">
-        <a href="{{ url_for('uom.list_uom') }}" class="btn-back">
-            <i class="bi bi-arrow-left"></i>
-            Back to Units of Measure
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header mb-0">
+            <div class="page-title">
+                <i class="bi bi-rulers page-title-icon"></i>
+                <h1 class="page-title-text">Create New Unit of Measure</h1>
+            </div>
+        </div>
+        <a href="{{ url_for('uom.list_uom') }}" class="btn-relief-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
         </a>
     </div>
 
-    <!-- Page Header -->
-    <div class="page-header mb-4">
-        <div class="page-title">
-            <i class="bi bi-plus-circle page-title-icon"></i>
-            <h1 class="page-title-text">Create Unit of Measure</h1>
-        </div>
-        <p class="page-subtitle">Define a new unit of measure for relief items and inventory</p>
-    </div>
-
     <!-- Form Card -->
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Unit of Measure Information</h5>
-        </div>
-        <div class="card-body">
-            <form method="POST" id="uomForm">
-                <!-- Row 1: UOM Code and Description -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="uom_code" class="form-label">UOM Code *</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="uom_code" 
-                               name="uom_code" 
-                               maxlength="25"
-                               value="{{ form_data.get('uom_code') if form_data else '' }}"
-                               required 
-                               placeholder="e.g., KG"
-                               style="text-transform: uppercase;">
-                        <small class="text-muted">Maximum 25 characters. Will be converted to UPPERCASE</small>
-                        {% if errors and errors.get('uom_code') %}
-                        <div class="text-danger small mt-1">{{ errors.get('uom_code') }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <label for="uom_desc" class="form-label">Description *</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="uom_desc" 
-                               name="uom_desc" 
-                               maxlength="60"
-                               value="{{ form_data.get('uom_desc') if form_data else '' }}"
-                               required 
-                               placeholder="e.g., Kilograms">
-                        <small class="text-muted">Maximum 60 characters</small>
-                        {% if errors and errors.get('uom_desc') %}
-                        <div class="text-danger small mt-1">{{ errors.get('uom_desc') }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+    <div class="row">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('uom.create_uom') }}" novalidate>
+                        <!-- UOM Information Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-tag"></i> Unit of Measure Information
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="uom_code" class="form-label">
+                                        UOM Code <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="uom_code" 
+                                           name="uom_code" 
+                                           maxlength="25"
+                                           value="{{ form_data.get('uom_code') if form_data else '' }}"
+                                           required 
+                                           placeholder="e.g., KG"
+                                           style="text-transform: uppercase;">
+                                    <small class="form-text text-muted">Max 25 characters, auto-converted to uppercase</small>
+                                    {% if errors and errors.get('uom_code') %}
+                                    <div class="text-danger small mt-1">{{ errors.get('uom_code') }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="status_code" class="form-label">
+                                        Status <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="status_code" name="status_code" required>
+                                        <option value="A" {% if form_data and form_data.get('status_code') == 'A' %}selected{% elif not form_data %}selected{% endif %}>Active</option>
+                                        <option value="I" {% if form_data and form_data.get('status_code') == 'I' %}selected{% endif %}>Inactive</option>
+                                    </select>
+                                    {% if errors and errors.get('status_code') %}
+                                    <div class="text-danger small mt-1">{{ errors.get('status_code') }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Row 2: Status -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="status_code" class="form-label">Status *</label>
-                        <select class="form-select" id="status_code" name="status_code" required>
-                            <option value="">Select status...</option>
-                            <option value="A" {% if form_data and form_data.get('status_code') == 'A' %}selected{% elif not form_data %}selected{% endif %}>Active</option>
-                            <option value="I" {% if form_data and form_data.get('status_code') == 'I' %}selected{% endif %}>Inactive</option>
-                        </select>
-                        {% if errors and errors.get('status_code') %}
-                        <div class="text-danger small mt-1">{{ errors.get('status_code') }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+                        <!-- Description Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-text-left"></i> Description
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="uom_desc" class="form-label">
+                                        UOM Description <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="uom_desc" 
+                                           name="uom_desc" 
+                                           maxlength="60"
+                                           value="{{ form_data.get('uom_desc') if form_data else '' }}"
+                                           required 
+                                           placeholder="e.g., Kilograms">
+                                    <small class="form-text text-muted">Max 60 characters</small>
+                                    {% if errors and errors.get('uom_desc') %}
+                                    <div class="text-danger small mt-1">{{ errors.get('uom_desc') }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Row 3: Comments -->
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <label for="comments_text" class="form-label">Comments</label>
-                        <textarea class="form-control" 
-                                  id="comments_text" 
-                                  name="comments_text" 
-                                  rows="3" 
-                                  maxlength="300"
-                                  placeholder="Optional notes or details about this unit of measure">{{ form_data.get('comments_text') if form_data else '' }}</textarea>
-                        <small class="text-muted">Optional. Maximum 300 characters. <span id="comment-count">0</span>/300</small>
-                        {% if errors and errors.get('comments_text') %}
-                        <div class="text-danger small mt-1">{{ errors.get('comments_text') }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+                        <!-- Additional Information Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-chat-square-text"></i> Additional Information
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="comments_text" class="form-label">
+                                        Comments
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="comments_text" 
+                                              name="comments_text" 
+                                              rows="3" 
+                                              maxlength="300"
+                                              placeholder="Optional notes or details about this unit of measure">{{ form_data.get('comments_text') if form_data else '' }}</textarea>
+                                    <small class="form-text text-muted">Optional. Max 300 characters. <span id="comment-count">0</span>/300</small>
+                                    {% if errors and errors.get('comments_text') %}
+                                    <div class="text-danger small mt-1">{{ errors.get('comments_text') }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Form Actions -->
-                <div class="border-top pt-3 mt-4">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn-relief-primary">
-                            <i class="bi bi-check-circle"></i>
-                            Create Unit of Measure
-                        </button>
-                        <a href="{{ url_for('uom.list_uom') }}" class="btn-relief-secondary">
-                            <i class="bi bi-x-circle"></i>
-                            Cancel
-                        </a>
-                    </div>
-                    <div class="text-muted small mt-2">
-                        <i class="bi bi-info-circle"></i>
-                        Fields marked with * are required
-                    </div>
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a href="{{ url_for('uom.list_uom') }}" class="btn-relief-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn-relief-primary">
+                                <i class="bi bi-check-circle"></i> Create Unit of Measure
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
