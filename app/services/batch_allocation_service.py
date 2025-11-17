@@ -297,8 +297,9 @@ class BatchAllocationService:
         required_uom: str = None
     ) -> Tuple[List[ItemBatch], Decimal, Decimal]:
         """
-        Get all available batches for the drawer display.
-        Shows all warehouses that have available stock for the item.
+        Get limited batches for the drawer display.
+        Shows only ONE batch per warehouse (the top FEFO/FIFO batch).
+        Only includes enough warehouses to fulfill the request.
         
         Args:
             item_id: Item ID
@@ -307,7 +308,7 @@ class BatchAllocationService:
             
         Returns:
             Tuple of:
-                - List of all available batches
+                - List of limited batches (one per warehouse, minimum needed)
                 - Total available from these batches
                 - Shortfall (0 if can fulfill, positive if not)
         """
@@ -319,14 +320,28 @@ class BatchAllocationService:
         batches = BatchAllocationService.get_available_batches(item_id, required_uom=required_uom)
         sorted_batches = BatchAllocationService.sort_batches_by_allocation_rule(batches, item)
         
-        # Calculate total available from all batches
+        # Group by warehouse, keeping only the first (top priority) batch per warehouse
+        seen_warehouses = set()
+        warehouse_batches = []
+        
+        for batch in sorted_batches:
+            warehouse_id = batch.inventory.inventory_id
+            if warehouse_id not in seen_warehouses:
+                warehouse_batches.append(batch)
+                seen_warehouses.add(warehouse_id)
+        
+        # Now accumulate warehouses until we can fulfill the request
         cumulative_available = Decimal('0')
         limited_batches = []
         
-        for batch in sorted_batches:
+        for batch in warehouse_batches:
             available_qty = batch.usable_qty - batch.reserved_qty
             limited_batches.append(batch)
             cumulative_available += available_qty
+            
+            # Stop once we have enough to fulfill the request
+            if cumulative_available >= remaining_qty:
+                break
         
         # Calculate shortfall
         shortfall = max(Decimal('0'), remaining_qty - cumulative_available)
