@@ -1,0 +1,455 @@
+You are a senior full-stack engineer.
+
+Help me implement Item Management for the Custodian role in my existing DRIMS web app.
+
+Tech & Constraints
+
+Stack: Python, Flask, HTML templates (Jinja), PostgreSQL.
+
+Use the existing item table as already defined in the database (do not change its schema).
+
+Enforce all rules in backend validation and reflect key ones in the UI.
+
+Only users with the Custodian role should be able to access item management screens / APIs.
+
+No physical deletes of item rows are allowed.
+
+The item table has (at least) the following fields (already created in DB):
+
+item_id (PK, identity)
+
+item_code, item_name, sku_code
+
+category_id (FK → itemcatg)
+
+item_desc (citext)
+
+reorder_qty (decimal(12,2))
+
+default_uom_code (FK → unitofmeasure)
+
+units_size_vary_flag (boolean, default FALSE)
+
+usage_desc (text)
+
+storage_desc (text)
+
+is_batched_flag (boolean, default TRUE)
+
+can_expire_flag (boolean, default FALSE)
+
+issuance_order (varchar(20), default 'FIFO')
+
+comments_text (text)
+
+status_code (char(1), A/I)
+
+create_by_id, create_dtime
+
+update_by_id, update_dtime
+
+version_nbr (integer, for optimistic locking)
+
+There are indexes on item_desc, category_id, and sku_code.
+
+What to build
+
+Implement a full Item Management module for the Custodian role with:
+
+Item list page
+
+Route example: GET /items
+
+For Custodian users only.
+
+Shows a paginated, filterable table of items with key columns:
+item_code, item_name, sku_code, category, status_code, is_batched_flag, can_expire_flag, issuance_order.
+
+Filters/search box that can search and/or filter by:
+
+item_code, item_name, sku_code (exact or partial, case-insensitive as appropriate)
+
+category_id
+
+item_desc (case-insensitive partial text)
+
+status_code
+
+flags: is_batched_flag, can_expire_flag
+
+By default, exclude inactive items (status_code = 'I') with a toggle/checkbox “Include inactive” to show them.
+
+Each row should have actions: View, Edit, Inactivate (if allowed).
+
+Create Item page
+
+Route example: GET/POST /items/create
+
+Custodian fills in all relevant fields.
+
+Enforce General CRUD & lifecycle rules and field rules (below).
+
+On successful create:
+
+Set create_by_id to current user ID.
+
+Set create_dtime to current timestamp.
+
+Set update_by_id and update_dtime to same values as create.
+
+Initialize version_nbr (e.g. to 1).
+
+Redirect back to the item view or list with a success message.
+
+View Item page
+
+Route example: GET /items/<item_id>
+
+Shows all fields in read-only mode, including audit and flags.
+
+Show whether item is Active or Inactive.
+
+Show any warnings, e.g., if item is batched / expires.
+
+Edit Item page
+
+Route example: GET/POST /items/<item_id>/edit
+
+Load current item data into form.
+
+Include a hidden field for version_nbr and use optimistic locking on save:
+
+When the form is submitted, compare submitted version_nbr with the current DB version_nbr.
+
+If they mismatch, reject the update and show a clear message like:
+“This item was modified by another user. Please refresh and try again.”
+
+On successful update:
+
+Increment version_nbr by 1.
+
+Update update_by_id to current user ID.
+
+Update update_dtime to current timestamp.
+
+Inactivate Item (no physical delete)
+
+There must be no physical delete of records from the item table.
+
+Instead, provide an “Inactivate” action that:
+
+Sets status_code = 'I' only if business rules allow.
+
+Before inactivation, check that the item has no stock on hand and no open transactions (e.g., open orders or reservations).
+
+Implement the checks assuming we have relevant inventory / transaction tables. If those tables are not present, create placeholder functions that would perform these checks.
+
+If checks fail, do not change status and show a clear message, e.g.:
+“This item cannot be inactivated because it has stock on hand or open transactions.”
+
+When status_code = 'I':
+
+Item must not appear in new transaction selection lists (receipts, issues, transfers).
+
+Item must still be available for reporting/history.
+
+Role-based access for Custodian
+
+Ensure that only users with role Custodian (or equivalent role flag/permission) can:
+
+Access /items, /items/create, /items/<id>/edit, /items/<id>/inactivate.
+
+Other roles should either see a 403 or be redirected.
+
+Business rules to implement
+
+Please implement the following rules explicitly in backend validation, and surface clear user-friendly messages in the UI.
+
+1. General CRUD & Lifecycle for Items
+
+System must allow Custodian users (authorized) to create, view, and update items according to the item table schema.
+
+Mandatory fields (may not be null/blank on create or update):
+
+item_code, item_name, sku_code
+
+category_id
+
+item_desc
+
+reorder_qty
+
+default_uom_code
+
+units_size_vary_flag
+
+is_batched_flag
+
+can_expire_flag
+
+issuance_order
+
+status_code
+
+create_by_id, create_dtime (auto set at create)
+
+update_by_id, update_dtime (auto set at create & every update)
+
+version_nbr
+
+Items must not be physically deleted. Any delete attempts must be blocked with a clear message.
+
+The system must not allow an item to be deactivated (status_code = 'I') if it has:
+
+stock on hand, or
+
+open transactions (e.g., open orders, reservations).
+
+If inactivation fails due to these conditions, show a clear error message.
+
+2. Item Identification Fields (Codes & Names)
+
+Item Code (item_code)
+
+Mandatory and must not be blank.
+
+Trim leading/trailing spaces.
+
+Must be stored in uppercase – auto-convert to uppercase before saving.
+
+Must be unique across all items.
+
+Maximum length 16 characters; reject longer values with a clear validation message.
+
+Item Name (item_name)
+
+Mandatory and must not be blank.
+
+Trim leading/trailing spaces.
+
+Must be stored in uppercase.
+
+Must be unique across all items.
+
+Max length 60 characters; reject longer values with clear message.
+
+SKU Code (sku_code)
+
+Mandatory and must not be blank.
+
+Trim leading/trailing spaces.
+
+Must be stored in uppercase.
+
+Must be unique across all items.
+
+Max length 30 characters; reject longer values with clear message.
+
+3. Category & Description
+
+Category (category_id)
+
+Mandatory and must reference a valid record in itemcatg.
+
+In the UI, present category as a dropdown / picklist populated from itemcatg.
+
+If an invalid or non-existent category_id is submitted (e.g., via API), reject the save.
+
+Item Description (item_desc)
+
+Mandatory and must not be blank.
+
+Stored as citext, treated as case-insensitive.
+
+Searching/filtering by item_desc must be case-insensitive and allow partial matches.
+
+Use this in selection lists and search dialogs (e.g., dropdown search).
+
+4. Quantities, Reorder Level & UOM
+
+Reorder Quantity (reorder_qty)
+
+Mandatory.
+
+Must be numeric > 0.00.
+
+If reorder_qty <= 0.00, reject save with validation error.
+
+Must support up to 12 digits with 2 decimal places (align with DB).
+
+Default Unit of Measure (default_uom_code)
+
+Mandatory; must reference valid unitofmeasure record.
+
+UI shows as dropdown/picklist from unitofmeasure.
+
+Invalid UOM must cause rejection.
+
+Units Size Vary Flag (units_size_vary_flag)
+
+Mandatory boolean; default to FALSE when not explicitly set.
+
+If TRUE:
+
+In related inventory/transaction screens, require capturing size details (e.g., length x width or similar).
+
+If FALSE:
+
+Size capture becomes optional.
+
+(For this prompt, you can set up the item form with this flag and add comments or hooks to be used later in transaction screens.)
+
+5. Batching, Expiry & Issuance Order
+
+Is Batched Flag (is_batched_flag)
+
+Mandatory boolean; default TRUE.
+
+If TRUE:
+
+All stock movements must reference a batch number for this item.
+
+System must prevent receiving or moving this item without a batch identifier.
+(For now, ensure the item metadata conveys this; implement actual enforcement in transaction logic if that module exists.)
+
+If FALSE:
+
+Batch number can be auto set to item_code in related itembatch or inventory transactions.
+
+Can Expire Flag (can_expire_flag)
+
+Mandatory boolean; default FALSE.
+
+If TRUE:
+
+Require an expiry date in relevant stock/batch records for this item.
+
+Prevent issuing/dispatching stock that is past expiry.
+
+If FALSE:
+
+Expiry capture is disabled and expiry checks are not enforced.
+
+(Within this item management module, focus on capturing and showing the flag; assume transaction modules enforce expiry.)
+
+Issuance Order (issuance_order)
+
+Mandatory; default 'FIFO' when not set.
+
+Restrict allowed values, e.g.: FIFO, FEFO, LIFO.
+
+The system must use this field later to determine default picking/issuing sequence (document this in comments if actual logic is elsewhere).
+
+6. Usage, Storage & Comments
+
+Usage Description (usage_desc)
+
+Optional free text.
+
+Allow add/edit/clear (null).
+
+Storage Description (storage_desc)
+
+Optional free text.
+
+Allow add/edit/clear.
+
+Can store information such as temperature, stacking rules.
+
+Comments (comments_text)
+
+Optional free-text comments.
+
+Limit comments to 300 characters; enforce in backend and UI.
+
+7. Status & Inactivation
+
+Status Code (status_code)
+
+Mandatory; allowed values:
+
+'A' – Active
+
+'I' – Inactive
+
+In UI, present as dropdown (Active/Inactive).
+
+When status_code = 'I':
+
+Item must not appear in selection lists for new transactions.
+
+Item remains visible for history / reporting.
+
+Prevent inactivation if item has on-hand stock or open orders; show clear error.
+
+8. Audit Fields
+
+Create audit
+
+On creation:
+
+create_by_id = current user’s ID (from session/auth).
+
+create_dtime = current timestamp.
+
+Users cannot edit create_by_id or create_dtime after creation (read-only in UI).
+
+Update audit
+
+On every update:
+
+update_by_id = current user’s ID.
+
+update_dtime = current timestamp.
+
+Always reflect last successful update.
+
+9. Version Number & Concurrency
+
+Initialize version_nbr when item is created (e.g. 1).
+
+Every successful update increments it by 1.
+
+Implement optimistic locking:
+
+The edit form includes the current version_nbr as a hidden field.
+
+On save, compare submitted version_nbr with DB version_nbr.
+
+If mismatch, reject update and inform user that the item was modified by another user.
+
+10. Querying, Searching & Performance
+
+Use existing indexes (item_desc, category_id, sku_code) and ensure queries use them where possible.
+
+Implement searches and filters on list page:
+
+item_code, item_name, sku_code
+
+category_id
+
+item_desc (case-insensitive partial like %term%)
+
+status_code
+
+booleans like is_batched_flag, can_expire_flag
+
+Selection lists for items (e.g. used in transactions later) must:
+
+Support filtering/search by item_desc, item_code, sku_code.
+
+Exclude inactive items by default, with an “include inactive” option where appropriate.
+
+Deliverables
+
+Flask routes, views, and templates for:
+
+List, Create, View, Edit, Inactivate items (Custodian only).
+
+Form validation logic enforcing all business rules above.
+
+SQL/ORM data access code that respects uniqueness, constraints, and optimistic locking.
+
+Clear, user-friendly error and success messages suitable for Custodian users.
+
+Please generate or update the necessary Python, HTML templates, and any helper modules to implement this complete Item Management module for the Custodian role
