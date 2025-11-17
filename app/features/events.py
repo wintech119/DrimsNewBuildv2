@@ -12,7 +12,7 @@ Permission-Based Access Control:
 - DELETE: EVENT / DELETE
 
 Validation Rules:
-- event_type: Must be one of 8 approved disaster types
+- event_type: Must be one of 10 approved disaster types (STORM, HURRICANE, TORNADO, FLOOD, TSUNAMI, FIRE, EARTHQUAKE, WAR, EPIDEMIC, ADHOC)
 - start_date: Cannot be in the future
 - status_code: 'A' (Active) or 'C' (Closed)
 - Closed events must have closed_date and reason_desc
@@ -33,7 +33,7 @@ from app.core.audit import add_audit_fields
 events_bp = Blueprint('events', __name__, url_prefix='/events')
 
 # Constants for validation
-EVENT_TYPES = ['STORM', 'TORNADO', 'FLOOD', 'TSUNAMI', 'FIRE', 'EARTHQUAKE', 'WAR', 'EPIDEMIC']
+EVENT_TYPES = ['STORM', 'HURRICANE', 'TORNADO', 'FLOOD', 'TSUNAMI', 'FIRE', 'EARTHQUAKE', 'WAR', 'EPIDEMIC', 'ADHOC']
 STATUS_CODES = ['A', 'C']  # Active, Closed
 
 def validate_event_data(form_data, is_update=False):

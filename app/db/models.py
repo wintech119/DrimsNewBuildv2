@@ -161,10 +161,30 @@ class UserWarehouse(db.Model):
     assigned_by = db.Column(db.Integer, db.ForeignKey('user.user_id'))
 
 class Event(db.Model):
-    """Disaster Event (from aidmgmt-3.sql)"""
-    __tablename__ = 'event'
+    """Disaster Event (from aidmgmt-3.sql)
     
-    event_id = db.Column(db.Integer, primary_key=True)
+    Event Types: STORM, HURRICANE, TORNADO, FLOOD, TSUNAMI, FIRE, EARTHQUAKE, WAR, EPIDEMIC, ADHOC
+    Status Codes: A=Active, C=Closed
+    """
+    __tablename__ = 'event'
+    __table_args__ = (
+        CheckConstraint(
+            "event_type IN ('STORM','HURRICANE','TORNADO','FLOOD','TSUNAMI','FIRE','EARTHQUAKE','WAR','EPIDEMIC','ADHOC')",
+            name='c_event_1'
+        ),
+        CheckConstraint('start_date <= CURRENT_DATE', name='c_event_2'),
+        CheckConstraint("status_code IN ('A','C')", name='c_event_3'),
+        CheckConstraint(
+            "(status_code = 'A' AND closed_date IS NULL) OR (status_code = 'C' AND closed_date IS NOT NULL)",
+            name='c_event_4a'
+        ),
+        CheckConstraint(
+            "(reason_desc IS NULL AND closed_date IS NULL) OR (reason_desc IS NOT NULL AND closed_date IS NOT NULL)",
+            name='c_event_4b'
+        ),
+    )
+    
+    event_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     event_type = db.Column(db.String(16), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     event_name = db.Column(db.String(60), nullable=False)
@@ -178,6 +198,10 @@ class Event(db.Model):
     update_by_id = db.Column(db.String(20), nullable=False)
     update_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    __mapper_args__ = {
+        'version_id_col': version_nbr
+    }
 
 class Custodian(db.Model):
     """GOJ Agency (ODPEM)"""
