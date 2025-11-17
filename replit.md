@@ -37,7 +37,7 @@ All pages maintain a modern, consistent UI with a comprehensive design system:
 - **Accessibility**: WCAG 2.1 AA compliance with focus-visible states, proper color contrast, ARIA labels, semantic HTML, and screen reader support.
 - **Workflows**: Standardized 5-step workflow patterns for Agency Relief Requests and Eligibility Approval.
 - **Dashboard System**: 6 role-specific dashboards with consistent modern UI, filter tabs, summary cards, and optimized queries. System Administration dashboard features modern tables with status badges, enhanced quick links with modern buttons, and improved recent users display with avatars.
-- **Management Modules**: Comprehensive modules for Event Management, Warehouse Management, User Management, Notification Management, Item Management, Item Category Management, Custodian Management, and Inventory, all featuring modern UI, CRUD operations, validation, and optimistic locking.
+- **Management Modules**: Comprehensive modules for Event Management, Warehouse Management, User Management, Notification Management, Item Management, Item Category Management, Custodian Management, Unit of Measure Management, and Inventory, all featuring modern UI, CRUD operations, validation, and optimistic locking. All Create forms follow a consistent structure with sectioned layouts, icon headers, proper spacing, and standardized action buttons.
 
 ### Database Architecture
 - **Schema**: Based on the authoritative ODPEM `aidmgmt-3.sql` schema (40 tables).
