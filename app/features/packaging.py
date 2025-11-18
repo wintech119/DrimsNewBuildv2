@@ -120,7 +120,8 @@ def review_approval(reliefrqst_id):
         allocations = {}
         for pkg_item in relief_pkg.items:
             item_id = pkg_item.item_id
-            warehouse_id = Inventory.query.get(pkg_item.fr_inventory_id).warehouse_id
+            # fr_inventory_id IS the warehouse_id (inventory_id = warehouse_id in schema)
+            warehouse_id = pkg_item.fr_inventory_id
             
             if item_id not in allocations:
                 allocations[item_id] = {}
@@ -388,16 +389,22 @@ def prepare_package(reliefrqst_id):
 
 
 def _save_draft(relief_request):
-    """Save packaging progress as draft (lock retained for continued editing)"""
+    """
+    Save packaging progress as draft (lock retained for continued editing).
+    
+    IMPORTANT: Uses atomic transaction to ensure allocations and reservations stay in sync.
+    If inventory reservation fails, entire transaction rolls back to prevent phantom allocations.
+    Lock is retained so user can continue editing and retry.
+    """
     try:
-        # Process and validate allocations
+        # Process and validate allocations (creates ReliefPkgItem records in pending transaction)
         new_allocations = _process_allocations(relief_request, validate_complete=False)
         
-        # Flush to persist allocations before calculating reservation deltas
+        # Flush to database (still in transaction - not committed yet)
         db.session.flush()
         
-        # Update inventory reservations (pass old allocations for delta calculation)
-        # For drafts, we attempt reservation but don't block on failure
+        # Attempt inventory reservation BEFORE commit (same transaction)
+        # This ensures atomicity: either both allocations and reservations succeed, or both fail
         old_allocations = relief_request._old_allocations if hasattr(relief_request, '_old_allocations') else {}
         success, error_msg = reservation_service.reserve_inventory(
             relief_request.reliefrqst_id,
@@ -405,21 +412,34 @@ def _save_draft(relief_request):
             old_allocations
         )
         
-        # Commit the draft even if reservation fails
-        db.session.commit()
-        
-        # Provide appropriate feedback based on reservation result
         if not success:
-            flash(f'Draft saved for relief request #{relief_request.reliefrqst_id}', 'success')
-            flash(f'Warning: {error_msg}. You can continue editing and submit when inventory becomes available.', 'warning')
-        else:
-            flash(f'Draft saved for relief request #{relief_request.reliefrqst_id}', 'success')
+            # Reservation failed - rollback to prevent phantom allocations
+            db.session.rollback()
+            # CRITICAL: Rollback clears the lock from session, so we must re-establish it
+            # to let user continue editing
+            lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
+            flash(f'{error_msg}', 'warning')
+            flash('Draft not saved due to insufficient inventory. Please adjust allocations or wait for inventory to become available. Your lock is retained so you can continue editing.', 'info')
+            return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
+        
+        # Reservation succeeded - commit both allocations and reservations atomically
+        db.session.commit()
+        flash(f'Draft saved for relief request #{relief_request.reliefrqst_id} with inventory reserved', 'success')
         
         return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
         
     except ValueError as e:
         db.session.rollback()
+        # Re-acquire lock after rollback to let user continue editing
+        lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
         flash(str(e), 'danger')
+        return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
+    except Exception as e:
+        # Catch all other exceptions (OptimisticLockError, database errors, etc.)
+        db.session.rollback()
+        # Re-acquire lock after rollback to let user continue editing
+        lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
+        flash(f'Error saving draft: {str(e)}', 'danger')
         return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
 
 
