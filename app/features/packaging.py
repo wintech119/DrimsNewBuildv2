@@ -278,19 +278,23 @@ def approve_package(reliefrqst_id):
             
             item_inventory_map[item.item_id] = inventories
         
-        # Load existing allocations from the pending package
-        existing_allocations = {}
+        # Load existing BATCH-LEVEL allocations from the pending package
+        # This ensures LM sees LO's prepared allocations exactly as submitted
+        existing_batch_allocations = {}
         for pkg_item in relief_pkg.items:
             item_id = pkg_item.item_id
             warehouse_id = pkg_item.fr_inventory_id  # fr_inventory_id IS the warehouse_id
+            batch_id = pkg_item.batch_id
             
-            if item_id not in existing_allocations:
-                existing_allocations[item_id] = {}
+            if item_id not in existing_batch_allocations:
+                existing_batch_allocations[item_id] = []
             
-            if warehouse_id not in existing_allocations[item_id]:
-                existing_allocations[item_id][warehouse_id] = Decimal('0')
-            
-            existing_allocations[item_id][warehouse_id] += pkg_item.item_qty
+            # Store batch-level allocation details
+            existing_batch_allocations[item_id].append({
+                'warehouse_id': warehouse_id,
+                'batch_id': batch_id,
+                'qty': float(pkg_item.item_qty)  # Convert Decimal to float for JSON
+            })
         
         # Load item status map
         status_map = item_status_service.load_status_map()
@@ -299,9 +303,9 @@ def approve_package(reliefrqst_id):
         item_status_options = {}
         for item in relief_request.items:
             total_allocated = Decimal('0')
-            if item.item_id in existing_allocations:
-                for warehouse_qty in existing_allocations[item.item_id].values():
-                    total_allocated += warehouse_qty
+            if item.item_id in existing_batch_allocations:
+                for batch_allocation in existing_batch_allocations[item.item_id]:
+                    total_allocated += Decimal(str(batch_allocation['qty']))
             
             auto_status, allowed_codes = item_status_service.compute_allowed_statuses(
                 item.status_code,
@@ -320,7 +324,7 @@ def approve_package(reliefrqst_id):
                              relief_pkg=relief_pkg,
                              warehouses=warehouses,
                              item_inventory_map=item_inventory_map,
-                             existing_allocations=existing_allocations,
+                             existing_batch_allocations=existing_batch_allocations,
                              can_edit=can_edit,
                              blocking_user=blocking_user,
                              lock=lock,
