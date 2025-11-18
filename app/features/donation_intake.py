@@ -48,8 +48,12 @@ def list_intakes():
     filter_type = request.args.get('filter', 'all')
     search_query = request.args.get('search', '').strip()
     
-    # Base query
-    query = db.session.query(DonationIntake).join(Donation).join(Warehouse)
+    # Base query with explicit joins
+    query = db.session.query(DonationIntake).join(
+        Donation, DonationIntake.donation_id == Donation.donation_id
+    ).join(
+        Warehouse, DonationIntake.inventory_id == Warehouse.warehouse_id
+    )
     
     # Apply filters
     if filter_type == 'recent':
