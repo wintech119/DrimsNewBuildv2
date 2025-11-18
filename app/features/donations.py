@@ -139,7 +139,7 @@ def create_donation():
                             item_data.append({
                                 'item_id': int(item_id),
                                 'quantity': quantity_value,
-                                'uom_id': int(uom_id) if uom_id else None,
+                                'uom_code': uom_id,
                                 'item_comments': item_comments
                             })
                         except ValueError as ve:
@@ -188,7 +188,7 @@ def create_donation():
                 donation_item.donation_id = donation.donation_id
                 donation_item.item_id = item_info['item_id']
                 donation_item.item_qty = item_info['quantity']
-                donation_item.uom_code = item_info['uom_id']
+                donation_item.uom_code = item_info['uom_code']
                 donation_item.location_name = 'DONATION RECEIVED'
                 donation_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
                 
