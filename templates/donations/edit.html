@@ -1,103 +1,169 @@
 {% extends 'base.html' %}
 
 {% block extra_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/modern-ui.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
 {% endblock %}
 
 {% block title %}Edit Donation #{{ donation.donation_id }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container-fluid py-4">
     <!-- Page Header -->
-    <div class="page-header mb-4">
-        <div class="page-title">
-            <i class="bi bi-pencil page-title-icon"></i>
-            <h1 class="page-title-text">Edit Donation #{{ donation.donation_id }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header mb-0">
+            <div class="page-title">
+                <i class="bi bi-pencil page-title-icon"></i>
+                <h1 class="page-title-text">Edit Donation #{{ donation.donation_id }}</h1>
+            </div>
         </div>
-        <p class="page-subtitle">Update donation information</p>
+        <a href="{{ url_for('donations.view_donation', donation_id=donation.donation_id) }}" class="btn-relief-secondary">
+            <i class="bi bi-arrow-left"></i> Back to View
+        </a>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="POST">
-                <input type="hidden" name="version_nbr" value="{{ donation.version_nbr }}">
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="donor_id" class="form-label">Donor *</label>
-                        <select class="form-select" id="donor_id" name="donor_id" required>
-                            <option value="">Select donor...</option>
-                            {% for donor in donors %}
-                            <option value="{{ donor.donor_id }}" {% if donor.donor_id == donation.donor_id %}selected{% endif %}>
-                                {{ donor.donor_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="event_id" class="form-label">Event *</label>
-                        <select class="form-select" id="event_id" name="event_id" required>
-                            <option value="">Select event...</option>
-                            {% for event in events %}
-                            <option value="{{ event.event_id }}" {% if event.event_id == donation.event_id %}selected{% endif %}>
-                                {{ event.event_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
+    <!-- Form Card -->
+    <div class="row">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('donations.edit_donation', donation_id=donation.donation_id) }}" novalidate>
+                        <input type="hidden" name="version_nbr" value="{{ donation.version_nbr }}">
+                        
+                        <!-- Donation Information Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-info-circle"></i> Donation Information
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="donor_id" class="form-label">
+                                        Donor <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="donor_id" name="donor_id" required>
+                                        <option value="">-- Select Donor --</option>
+                                        {% for donor in donors %}
+                                        <option value="{{ donor.donor_id }}" {% if donor.donor_id == donation.donor_id %}selected{% endif %}>
+                                            {{ donor.donor_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="event_id" class="form-label">
+                                        Event <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="event_id" name="event_id" required>
+                                        <option value="">-- Select Event --</option>
+                                        {% for event in events %}
+                                        <option value="{{ event.event_id }}" {% if event.event_id == donation.event_id %}selected{% endif %}>
+                                            {{ event.event_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="custodian_id" class="form-label">Custodian *</label>
-                        <select class="form-select" id="custodian_id" name="custodian_id" required>
-                            <option value="">Select custodian...</option>
-                            {% for custodian in custodians %}
-                            <option value="{{ custodian.custodian_id }}" {% if custodian.custodian_id == donation.custodian_id %}selected{% endif %}>
-                                {{ custodian.custodian_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="received_date" class="form-label">Received Date *</label>
-                        <input type="date" class="form-control" id="received_date" name="received_date" 
-                               value="{{ donation.received_date.isoformat() }}" max="{{ today }}" required>
-                    </div>
-                </div>
+                        <!-- Description and Date Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-file-text"></i> Description and Details
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="donation_desc" class="form-label">
+                                        Donation Description <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="donation_desc" 
+                                              name="donation_desc" 
+                                              rows="3" 
+                                              required 
+                                              placeholder="Describe the donation contents and source..."
+                                              style="text-transform: uppercase;">{{ donation.donation_desc }}</textarea>
+                                    <small class="form-text text-muted">Auto-converted to uppercase</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="received_date" class="form-label">
+                                        Received Date <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="received_date" 
+                                           name="received_date" 
+                                           max="{{ today }}" 
+                                           value="{{ donation.received_date.isoformat() }}"
+                                           required>
+                                    <small class="form-text text-muted">Cannot be a future date</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="custodian_id" class="form-label">
+                                        Custodian <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="custodian_id" name="custodian_id" required>
+                                        <option value="">-- Select Custodian --</option>
+                                        {% for custodian in custodians %}
+                                        <option value="{{ custodian.custodian_id }}" {% if custodian.custodian_id == donation.custodian_id %}selected{% endif %}>
+                                            {{ custodian.custodian_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="mb-3">
-                    <label for="donation_desc" class="form-label">Donation Description *</label>
-                    <textarea class="form-control" id="donation_desc" name="donation_desc" rows="3" required>{{ donation.donation_desc }}</textarea>
-                </div>
+                        <!-- Status Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-check-circle"></i> Status
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="status_code" class="form-label">
+                                        Status <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="status_code" name="status_code" required>
+                                        <option value="E" {% if donation.status_code == 'E' %}selected{% endif %}>Entered</option>
+                                        <option value="V" {% if donation.status_code == 'V' %}selected{% endif %}>Verified</option>
+                                        <option value="P" {% if donation.status_code == 'P' %}selected{% endif %}>Processed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="status_code" class="form-label">Status *</label>
-                        <select class="form-select" id="status_code" name="status_code" required>
-                            <option value="E" {% if donation.status_code == 'E' %}selected{% endif %}>Entered</option>
-                            <option value="V" {% if donation.status_code == 'V' %}selected{% endif %}>Verified</option>
-                            <option value="P" {% if donation.status_code == 'P' %}selected{% endif %}>Processed</option>
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="comments_text" class="form-label">Comments</label>
-                        <textarea class="form-control" id="comments_text" name="comments_text" rows="2">{{ donation.comments_text or '' }}</textarea>
-                    </div>
-                </div>
+                        <!-- Comments Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-chat-left-text"></i> Additional Comments
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="comments_text" class="form-label">
+                                        Comments
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="comments_text" 
+                                              name="comments_text" 
+                                              rows="2"
+                                              placeholder="Optional comments about this donation..."
+                                              style="text-transform: uppercase;">{{ donation.comments_text or '' }}</textarea>
+                                    <small class="form-text text-muted">Auto-converted to uppercase</small>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle"></i> Save Changes
-                    </button>
-                    <a href="{{ url_for('donations.view_donation', donation_id=donation.donation_id) }}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancel
-                    </a>
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a href="{{ url_for('donations.view_donation', donation_id=donation.donation_id) }}" class="btn-relief-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn-relief-primary">
+                                <i class="bi bi-check-circle"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
