@@ -1,0 +1,70 @@
+You are a senior full-stack engineer working on the DRIMS web app in Replit.
+
+Update the donation processing logic so that verification is done automatically as part of the same transaction, based on the acceptance criteria, instead of as a separate manual step later.
+
+Use the following rules and replace/align any existing verification behaviour with them:
+
+4. Defaulting & Verification Behaviour (MVP – Auto Verification on Accept)
+
+Goal:
+Once a donation (header + items) is entered and passes all acceptance criteria, it must be treated as verified by default in a single save/accept action. There must be no separate verification transaction or workflow in the UI.
+
+4.1 Donation Header Verification Fields (donation)
+
+On creation of a donation header via the “accept donation” flow:
+
+create_by_id must be automatically set to the current user’s ID.
+
+create_dtime must be automatically set to the current system timestamp.
+
+Because there is no separate verification step in MVP:
+
+verify_by_id must automatically be set to the same value as create_by_id.
+
+verify_dtime must automatically be set to the same value as create_dtime.
+
+status_code must reflect that the record has met all acceptance criteria and is considered verified/valid according to the business rules (e.g. 'E' = Entered but already verified by these fields, or 'V' if the business chooses to use that state to mark fully verified).
+
+On update of a donation header (still in MVP):
+
+verify_by_id and verify_dtime may remain unchanged or be updated according to agreed rules, but there must be no separate manual verification workflow or screen.
+
+The act of saving a valid donation (after passing all validations) continues to imply that it is in a verified state for MVP purposes.
+
+4.2 Donation Item Default Status & Verification Fields (donation_item)
+
+When a donation_item row is created via the same “accept donation” process:
+
+status_code must default to 'V' (Verified).
+
+The user must not have to set this field manually in MVP.
+
+Creating an item that passes all validation = it is verified by default.
+
+create_by_id must automatically be set to the current user’s ID.
+
+create_dtime must automatically be set to the current system timestamp.
+
+verify_by_id must automatically default to the same value as create_by_id.
+
+verify_dtime must automatically default to the same value as create_dtime.
+
+The UI must not expose any separate verification step, button, page, or workflow for donation items in MVP. The single “Save/Accept Donation” action is sufficient to create and verify the donation and its items.
+
+Updates to a donation_item (for example, correcting quantity or UOM) must:
+
+Preserve the notion that the item is Verified in MVP.
+
+status_code must remain 'V' unless changed by a future phase’s design.
+
+Any successful update that passes validation is still treated as a verified state, with audit fields and version_nbr updated accordingly.
+
+Implementation notes:
+
+Ensure all this verification behaviour happens within the same transaction that creates/updates the donation header and items.
+
+If any validation fails, nothing is saved or verified (full rollback).
+
+Remove or disable any existing code, endpoints, or UI elements that assume a separate verification step for donations or donation items in MVP.
+
+Update the current donation create/update endpoints, services, and templates to fully conform to these rules.

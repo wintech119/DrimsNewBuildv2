@@ -175,10 +175,15 @@ def create_donation():
             donation.custodian_id = int(custodian_id)
             donation.donation_desc = donation_desc.upper()
             donation.received_date = received_date
-            donation.status_code = 'E'
+            donation.status_code = 'V'
             donation.comments_text = comments_text.upper() if comments_text else None
             
+            current_timestamp = datetime.now()
+            
             add_audit_fields(donation, current_user, is_new=True)
+            
+            donation.verify_by_id = current_user.user_name
+            donation.verify_dtime = current_timestamp
             
             db.session.add(donation)
             db.session.flush()
@@ -193,6 +198,9 @@ def create_donation():
                 donation_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
                 
                 add_audit_fields(donation_item, current_user, is_new=True)
+                
+                donation_item.verify_by_id = current_user.user_name
+                donation_item.verify_dtime = current_timestamp
                 
                 db.session.add(donation_item)
             
@@ -383,7 +391,6 @@ def edit_donation(donation_id):
             donation.event_id = int(event_id)
             donation.custodian_id = int(custodian_id)
             donation.donation_desc = donation_desc.upper()
-            old_status = donation.status_code
             
             donation.received_date = received_date
             donation.status_code = status_code
@@ -391,8 +398,11 @@ def edit_donation(donation_id):
             
             add_audit_fields(donation, current_user, is_new=False)
             
-            if status_code in ['V', 'P'] and old_status != status_code:
-                add_verify_fields(donation, current_user)
+            # MVP: Any successful update is treated as verified
+            # Update verify fields to reflect current user and timestamp
+            if status_code == 'V':
+                donation.verify_by_id = current_user.user_name
+                donation.verify_dtime = datetime.now()
             
             db.session.commit()
             
@@ -501,10 +511,13 @@ def add_donation_item(donation_id):
             donation_item.status_code = 'V'
             donation_item.comments_text = comments_text.upper() if comments_text else None
             
+            current_timestamp = datetime.now()
+            
             add_audit_fields(donation_item, current_user, is_new=True)
             
-            if donation_item.status_code == 'V':
-                add_verify_fields(donation_item, current_user)
+            # MVP: Auto-verify on creation - same user and timestamp as creation
+            donation_item.verify_by_id = current_user.user_name
+            donation_item.verify_dtime = current_timestamp
             
             db.session.add(donation_item)
             db.session.commit()
@@ -579,7 +592,6 @@ def edit_donation_item(donation_id, item_id):
             
             donation_item.item_qty = Decimal(item_qty)
             donation_item.uom_code = uom_code
-            old_status = donation_item.status_code
             
             donation_item.location_name = location_name.upper()
             donation_item.status_code = status_code
@@ -587,8 +599,11 @@ def edit_donation_item(donation_id, item_id):
             
             add_audit_fields(donation_item, current_user, is_new=False)
             
-            if status_code == 'V' and old_status != status_code:
-                add_verify_fields(donation_item, current_user)
+            # MVP: Any successful update is treated as verified
+            # Status remains 'V' and verify fields are updated
+            if status_code == 'V':
+                donation_item.verify_by_id = current_user.user_name
+                donation_item.verify_dtime = datetime.now()
             
             db.session.commit()
             
@@ -634,97 +649,15 @@ def delete_donation_item(donation_id, item_id):
         return redirect(url_for('donations.view_donation', donation_id=donation_id))
 
 
-@donations_bp.route('/<int:donation_id>/verify', methods=['POST'])
-@login_required
-@feature_required('donation_management')
-def verify_donation(donation_id):
-    """
-    Verify entire donation (header + all items) as a single atomic transaction.
-    Uses isolated transaction to ensure complete atomicity.
-    """
-    version_nbr_from_form = int(request.form.get('version_nbr', 0))
-    item_versions_from_form = {}
-    
-    for key in request.form.keys():
-        if key.startswith('item_version_'):
-            item_id = int(key.replace('item_version_', ''))
-            item_versions_from_form[item_id] = int(request.form.get(key))
-    
-    success_message = None
-    error_message = None
-    
-    try:
-        donation = Donation.query.filter_by(donation_id=donation_id).with_for_update().first()
-        
-        if not donation:
-            error_message = f'Donation #{donation_id} not found'
-            db.session.rollback()
-            flash(error_message, 'danger')
-            return redirect(url_for('donations.list_donations'))
-        
-        if version_nbr_from_form != donation.version_nbr:
-            error_message = 'This donation has been modified by another user. Please reload and try again.'
-            db.session.rollback()
-            flash(error_message, 'danger')
-            return redirect(url_for('donations.view_donation', donation_id=donation_id))
-        
-        if donation.status_code == 'V':
-            error_message = 'This donation is already verified'
-            db.session.rollback()
-            flash(error_message, 'info')
-            return redirect(url_for('donations.view_donation', donation_id=donation_id))
-        
-        if donation.status_code == 'P':
-            error_message = 'Cannot verify a processed donation'
-            db.session.rollback()
-            flash(error_message, 'warning')
-            return redirect(url_for('donations.view_donation', donation_id=donation_id))
-        
-        donation_items = DonationItem.query.filter_by(donation_id=donation_id).with_for_update().all()
-        
-        if not donation_items:
-            error_message = 'Cannot verify donation with no items. Add items first.'
-            db.session.rollback()
-            flash(error_message, 'warning')
-            return redirect(url_for('donations.view_donation', donation_id=donation_id))
-        
-        for item in donation_items:
-            if item.item_id in item_versions_from_form:
-                if item.version_nbr != item_versions_from_form[item.item_id]:
-                    error_message = f'Item {item.item.item_name} has been modified. Please reload and try again.'
-                    db.session.rollback()
-                    flash(error_message, 'danger')
-                    return redirect(url_for('donations.view_donation', donation_id=donation_id))
-        
-        items_verified = 0
-        
-        donation.status_code = 'V'
-        add_audit_fields(donation, current_user, is_new=False)
-        add_verify_fields(donation, current_user)
-        
-        for donation_item in donation_items:
-            if donation_item.status_code != 'V':
-                donation_item.status_code = 'V'
-                add_audit_fields(donation_item, current_user, is_new=False)
-                add_verify_fields(donation_item, current_user)
-                items_verified += 1
-        
-        db.session.flush()
-        db.session.commit()
-        
-        success_message = f'Donation #{donation_id} and {items_verified} item(s) verified successfully'
-        flash(success_message, 'success')
-        return redirect(url_for('donations.view_donation', donation_id=donation_id))
-        
-    except StaleDataError:
-        db.session.rollback()
-        flash('This donation has been modified by another user. Please reload and try again.', 'danger')
-        return redirect(url_for('donations.view_donation', donation_id=donation_id))
-    except IntegrityError as e:
-        db.session.rollback()
-        flash(f'Database constraint violation: {str(e)}', 'danger')
-        return redirect(url_for('donations.view_donation', donation_id=donation_id))
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Unexpected error during verification: {str(e)}', 'danger')
-        return redirect(url_for('donations.view_donation', donation_id=donation_id))
+# DISABLED: Separate verification workflow removed for MVP
+# Donations are now auto-verified during acceptance (create_donation)
+# @donations_bp.route('/<int:donation_id>/verify', methods=['POST'])
+# @login_required
+# @feature_required('donation_management')
+# def verify_donation(donation_id):
+#     """
+#     DEPRECATED: Verification now happens automatically during donation acceptance.
+#     This endpoint is disabled for MVP. All donations are verified on creation.
+#     """
+#     flash('Donations are automatically verified when accepted. No separate verification needed.', 'info')
+#     return redirect(url_for('donations.view_donation', donation_id=donation_id))
