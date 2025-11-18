@@ -935,11 +935,12 @@ function updateAllowedStatusOptions(itemId, allocated, requested) {
     
     // Determine allowed status codes based on allocation
     // D, U, W can override any allocation
+    // L (Allowed Limit) can be used for partial or full allocations
     let allowedCodes;
     if (allocated === 0) {
         allowedCodes = ['R', 'D', 'U', 'W'];
     } else if (allocated >= requested) {
-        allowedCodes = ['F', 'D', 'U', 'W'];
+        allowedCodes = ['F', 'L', 'D', 'U', 'W'];
     } else {
         allowedCodes = ['P', 'L', 'D', 'U', 'W'];
     }

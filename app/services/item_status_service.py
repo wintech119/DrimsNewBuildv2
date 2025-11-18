@@ -58,9 +58,10 @@ def compute_allowed_statuses(current_status: str, total_allocated: Decimal, requ
     Rules:
         - allocated == 0: auto=R, allowed={R, D, U, W}
         - 0 < allocated < requested: auto=P, allowed={P, L, D, U, W}
-        - allocated >= requested: auto=F, allowed={F, D, U, W}
+        - allocated >= requested: auto=F, allowed={F, L, D, U, W}
     
     Note: D (Denied), U (Unavailable), W (Awaiting Availability) can override any allocation
+    Note: L (Allowed Limit) allows manual override even when fully allocated
     """
     status_map = load_status_map()
     
@@ -71,8 +72,8 @@ def compute_allowed_statuses(current_status: str, total_allocated: Decimal, requ
         allowed_statuses = ['R', 'D', 'U', 'W']
     elif total_allocated >= requested_qty:
         auto_status = 'F'  # Filled
-        # When fully allocated, allow Filled or denial/unavailability overrides
-        allowed_statuses = ['F', 'D', 'U', 'W']
+        # When fully allocated, allow Filled, Allowed Limit, or denial/unavailability overrides
+        allowed_statuses = ['F', 'L', 'D', 'U', 'W']
     else:
         auto_status = 'P'  # Partly filled
         # When partially allocated, allow Partly Filled, Allowed Limit, or denial/unavailability overrides
