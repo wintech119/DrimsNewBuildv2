@@ -691,11 +691,26 @@ class ReliefRequestFulfillmentLock(db.Model):
     fulfiller = db.relationship('User', backref='fulfillment_locks')
 
 class ReliefPkg(db.Model):
-    """Relief Package / Fulfilment (AIDMGMT workflow)"""
+    """Relief Package / Fulfilment (AIDMGMT workflow)
+    
+    Tracks relief packages prepared for distribution to agencies.
+    Each package contains items allocated from inventory for a specific relief request.
+    
+    Status Codes:
+        A = Draft (package being prepared)
+        P = Processing (items being packed)
+        C = Completed (packaging finished)
+        V = Verified (package verified by custodian)
+        D = Dispatched (package sent to agency)
+        R = Received (package received by agency)
+    """
     __tablename__ = 'reliefpkg'
     
     reliefpkg_id = db.Column(db.Integer, primary_key=True)
-    to_inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
+    agency_id = db.Column(db.Integer, db.ForeignKey('agency.agency_id'), nullable=False)
+    tracking_no = db.Column(db.CHAR(7), nullable=False)
+    eligible_event_id = db.Column(db.Integer, db.ForeignKey('event.event_id'))
+    to_inventory_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), nullable=False)
     reliefrqst_id = db.Column(db.Integer, db.ForeignKey('reliefrqst.reliefrqst_id'), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     dispatch_dtime = db.Column(db.DateTime)
@@ -712,8 +727,20 @@ class ReliefPkg(db.Model):
     received_dtime = db.Column(db.DateTime)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
+    __table_args__ = (
+        db.CheckConstraint("start_date <= CURRENT_DATE", name='c_reliefpkg_1'),
+        db.CheckConstraint("(dispatch_dtime IS NULL AND status_code != 'D') OR (dispatch_dtime IS NOT NULL AND status_code = 'D')", name='c_reliefpkg_2'),
+        db.CheckConstraint("status_code IN ('A','P','C','V','D','R')", name='c_reliefpkg_3'),
+    )
+    
+    agency = db.relationship('Agency', backref='relief_packages')
+    eligible_event = db.relationship('Event', backref='relief_packages')
     relief_request = db.relationship('ReliefRqst', backref='packages')
-    to_inventory = db.relationship('Inventory', backref='relief_packages')
+    to_inventory = db.relationship('Warehouse', foreign_keys=[to_inventory_id], backref='relief_packages')
+    
+    __mapper_args__ = {
+        'version_id_col': version_nbr
+    }
 
 class ReliefPkgItem(db.Model):
     """Relief Package Item - Batch-level allocation for relief packages
