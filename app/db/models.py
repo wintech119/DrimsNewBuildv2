@@ -446,8 +446,11 @@ class ItemBatch(db.Model):
     inventory = db.relationship('Inventory', 
         foreign_keys=[inventory_id, item_id],
         primaryjoin='and_(ItemBatch.inventory_id==Inventory.inventory_id, ItemBatch.item_id==Inventory.item_id)',
-        backref='batches')
-    item = db.relationship('Item', backref='batches')
+        backref='batches',
+        overlaps='batches,item')
+    item = db.relationship('Item', 
+        backref='batches',
+        overlaps='batches,inventory')
     uom = db.relationship('UnitOfMeasure', backref='batches')
     
     __mapper_args__ = {
@@ -544,6 +547,48 @@ class Donation(db.Model):
     donor = db.relationship('Donor', backref='donations')
     event = db.relationship('Event', backref='donations')
     custodian = db.relationship('Custodian', backref='donations')
+    
+    __mapper_args__ = {
+        'version_id_col': version_nbr
+    }
+
+class DonationItem(db.Model):
+    """Donation Item - Items donated in a donation
+    
+    Tracks individual items and quantities donated as part of a donation.
+    Links donations to specific items with verification status.
+    
+    Status Codes:
+        P = Processed
+        V = Verified
+    """
+    __tablename__ = 'donation_item'
+    
+    donation_id = db.Column(db.Integer, db.ForeignKey('donation.donation_id'), primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), primary_key=True)
+    item_qty = db.Column(db.Numeric(12, 2), nullable=False)
+    uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=False)
+    location_name = db.Column(db.Text, nullable=False)
+    status_code = db.Column(db.CHAR(1), nullable=False)
+    comments_text = db.Column(db.Text)
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False)
+    verify_by_id = db.Column(db.String(20), nullable=False)
+    verify_dtime = db.Column(db.DateTime, nullable=False)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    __table_args__ = (
+        db.CheckConstraint("item_qty >= 0.00", name='c_donation_item_1'),
+        db.CheckConstraint("status_code IN ('P', 'V')", name='c_donation_item_2'),
+    )
+    
+    donation = db.relationship('Donation', backref='items')
+    item = db.relationship('Item', backref='donation_items')
+    uom = db.relationship('UnitOfMeasure', backref='donation_items')
+    
+    __mapper_args__ = {
+        'version_id_col': version_nbr
+    }
 
 class ReliefRqstStatus(db.Model):
     """Relief Request Status Lookup Table
