@@ -934,13 +934,14 @@ function updateAllowedStatusOptions(itemId, allocated, requested) {
     if (!statusDropdown) return;
     
     // Determine allowed status codes based on allocation
+    // D, U, W can override any allocation
     let allowedCodes;
     if (allocated === 0) {
         allowedCodes = ['R', 'D', 'U', 'W'];
     } else if (allocated >= requested) {
-        allowedCodes = ['F'];
+        allowedCodes = ['F', 'D', 'U', 'W'];
     } else {
-        allowedCodes = ['P', 'L'];
+        allowedCodes = ['P', 'L', 'D', 'U', 'W'];
     }
     
     // Get current value before updating options

@@ -57,24 +57,26 @@ def compute_allowed_statuses(current_status: str, total_allocated: Decimal, requ
     
     Rules:
         - allocated == 0: auto=R, allowed={R, D, U, W}
-        - 0 < allocated < requested: auto=P, allowed={P, L}
-        - allocated >= requested: auto=F, allowed={F} (locked)
+        - 0 < allocated < requested: auto=P, allowed={P, L, D, U, W}
+        - allocated >= requested: auto=F, allowed={F, D, U, W}
+    
+    Note: D (Denied), U (Unavailable), W (Awaiting Availability) can override any allocation
     """
     status_map = load_status_map()
     
     # Determine auto status based on allocation
     if total_allocated == Decimal('0'):
         auto_status = 'R'  # Requested
-        # When zero allocated, can only select denial/unavailability statuses
+        # When zero allocated, allow request or denial/unavailability statuses
         allowed_statuses = ['R', 'D', 'U', 'W']
     elif total_allocated >= requested_qty:
         auto_status = 'F'  # Filled
-        # When fully allocated, status is locked to Filled
-        allowed_statuses = ['F']
+        # When fully allocated, allow Filled or denial/unavailability overrides
+        allowed_statuses = ['F', 'D', 'U', 'W']
     else:
         auto_status = 'P'  # Partly filled
-        # When partially allocated, can only mark as Partly Filled or Allowed Limit
-        allowed_statuses = ['P', 'L']
+        # When partially allocated, allow Partly Filled, Allowed Limit, or denial/unavailability overrides
+        allowed_statuses = ['P', 'L', 'D', 'U', 'W']
     
     # Filter to only active statuses that exist in the database
     allowed_statuses = [s for s in allowed_statuses if s in status_map]
@@ -107,12 +109,16 @@ def validate_status_transition(
         current_desc = status_map.get(current_status, {}).get('desc', current_status)
         new_desc = status_map.get(new_status, {}).get('desc', new_status)
         
+        # Build friendly list of allowed status names
+        allowed_names = [status_map.get(s, {}).get('desc', s) for s in allowed_statuses]
+        allowed_str = ', '.join(allowed_names)
+        
         if total_allocated == Decimal('0'):
-            return False, f"Item #{item_id}: With zero allocation, status must be one of: Requested, Denied, Unavailable, or Awaiting Availability (not {new_desc})"
+            return False, f"Item #{item_id}: With zero allocation, status must be one of: {allowed_str} (not {new_desc})"
         elif total_allocated >= requested_qty:
-            return False, f"Item #{item_id}: Fully allocated items cannot change status from Filled"
+            return False, f"Item #{item_id}: Fully allocated items must be: {allowed_str} (not {new_desc})"
         else:
-            return False, f"Item #{item_id}: Partially allocated items can only be marked as Partly Filled or Allowed Limit (not {new_desc})"
+            return False, f"Item #{item_id}: Partially allocated items must be: {allowed_str} (not {new_desc})"
     
     return True, ""
 
