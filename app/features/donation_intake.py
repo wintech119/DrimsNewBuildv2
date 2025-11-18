@@ -21,7 +21,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 from decimal import Decimal
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from app.db import db
 from app.db.models import (
@@ -432,4 +432,3 @@ def _process_intake_submission(donation, warehouse, existing_intake):
         return {'success': False, 'errors': [f'Database error: {str(e)}'], 'message': None}
 
 
-from datetime import timedelta

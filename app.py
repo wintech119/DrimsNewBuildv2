@@ -33,6 +33,7 @@ from app.features.inventory import inventory_bp
 from app.features.requests_aidmgmt import requests_bp
 from app.features.packaging import packaging_bp
 from app.features.donations import donations_bp
+from app.features.donation_intake import donation_intake_bp
 from app.features.intake_aidmgmt import bp as intake_bp
 from app.features.user_admin import user_admin_bp
 from app.features.donors import donors_bp
@@ -103,6 +104,7 @@ app.register_blueprint(inventory_bp)
 app.register_blueprint(requests_bp)
 app.register_blueprint(packaging_bp)
 app.register_blueprint(donations_bp)
+app.register_blueprint(donation_intake_bp)
 app.register_blueprint(intake_bp)
 app.register_blueprint(user_admin_bp, url_prefix='/users')
 app.register_blueprint(donors_bp, url_prefix='/donors')

@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% from 'relief_requests/_summary_cards.html' import render_summary_cards %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
+{% endblock %}
+
+{% block title %}Donation Intake{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Action Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header mb-0">
+            <div class="page-title">
+                <i class="bi bi-box-arrow-in-down page-title-icon"></i>
+                <h1 class="page-title-text">Donation Intake</h1>
+            </div>
+        </div>
+        <a href="{{ url_for('donation_intake.create_intake') }}" class="btn-relief-primary">
+            <i class="bi bi-plus-circle"></i>
+            Intake Donation
+        </a>
+    </div>
+
+    <!-- Summary Metrics -->
+    {% set summary_metrics = [
+        {
+            'icon': 'box-arrow-in-down',
+            'label': 'All Intakes',
+            'value': counts.get('all', 0),
+            'variant': 'primary'
+        },
+        {
+            'icon': 'calendar-check',
+            'label': 'Recent (30 Days)',
+            'value': counts.get('recent', 0),
+            'variant': 'success'
+        }
+    ] %}
+    {{ render_summary_cards(summary_metrics) }}
+
+    <!-- Filter Tabs -->
+    <nav class="filter-tabs" role="navigation" aria-label="Intake filters">
+        <a href="{{ url_for('donation_intake.list_intakes', filter='all') }}" 
+           class="filter-tab {% if current_filter == 'all' or not current_filter %}active{% endif %}"
+           aria-current="{% if current_filter == 'all' or not current_filter %}page{% endif %}">
+            All Intakes
+            {% if counts.get('all', 0) > 0 %}
+            <span class="filter-tab-count" aria-label="{{ counts.get('all', 0) }} total">{{ counts.get('all', 0) }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('donation_intake.list_intakes', filter='recent') }}" 
+           class="filter-tab {% if current_filter == 'recent' %}active{% endif %}"
+           aria-current="{% if current_filter == 'recent' %}page{% endif %}">
+            Recent
+            {% if counts.get('recent', 0) > 0 %}
+            <span class="filter-tab-count" aria-label="{{ counts.get('recent', 0) }} recent">{{ counts.get('recent', 0) }}</span>
+            {% endif %}
+        </a>
+    </nav>
+
+    <!-- Search Bar -->
+    <div class="card mb-3">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('donation_intake.list_intakes') }}" class="row g-2">
+                <input type="hidden" name="filter" value="{{ current_filter }}">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               value="{{ search_query }}" 
+                               placeholder="Search by donation or warehouse..."
+                               aria-label="Search intakes">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn-relief-secondary w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Intakes Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if intakes %}
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Donation ID</th>
+                            <th>Donation Description</th>
+                            <th>Warehouse</th>
+                            <th>Intake Date</th>
+                            <th>Status</th>
+                            <th>Created By</th>
+                            <th>Items</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for intake in intakes %}
+                        <tr>
+                            <td class="fw-bold">#{{ intake.donation_id }}</td>
+                            <td>{{ intake.donation.donation_desc|truncate(50) }}</td>
+                            <td>{{ intake.warehouse.warehouse_name }}</td>
+                            <td>{{ intake.intake_date|format_date }}</td>
+                            <td>
+                                {% if intake.status_code == 'V' %}
+                                <span class="badge bg-success">Verified</span>
+                                {% elif intake.status_code == 'P' %}
+                                <span class="badge bg-info">Pending</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ intake.status_code }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ intake.create_by_id }}</td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ intake.donation.donation_items|length }} items
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inbox display-1 d-block mb-3"></i>
+                <p class="lead">No donation intakes found</p>
+                {% if search_query %}
+                <p>Try adjusting your search criteria</p>
+                {% else %}
+                <a href="{{ url_for('donation_intake.create_intake') }}" class="btn-relief-primary">
+                    <i class="bi bi-plus-circle"></i> Intake First Donation
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
