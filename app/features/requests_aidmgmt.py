@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.db import db
 from app.db.models import ReliefRqst, ReliefRqstItem, Agency, Item, Event, UnitOfMeasure
-from app.core.rbac import agency_user_required, is_admin, is_logistics_manager, is_logistics_officer
+from app.core.rbac import agency_user_required, is_admin, is_logistics_manager, is_logistics_officer, can_access_relief_request
 from app.core.decorators import feature_required
 from app.core.exceptions import OptimisticLockError
 from app.services import relief_request_service as rr_service
@@ -27,21 +27,34 @@ def prepare_package_alias(reliefrqst_id):
 
 @requests_bp.route('/')
 @login_required
-@agency_user_required
 def list_requests():
     """
-    List all relief requests for the current user's agency.
-    Agency users only see their own agency's requests.
+    List relief requests.
+    - Agency users see their own agency's requests
+    - Logistics users see all requests
     """
     # Support both 'filter' and 'status' params for backward compatibility
     status_filter = request.args.get('filter') or request.args.get('status', 'submitted')
     
-    # Base query for current user's agency with eager loading
-    base_query = ReliefRqst.query.filter_by(agency_id=current_user.agency_id).options(
-        db.joinedload(ReliefRqst.agency),
-        db.joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom),
-        db.joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.category)
-    )
+    # Base query with eager loading
+    if is_logistics_manager() or is_logistics_officer():
+        # Logistics users see all requests
+        base_query = ReliefRqst.query.options(
+            db.joinedload(ReliefRqst.agency),
+            db.joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom),
+            db.joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.category)
+        )
+    elif current_user.agency_id:
+        # Agency users see only their agency's requests
+        base_query = ReliefRqst.query.filter_by(agency_id=current_user.agency_id).options(
+            db.joinedload(ReliefRqst.agency),
+            db.joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom),
+            db.joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.category)
+        )
+    else:
+        # User has no agency and no logistics role - should not happen
+        flash('You do not have permission to view relief requests.', 'danger')
+        abort(403)
     
     # Calculate counts for filter tabs
     counts = {
@@ -144,7 +157,6 @@ def create_request():
 
 @requests_bp.route('/<int:request_id>')
 @login_required
-@agency_user_required
 def view_request(request_id):
     """View relief request details"""
     relief_request = ReliefRqst.query.options(
@@ -156,8 +168,8 @@ def view_request(request_id):
     if not relief_request:
         abort(404)
     
-    # Verify request belongs to current agency
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         flash('You do not have permission to view this request.', 'danger')
         abort(403)
     
@@ -218,7 +230,6 @@ def view_request(request_id):
 
 @requests_bp.route('/<int:request_id>/edit', methods=['GET', 'POST'])
 @login_required
-@agency_user_required
 def edit_request(request_id):
     """Edit relief request header (only for drafts)"""
     relief_request = ReliefRqst.query.options(
@@ -230,8 +241,8 @@ def edit_request(request_id):
     if not relief_request:
         abort(404)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         flash('You do not have permission to edit this request.', 'danger')
         abort(403)
     
@@ -289,13 +300,12 @@ def edit_request(request_id):
 
 @requests_bp.route('/<int:request_id>/items', methods=['GET'])
 @login_required
-@agency_user_required
 def get_items(request_id):
     """API endpoint: Get all items for a request"""
     relief_request = ReliefRqst.query.get_or_404(request_id)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         return jsonify({'error': 'Unauthorized'}), 403
     
     items_data = []
@@ -318,13 +328,12 @@ def get_items(request_id):
 
 @requests_bp.route('/<int:request_id>/items/edit', methods=['GET', 'POST'])
 @login_required
-@agency_user_required
 def edit_items(request_id):
     """Add/edit items on a draft relief request"""
     relief_request = ReliefRqst.query.get_or_404(request_id)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         flash('You do not have permission to edit this request.', 'danger')
         abort(403)
     
@@ -393,13 +402,12 @@ def edit_items(request_id):
 
 @requests_bp.route('/<int:request_id>/items/<int:item_id>/delete', methods=['POST'])
 @login_required
-@agency_user_required
 def delete_item(request_id, item_id):
     """Delete an item from a draft request"""
     relief_request = ReliefRqst.query.get_or_404(request_id)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -421,13 +429,12 @@ def delete_item(request_id, item_id):
 
 @requests_bp.route('/<int:request_id>/save_draft', methods=['POST'])
 @login_required
-@agency_user_required
 def save_draft(request_id):
     """Save current state of draft relief request (allows user to return later)"""
     relief_request = ReliefRqst.query.get_or_404(request_id)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         flash('You do not have permission to save this request.', 'danger')
         abort(403)
     
@@ -451,13 +458,12 @@ def save_draft(request_id):
 
 @requests_bp.route('/<int:request_id>/cancel', methods=['POST'])
 @login_required
-@agency_user_required
 def cancel_request(request_id):
     """Cancel and delete a draft relief request"""
     relief_request = ReliefRqst.query.get_or_404(request_id)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         flash('You do not have permission to cancel this request.', 'danger')
         abort(403)
     
@@ -475,7 +481,14 @@ def cancel_request(request_id):
         db.session.commit()
         
         flash(f'Draft relief request #{request_id} has been cancelled and deleted.', 'info')
-        return redirect(url_for('requests.my_requests'))
+        
+        # Redirect based on user type
+        if current_user.agency_id:
+            # Agency users go to their requests list
+            return redirect(url_for('requests.list_requests'))
+        else:
+            # Logistics users without agency go to packaging fulfillment
+            return redirect(url_for('packaging.pending_fulfillment'))
         
     except Exception as e:
         db.session.rollback()
@@ -485,13 +498,12 @@ def cancel_request(request_id):
 
 @requests_bp.route('/<int:request_id>/submit', methods=['POST'])
 @login_required
-@agency_user_required
 def submit_request(request_id):
     """Submit a draft relief request to ODPEM for processing"""
     relief_request = ReliefRqst.query.get_or_404(request_id)
     
-    # Verify ownership
-    if relief_request.agency_id != current_user.agency_id:
+    # Verify user has access to this request
+    if not can_access_relief_request(relief_request):
         flash('You do not have permission to submit this request.', 'danger')
         abort(403)
     

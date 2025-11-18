@@ -114,6 +114,34 @@ def is_agency_user():
     return current_user.agency_id is not None
 
 
+def can_access_relief_request(relief_request):
+    """
+    Check if the current user can access/edit a relief request.
+    
+    User has access if:
+    1. Request belongs to their agency (for agency users)
+    2. User is a Logistics Manager or Logistics Officer (can access all requests)
+    
+    Args:
+        relief_request: ReliefRqst object to check access for
+        
+    Returns:
+        bool: True if user can access the request
+    """
+    if not current_user.is_authenticated:
+        return False
+    
+    # Logistics Managers and Officers have access to all relief requests
+    if has_role('LOGISTICS_MANAGER', 'LOGISTICS_OFFICER'):
+        return True
+    
+    # Agency users can access their own agency's requests
+    if current_user.agency_id and relief_request.agency_id == current_user.agency_id:
+        return True
+    
+    return False
+
+
 def has_warehouse_access(warehouse_id):
     """
     Check if the current user has access to a specific warehouse.
