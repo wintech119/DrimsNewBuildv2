@@ -133,19 +133,65 @@
 
                         <!-- Donation Items Section -->
                         <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="border-bottom pb-2 mb-0 flex-grow-1">
-                                    <i class="bi bi-box-seam"></i> Donation Items <span class="text-danger">*</span>
-                                </h5>
-                                <button type="button" class="btn btn-sm btn-success ms-3" id="addItemBtn">
-                                    <i class="bi bi-plus-circle"></i> Add Item
-                                </button>
+                            <div class="drims-card">
+                                <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Add Donation Item</h5>
+                                <div id="addItemForm">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="new_item_id" class="form-label">Item *</label>
+                                            <select class="form-select" id="new_item_id">
+                                                <option value="">Select item...</option>
+                                                {% for item in items %}
+                                                <option value="{{ item.item_id }}" data-name="{{ item.item_name }}" data-uom="{{ item.default_uom_code }}">
+                                                    {{ item.item_name }} ({{ item.sku_code }})
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="new_quantity" class="form-label">Quantity *</label>
+                                            <input type="number" class="form-control" id="new_quantity" step="0.01" min="0.01" placeholder="0.00">
+                                            <small class="text-muted" id="uom_hint">Unit: <span id="selected_uom">—</span></small>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="new_uom_code" class="form-label">UOM *</label>
+                                            <select class="form-select" id="new_uom_code">
+                                                <option value="">Select...</option>
+                                                {% for uom in uoms %}
+                                                <option value="{{ uom.uom_code }}" data-desc="{{ uom.uom_desc }}">
+                                                    {{ uom.uom_desc }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="new_item_comments" class="form-label">Item Comments</label>
+                                            <input type="text" class="form-control" id="new_item_comments" placeholder="Optional comments about this item..." style="text-transform: uppercase;">
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-goj" id="addItemBtn">
+                                        <i class="bi bi-plus-circle"></i> Add Item to Donation
+                                    </button>
+                                </div>
                             </div>
-                            <div id="itemsContainer">
-                                <!-- Item rows will be added here dynamically -->
-                            </div>
-                            <div id="noItemsMessage" class="alert alert-info">
-                                <i class="bi bi-info-circle"></i> Click "Add Item" to add donation items. At least one item is required.
+
+                            <div class="drims-card mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Current Items (<span id="itemCount">0</span>)</h5>
+                                </div>
+
+                                <div id="itemsTableContainer"></div>
+                                
+                                <div id="noItemsMessage" class="text-center py-4">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: #dee2e6;"></i>
+                                    <p class="text-muted mt-2 mb-0">No items added yet. Use the form above to add items to this donation.</p>
+                                </div>
+
+                                <div id="itemsContainer" style="display: none;">
+                                    <!-- Hidden inputs for form submission -->
+                                </div>
                             </div>
                         </div>
 
@@ -167,104 +213,162 @@
 
 <script>
 let itemCounter = 0;
-const items = {{ items | tojson | safe }};
-const uoms = {{ uoms | tojson | safe }};
+const donationItems = [];
 
-function addItemRow() {
-    const container = document.getElementById('itemsContainer');
+// Update UOM hint when item is selected
+document.getElementById('new_item_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const uomCode = selectedOption.getAttribute('data-uom');
+    const uomHint = document.getElementById('selected_uom');
+    if (uomCode) {
+        uomHint.textContent = uomCode;
+    } else {
+        uomHint.textContent = '—';
+    }
+});
+
+// Add item button click handler
+document.getElementById('addItemBtn').addEventListener('click', function() {
+    const itemSelect = document.getElementById('new_item_id');
+    const quantityInput = document.getElementById('new_quantity');
+    const uomSelect = document.getElementById('new_uom_code');
+    const commentsInput = document.getElementById('new_item_comments');
+    
+    // Validate
+    if (!itemSelect.value) {
+        alert('Please select an item');
+        itemSelect.focus();
+        return;
+    }
+    if (!quantityInput.value || parseFloat(quantityInput.value) <= 0) {
+        alert('Please enter a valid quantity greater than 0');
+        quantityInput.focus();
+        return;
+    }
+    if (!uomSelect.value) {
+        alert('Please select a unit of measure');
+        uomSelect.focus();
+        return;
+    }
+    
+    // Get item details
+    const selectedItemOption = itemSelect.options[itemSelect.selectedIndex];
+    const selectedUomOption = uomSelect.options[uomSelect.selectedIndex];
+    
+    const item = {
+        id: ++itemCounter,
+        item_id: itemSelect.value,
+        item_name: selectedItemOption.getAttribute('data-name'),
+        quantity: parseFloat(quantityInput.value),
+        uom_code: uomSelect.value,
+        uom_desc: selectedUomOption.getAttribute('data-desc'),
+        comments: commentsInput.value.trim().toUpperCase()
+    };
+    
+    donationItems.push(item);
+    updateItemsTable();
+    
+    // Clear form
+    itemSelect.value = '';
+    quantityInput.value = '';
+    uomSelect.value = '';
+    commentsInput.value = '';
+    document.getElementById('selected_uom').textContent = '—';
+    
+    itemSelect.focus();
+});
+
+function removeItem(itemId) {
+    const index = donationItems.findIndex(item => item.id === itemId);
+    if (index > -1) {
+        if (confirm('Remove this item from the donation?')) {
+            donationItems.splice(index, 1);
+            updateItemsTable();
+        }
+    }
+}
+
+function updateItemsTable() {
+    const tableContainer = document.getElementById('itemsTableContainer');
+    const hiddenContainer = document.getElementById('itemsContainer');
     const noItemsMsg = document.getElementById('noItemsMessage');
+    const itemCountSpan = document.getElementById('itemCount');
     
-    itemCounter++;
-    const rowId = `item-row-${itemCounter}`;
+    itemCountSpan.textContent = donationItems.length;
     
-    const itemRow = document.createElement('div');
-    itemRow.className = 'card mb-3';
-    itemRow.id = rowId;
-    itemRow.innerHTML = `
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <h6 class="mb-0">Item #${itemCounter}</h6>
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow('${rowId}')">
-                    <i class="bi bi-trash"></i> Remove
-                </button>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Item <span class="text-danger">*</span></label>
-                    <select class="form-select" name="item_id_${itemCounter}" required>
-                        <option value="">-- Select Item --</option>
-                        ${items.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" name="quantity_${itemCounter}" 
-                           step="0.0001" min="0.0001" required placeholder="0.00">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">UOM <span class="text-danger">*</span></label>
-                    <select class="form-select" name="uom_id_${itemCounter}" required>
-                        <option value="">-- Select UOM --</option>
-                        ${uoms.map(uom => `<option value="${uom.uom_code}">${uom.uom_desc}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label">Item Comments</label>
-                    <input type="text" class="form-control" name="item_comments_${itemCounter}" 
-                           placeholder="Optional comments" style="text-transform: uppercase;">
-                </div>
-            </div>
-        </div>
-    `;
-    
-    container.appendChild(itemRow);
-    
-    if (noItemsMsg) {
+    if (donationItems.length === 0) {
+        tableContainer.innerHTML = '';
+        hiddenContainer.innerHTML = '';
+        noItemsMsg.style.display = 'block';
+    } else {
         noItemsMsg.style.display = 'none';
-    }
-    
-    updateItemNumbers();
-}
-
-function removeItemRow(rowId) {
-    const row = document.getElementById(rowId);
-    if (row) {
-        row.remove();
-        updateItemNumbers();
         
-        const container = document.getElementById('itemsContainer');
-        const noItemsMsg = document.getElementById('noItemsMessage');
+        // Build table HTML
+        let tableHtml = `
+            <div class="table-responsive">
+                <table class="table drims-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-end">Quantity</th>
+                            <th>Comments</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
         
-        if (container.children.length === 0 && noItemsMsg) {
-            noItemsMsg.style.display = 'block';
-        }
+        donationItems.forEach(item => {
+            tableHtml += `
+                <tr>
+                    <td>${item.item_name}</td>
+                    <td class="text-end">
+                        <strong>${item.quantity.toFixed(2)}</strong>
+                        ${item.uom_desc}
+                    </td>
+                    <td>
+                        ${item.comments ? item.comments : '<span class="text-muted">—</span>'}
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.id})">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tableHtml += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        tableContainer.innerHTML = tableHtml;
+        
+        // Build hidden inputs for form submission
+        let hiddenHtml = '';
+        donationItems.forEach((item, index) => {
+            const num = index + 1;
+            hiddenHtml += `
+                <input type="hidden" name="item_id_${num}" value="${item.item_id}">
+                <input type="hidden" name="quantity_${num}" value="${item.quantity}">
+                <input type="hidden" name="uom_id_${num}" value="${item.uom_code}">
+                <input type="hidden" name="item_comments_${num}" value="${item.comments}">
+            `;
+        });
+        
+        hiddenContainer.innerHTML = hiddenHtml;
     }
 }
 
-function updateItemNumbers() {
-    const container = document.getElementById('itemsContainer');
-    const items = container.children;
-    
-    Array.from(items).forEach((item, index) => {
-        const header = item.querySelector('h6');
-        if (header) {
-            header.textContent = `Item #${index + 1}`;
-        }
-    });
-}
-
-document.getElementById('addItemBtn').addEventListener('click', addItemRow);
-
+// Form submission validation
 document.querySelector('form').addEventListener('submit', function(e) {
-    const container = document.getElementById('itemsContainer');
-    
-    if (container.children.length === 0) {
+    if (donationItems.length === 0) {
         e.preventDefault();
         alert('Please add at least one donation item before submitting.');
         return false;
     }
 });
-
-addItemRow();
 </script>
 {% endblock %}
