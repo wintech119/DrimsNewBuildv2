@@ -34,9 +34,20 @@ class BatchAllocationService:
             joinedload(ItemBatch.inventory).joinedload(Inventory.warehouse),
             joinedload(ItemBatch.item),
             joinedload(ItemBatch.uom)
-        ).join(Inventory).filter(
+        ).join(
+            Inventory,
+            and_(
+                ItemBatch.inventory_id == Inventory.inventory_id,
+                ItemBatch.item_id == Inventory.item_id
+            )
+        ).join(
+            Warehouse,
+            Inventory.inventory_id == Warehouse.warehouse_id
+        ).filter(
             ItemBatch.item_id == item_id,
             ItemBatch.status_code == 'A',
+            Inventory.status_code == 'A',
+            Warehouse.status_code == 'A',
             ItemBatch.usable_qty > ItemBatch.reserved_qty
         )
         
