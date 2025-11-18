@@ -128,9 +128,24 @@ All pages maintain a modern, consistent UI with a comprehensive design system in
 - `reserve_inventory()`: Called before commit in same transaction with row-level locking (`with_for_update()`)
 - Rollback pattern: `db.session.rollback()` → `lock_service.acquire_lock()` → user feedback → redirect
 
+3. **CRITICAL: Fixed "No active inventory found" error when saving packages** (`app/services/batch_allocation_service.py`, `app/services/inventory_reservation_service.py`)
+   - **Issue**: Users couldn't save package drafts, getting "No active inventory found for item X at warehouse Y" errors for inactive warehouses
+   - **Root Cause #1**: `BatchAllocationService.get_available_batches()` was suggesting batches from inactive warehouses and inactive inventory
+   - **Root Cause #2**: `InventoryReservationService.reserve_inventory()` was failing when trying to release old allocations from warehouses that became inactive
+   - **Fix #1**: Added three-level status filtering in batch allocation - checks batch, inventory, AND warehouse status_code='A' with explicit joins
+   - **Fix #2**: Enhanced reservation service to gracefully handle inactive warehouses when releasing allocations - queries for inactive inventory, cleans up reserved_qty, logs warning for operators
+   - **Impact**: Users can now save packages without errors; stale reservations from inactive warehouses are automatically cleaned up; data integrity maintained for warehouse reactivation scenarios
+
+**Technical Implementation**:
+- `_save_draft()`: Uses atomic transaction with 3 exception handlers ensuring lock retention on all failure paths
+- `reserve_inventory()`: Called before commit in same transaction with row-level locking (`with_for_update()`)
+- Rollback pattern: `db.session.rollback()` → `lock_service.acquire_lock()` → user feedback → redirect
+- `get_available_batches()`: Explicit joins on Inventory (composite PK) and Warehouse with status filters
+- Inactive inventory cleanup: Queries without status filter when releasing, logs warnings, resets reserved_qty safely
+
 **Schema Updates**:
 - Donation table: `verify_by_id` and `verify_dtime` made nullable
 - Donation table: Added `update_by_id` and `update_dtime` columns
 - Donation model: Added User relationships for audit trail (`created_by`, `verify_by`, `update_by`)
 
-**Status**: Both fixes architect-reviewed and approved as production-ready
+**Status**: All three fixes architect-reviewed and approved as production-ready
