@@ -11,7 +11,7 @@ Key Functions:
 """
 
 from decimal import Decimal
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from sqlalchemy.exc import SQLAlchemyError
 from app.db import db
 from app.db.models import Inventory, ReliefPkgItem
@@ -37,14 +37,14 @@ def get_current_reservations(reliefrqst_id: int) -> Dict[Tuple[int, int], Decima
     for pkg_item in pkg_items:
         if pkg_item.item_qty and pkg_item.item_qty > 0:
             # inventory_id IS the warehouse_id (composite PK: inventory_id, item_id)
-            if pkg_item.from_inventory:
-                key = (pkg_item.item_id, pkg_item.from_inventory.inventory_id)
-                reservations[key] = pkg_item.item_qty
+            # fr_inventory_id is the warehouse_id
+            key = (pkg_item.item_id, pkg_item.fr_inventory_id)
+            reservations[key] = pkg_item.item_qty
     
     return reservations
 
 
-def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict], old_allocations: Dict[Tuple[int, int], Decimal] = None) -> Tuple[bool, str]:
+def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict], old_allocations: Optional[Dict[Tuple[int, int], Decimal]] = None) -> Tuple[bool, str]:
     """
     Reserve inventory for package allocations.
     
