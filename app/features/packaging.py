@@ -496,7 +496,7 @@ def _approve_and_dispatch(relief_request, relief_pkg):
         lock_service.release_lock(relief_request.reliefrqst_id, current_user.user_id, force=True)
         
         flash(f'Relief request #{relief_request.reliefrqst_id} approved and dispatched to inventory clerk', 'success')
-        return redirect(url_for('packaging.pending_approval'))
+        return redirect(url_for('packaging.transaction_summary', reliefpkg_id=relief_pkg.reliefpkg_id))
         
     except ValueError as e:
         db.session.rollback()
@@ -510,6 +510,81 @@ def _approve_and_dispatch(relief_request, relief_pkg):
         db.session.rollback()
         flash(f'Error approving package: {str(e)}', 'danger')
         return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
+
+
+@packaging_bp.route('/transaction-summary/<int:reliefpkg_id>')
+@login_required
+def transaction_summary(reliefpkg_id):
+    """
+    Display print-friendly transaction summary after LM approval.
+    Shows all package details, allocations by warehouse/batch, and signature section.
+    """
+    from app.core.rbac import is_logistics_manager, is_logistics_officer
+    if not (is_logistics_manager() or is_logistics_officer()):
+        flash('Access denied. Only Logistics Officers and Managers can view transaction summaries.', 'danger')
+        abort(403)
+    
+    # Load package with all related data
+    relief_pkg = ReliefPkg.query.options(
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom),
+        joinedload(ReliefPkg.items)
+    ).get_or_404(reliefpkg_id)
+    
+    # Get package creator and approver info
+    creator = User.query.filter_by(user_name=relief_pkg.create_by_id).first() if relief_pkg.create_by_id else None
+    approver = User.query.filter_by(user_name=relief_pkg.verify_by_id).first() if relief_pkg.verify_by_id else None
+    
+    # Organize items by batch with warehouse info
+    items_with_batches = []
+    for req_item in relief_pkg.relief_request.items:
+        # Get all package items (batches) for this request item
+        pkg_items = [pi for pi in relief_pkg.items if pi.item_id == req_item.item_id]
+        
+        batches_info = []
+        for pkg_item in pkg_items:
+            # Load batch and warehouse info
+            batch = ItemBatch.query.get(pkg_item.batch_id) if pkg_item.batch_id else None
+            warehouse = Warehouse.query.get(pkg_item.fr_inventory_id) if pkg_item.fr_inventory_id else None
+            
+            batches_info.append({
+                'warehouse_name': warehouse.warehouse_name if warehouse else 'Unknown',
+                'batch_no': batch.batch_no if batch else 'N/A',
+                'batch_date': batch.batch_date if batch else None,
+                'expiry_date': batch.expiry_date if batch else None,
+                'qty': pkg_item.item_qty
+            })
+        
+        total_issued = sum(b['qty'] for b in batches_info)
+        
+        items_with_batches.append({
+            'item': req_item.item,
+            'requested_qty': req_item.request_qty,
+            'issued_qty': total_issued,
+            'batches': batches_info,
+            'status_code': req_item.status_code
+        })
+    
+    # Calculate summary totals
+    total_items = len(items_with_batches)
+    total_batches = sum(len(item['batches']) for item in items_with_batches)
+    unique_warehouses = set()
+    for item in items_with_batches:
+        for batch in item['batches']:
+            unique_warehouses.add(batch['warehouse_name'])
+    warehouses_used = len(unique_warehouses)
+    
+    return render_template('packaging/transaction_summary.html',
+                         relief_pkg=relief_pkg,
+                         relief_request=relief_pkg.relief_request,
+                         items_with_batches=items_with_batches,
+                         creator=creator,
+                         approver=approver,
+                         total_items=total_items,
+                         total_batches=total_batches,
+                         warehouses_used=warehouses_used,
+                         generated_at=datetime.now())
 
 
 @packaging_bp.route('/create-request-on-behalf', methods=['GET', 'POST'])
