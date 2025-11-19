@@ -1344,7 +1344,7 @@ def get_item_batches(item_id):
                     'priority_group': priority_group
                 }
                 result.append(batch_info)
-                print(f"DEBUG batch: {batch.batch_id} ({batch.batch_no}) - warehouse_id={batch_info['warehouse_id']}, warehouse_name={batch_info['warehouse_name']}, available={available_qty}")
+                print(f"DEBUG batch: {batch.batch_id} ({batch.batch_no}) - warehouse={batch_info['warehouse_name']}, expiry={batch_info['expiry_date']}, batch_date={batch_info['batch_date']}, available={available_qty}")
             
             return jsonify({
                 'item_id': item_id,
