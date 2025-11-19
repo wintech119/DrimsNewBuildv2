@@ -213,9 +213,6 @@ def commit_inventory(reliefrqst_id: int) -> Tuple[bool, str]:
         
         pkg_items = ReliefPkgItem.query.filter_by(reliefpkg_id=pkg.reliefpkg_id).all()
         
-        # Track warehouse-level changes for updating Inventory table
-        warehouse_changes = {}  # {(item_id, inventory_id): total_allocated_qty}
-        
         # Process each batch allocation
         for pkg_item in pkg_items:
             if pkg_item.item_qty and pkg_item.item_qty > 0:
@@ -236,27 +233,13 @@ def commit_inventory(reliefrqst_id: int) -> Tuple[bool, str]:
                     warehouse_name = warehouse.warehouse_name if warehouse else f'ID {pkg_item.fr_inventory_id}'
                     return False, f'Insufficient inventory at warehouse {warehouse_name}: need {pkg_item.item_qty}, have {batch.usable_qty}'
                 
-                # Commit batch allocation
+                # Commit batch allocation - deduct from batch only
                 batch.usable_qty -= pkg_item.item_qty
                 batch.reserved_qty = max(Decimal('0'), batch.reserved_qty - pkg_item.item_qty)
-                
-                # Track warehouse-level changes
-                key = (pkg_item.item_id, pkg_item.fr_inventory_id)
-                if key not in warehouse_changes:
-                    warehouse_changes[key] = Decimal('0')
-                warehouse_changes[key] += pkg_item.item_qty
         
-        # Update warehouse-level inventory
-        for (item_id, inventory_id), total_qty in warehouse_changes.items():
-            inventory = Inventory.query.filter_by(
-                item_id=item_id,
-                inventory_id=inventory_id,
-                status_code='A'
-            ).with_for_update().first()
-            
-            if inventory:
-                inventory.usable_qty -= total_qty
-                inventory.reserved_qty = max(Decimal('0'), inventory.reserved_qty - total_qty)
+        # Note: Warehouse-level inventory is NOT updated here.
+        # The Inventory table usable_qty should be calculated as SUM(ItemBatch.usable_qty)
+        # for the given (inventory_id, item_id). Updating both creates sync issues.
         
         return True, ''
         

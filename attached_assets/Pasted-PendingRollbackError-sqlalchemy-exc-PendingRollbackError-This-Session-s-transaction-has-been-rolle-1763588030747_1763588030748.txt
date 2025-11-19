@@ -1,0 +1,59 @@
+PendingRollbackError
+sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)
+(psycopg2.errors.CheckViolation) new row for relation "inventory" violates check constraint "c_inventory_1"
+DETAIL:  Failing row contains (1, 11, -20.00, 0.00, 0.00, 0.00, BOTTLE, null, null, A, null, LOGISTICS.MANAGER@GO, 2025-11-19 20:40:50, LOGISTICS.MANAGER@GO, 2025-11-19 20:40:50, 5, 0.00).
+
+[SQL: UPDATE inventory SET usable_qty=%(usable_qty)s, reserved_qty=%(reserved_qty)s, version_nbr=%(version_nbr)s WHERE inventory.inventory_id = %(inventory_inventory_id)s AND inventory.item_id = %(inventory_item_id)s AND inventory.version_nbr = %(inventory_version_nbr)s]
+[parameters: {'usable_qty': Decimal('-20.0000'), 'reserved_qty': Decimal('0'), 'version_nbr': 5, 'inventory_inventory_id': 1, 'inventory_item_id': 11, 'inventory_version_nbr': 4}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+
+Traceback (most recent call last)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1498, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1476, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1473, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 882, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 880, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 865, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_login/utils.py", line 290, in decorated_view
+return current_app.ensure_sync(func)(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/app/features/packaging.py", line 797, in prepare_package
+return _send_for_dispatch(relief_request)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/app/features/packaging.py", line 1013, in _send_for_dispatch
+db.session.commit()
+^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/scoping.py", line 597, in commit
+return self._proxied.commit()
+       ^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2028, in commit
+trans.commit(_to_root=True)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "<string>", line 2, in commit
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 103, in _go
+self._raise_for_prerequisite_state(fn.__name__, current_state)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 973, in _raise_for_prerequisite_state
+raise sa_exc.PendingRollbackError(
+^
+sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)
+(psycopg2.errors.CheckViolation) new row for relation "inventory" violates check constraint "c_inventory_1"
+DETAIL: Failing row contains (1, 11, -20.00, 0.00, 0.00, 0.00, BOTTLE, null, null, A, null, LOGISTICS.MANAGER@GO, 2025-11-19 20:40:50, LOGISTICS.MANAGER@GO, 2025-11-19 20:40:50, 5, 0.00).
+
+[SQL: UPDATE inventory SET usable_qty=%(usable_qty)s, reserved_qty=%(reserved_qty)s, version_nbr=%(version_nbr)s WHERE inventory.inventory_id = %(inventory_inventory_id)s AND inventory.item_id = %(inventory_item_id)s AND inventory.version_nbr = %(inventory_version_nbr)s]
+[parameters: {'usable_qty': Decimal('-20.0000'), 'reserved_qty': Decimal('0'), 'version_nbr': 5, 'inventory_inventory_id': 1, 'inventory_item_id': 11, 'inventory_version_nbr': 4}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it.
