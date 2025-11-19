@@ -1027,6 +1027,7 @@ def _process_allocations(relief_request, validate_complete=False):
     if not relief_pkg:
         # Create a new relief package for tracking allocations
         relief_pkg = ReliefPkg(
+            agency_id=relief_request.agency_id,
             reliefrqst_id=relief_request.reliefrqst_id,
             to_inventory_id=1,  # Placeholder, will be updated on dispatch
             start_date=date.today(),
