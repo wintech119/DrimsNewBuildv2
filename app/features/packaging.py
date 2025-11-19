@@ -1569,3 +1569,385 @@ def get_batch_details(batch_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ==================== INVENTORY CLERK DISPATCH ROUTES ====================
+
+@packaging_bp.route('/dispatch/awaiting')
+@login_required
+def awaiting_dispatch():
+    """
+    Inventory Clerk - Awaiting Dispatch page.
+    Shows packages approved by LM and dispatched, filtered by clerk's warehouse(s).
+    Only displays items allocated from warehouses the clerk has access to.
+    """
+    from app.core.rbac import has_role
+    
+    if not has_role('INVENTORY_CLERK'):
+        flash('Access denied. This page is for Inventory Clerks only.', 'danger')
+        abort(403)
+    
+    # Get user's assigned warehouses
+    user_warehouse_ids = [w.warehouse_id for w in current_user.warehouses]
+    
+    if not user_warehouse_ids:
+        flash('You have not been assigned to any warehouses. Please contact your administrator.', 'warning')
+        return render_template('packaging/awaiting_dispatch.html', 
+                             packages=[], 
+                             counts={}, 
+                             current_filter='awaiting',
+                             global_counts={})
+    
+    # Get filter parameter
+    current_filter = request.args.get('filter', 'awaiting')
+    
+    # Query packages that are dispatched (status='D') but not yet completed
+    # Filter to show only packages with items from clerk's warehouse(s)
+    from sqlalchemy import func, exists
+    
+    base_query = db.session.query(ReliefPkg).options(
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
+        joinedload(ReliefPkg.items)
+    ).join(ReliefRqst).filter(
+        ReliefPkg.status_code == rr_service.PKG_STATUS_DISPATCHED,
+        # Only show packages with items from clerk's warehouses
+        exists().where(
+            and_(
+                ReliefPkgItem.reliefpkg_id == ReliefPkg.reliefpkg_id,
+                ReliefPkgItem.fr_inventory_id.in_(user_warehouse_ids)
+            )
+        )
+    )
+    
+    # Apply filters
+    if current_filter == 'awaiting':
+        # Not yet handed over (no received_dtime)
+        packages = base_query.filter(ReliefPkg.received_dtime == None).order_by(
+            ReliefPkg.dispatch_dtime.desc()
+        ).all()
+    elif current_filter == 'completed':
+        # Already handed over (has received_dtime)
+        packages = base_query.filter(ReliefPkg.received_dtime != None).order_by(
+            ReliefPkg.received_dtime.desc()
+        ).all()
+    else:  # 'all'
+        packages = base_query.order_by(ReliefPkg.dispatch_dtime.desc()).all()
+    
+    # Calculate counts for filter tabs
+    global_counts = {
+        'awaiting': base_query.filter(ReliefPkg.received_dtime == None).count(),
+        'completed': base_query.filter(ReliefPkg.received_dtime != None).count(),
+    }
+    global_counts['all'] = global_counts['awaiting'] + global_counts['completed']
+    
+    # For each package, calculate totals specific to this clerk's warehouses
+    package_data = []
+    for pkg in packages:
+        # Count items and total qty for this clerk's warehouses only
+        warehouse_items = [item for item in pkg.items if item.fr_inventory_id in user_warehouse_ids]
+        
+        package_data.append({
+            'package': pkg,
+            'relief_request': pkg.relief_request,
+            'item_count': len(warehouse_items),
+            'total_qty': sum(item.item_qty for item in warehouse_items if item.item_qty),
+            'warehouse_items': warehouse_items
+        })
+    
+    counts = global_counts.copy()
+    
+    return render_template('packaging/awaiting_dispatch.html',
+                         packages=package_data,
+                         counts=counts,
+                         current_filter=current_filter,
+                         global_counts=global_counts,
+                         user_warehouse_ids=user_warehouse_ids)
+
+
+@packaging_bp.route('/dispatch/<int:reliefpkg_id>/details')
+@login_required
+def dispatch_details(reliefpkg_id):
+    """
+    Dispatch Details page for Inventory Clerk.
+    Shows package details for items from clerk's warehouse(s) only.
+    Includes print-friendly layout option.
+    """
+    from app.core.rbac import has_role
+    
+    if not has_role('INVENTORY_CLERK'):
+        flash('Access denied. This page is for Inventory Clerks only.', 'danger')
+        abort(403)
+    
+    # Get user's assigned warehouses
+    user_warehouse_ids = [w.warehouse_id for w in current_user.warehouses]
+    
+    if not user_warehouse_ids:
+        flash('You have not been assigned to any warehouses.', 'warning')
+        return redirect(url_for('packaging.awaiting_dispatch'))
+    
+    # Load package with all necessary relationships
+    relief_pkg = ReliefPkg.query.options(
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.item),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.batch),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.warehouse)
+    ).get_or_404(reliefpkg_id)
+    
+    # Verify package is dispatched
+    if relief_pkg.status_code != rr_service.PKG_STATUS_DISPATCHED:
+        flash('This package is not in dispatched status.', 'warning')
+        return redirect(url_for('packaging.awaiting_dispatch'))
+    
+    # Filter items to only those from clerk's warehouses
+    warehouse_items = [item for item in relief_pkg.items if item.fr_inventory_id in user_warehouse_ids]
+    
+    if not warehouse_items:
+        flash('This package has no items allocated from your assigned warehouses.', 'warning')
+        return redirect(url_for('packaging.awaiting_dispatch'))
+    
+    # Group items by warehouse for display
+    from collections import defaultdict
+    items_by_warehouse = defaultdict(list)
+    for item in warehouse_items:
+        items_by_warehouse[item.fr_inventory_id].append(item)
+    
+    # Get warehouse objects
+    warehouses = {w.warehouse_id: w for w in Warehouse.query.filter(
+        Warehouse.warehouse_id.in_(user_warehouse_ids)
+    ).all()}
+    
+    # Check if print mode
+    print_mode = request.args.get('print', '0') == '1'
+    
+    return render_template('packaging/dispatch_details.html',
+                         relief_pkg=relief_pkg,
+                         relief_request=relief_pkg.relief_request,
+                         warehouse_items=warehouse_items,
+                         items_by_warehouse=items_by_warehouse,
+                         warehouses=warehouses,
+                         print_mode=print_mode)
+
+
+@packaging_bp.route('/dispatch/<int:reliefpkg_id>/handover', methods=['POST'])
+@login_required
+def mark_handover(reliefpkg_id):
+    """
+    Mark dispatch as handed over to agency.
+    Inventory Clerk confirms that items have been physically given to the agency.
+    Updates status, triggers notifications to LO/LM.
+    """
+    from app.core.rbac import has_role
+    from app.services.notification_service import NotificationService
+    
+    if not has_role('INVENTORY_CLERK'):
+        flash('Access denied. Only Inventory Clerks can mark handovers.', 'danger')
+        abort(403)
+    
+    # Get user's assigned warehouses
+    user_warehouse_ids = [w.warehouse_id for w in current_user.warehouses]
+    
+    if not user_warehouse_ids:
+        flash('You have not been assigned to any warehouses.', 'warning')
+        return redirect(url_for('packaging.awaiting_dispatch'))
+    
+    # Load package
+    relief_pkg = ReliefPkg.query.options(
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+        joinedload(ReliefPkg.items)
+    ).get_or_404(reliefpkg_id)
+    
+    # Verify package is dispatched and not already handed over
+    if relief_pkg.status_code != rr_service.PKG_STATUS_DISPATCHED:
+        flash('This package is not in dispatched status.', 'warning')
+        return redirect(url_for('packaging.awaiting_dispatch'))
+    
+    if relief_pkg.received_dtime:
+        flash('This package has already been marked as handed over.', 'info')
+        return redirect(url_for('packaging.dispatch_details', reliefpkg_id=reliefpkg_id))
+    
+    # Verify clerk has items from their warehouse in this package
+    warehouse_items = [item for item in relief_pkg.items if item.fr_inventory_id in user_warehouse_ids]
+    
+    if not warehouse_items:
+        flash('This package has no items from your assigned warehouses.', 'warning')
+        return redirect(url_for('packaging.awaiting_dispatch'))
+    
+    try:
+        # Mark as received/handed over
+        relief_pkg.received_by_id = current_user.user_name
+        relief_pkg.received_dtime = datetime.now()
+        relief_pkg.update_by_id = current_user.user_name
+        relief_pkg.update_dtime = datetime.now()
+        
+        # Note: Status remains 'D' (Dispatched). We use received_dtime to track handover.
+        # Status changes to 'C' (Completed) when agency signs off, if needed.
+        
+        db.session.commit()
+        
+        # Send notifications to LO and LM
+        try:
+            # Get all logistics officers and managers
+            lo_users = User.query.filter(User.roles.like('%LOGISTICS_OFFICER%')).all()
+            lm_users = User.query.filter(User.roles.like('%LOGISTICS_MANAGER%')).all()
+            all_recipients = lo_users + lm_users
+            
+            if all_recipients:
+                # Get warehouse names for notification
+                warehouse_names = [w.warehouse_name for w in Warehouse.query.filter(
+                    Warehouse.warehouse_id.in_(user_warehouse_ids)
+                ).all()]
+                warehouse_list = ', '.join(warehouse_names)
+                
+                agency_name = relief_pkg.relief_request.agency.agency_name if relief_pkg.relief_request.agency else 'Unknown Agency'
+                
+                for user in all_recipients:
+                    notification = Notification(
+                        user_id=user.user_id,
+                        reliefrqst_id=relief_pkg.reliefrqst_id,
+                        title='Package Handed Over to Agency',
+                        message=f'Package for {agency_name} (RR-{relief_pkg.reliefrqst_id:06d}) has been handed over from warehouse: {warehouse_list}',
+                        type='package_handover',
+                        status='unread',
+                        link_url=url_for('packaging.dispatch_received_details', reliefpkg_id=relief_pkg.reliefpkg_id, _external=False),
+                        is_archived=False
+                    )
+                    db.session.add(notification)
+                
+                db.session.commit()
+        except Exception as e:
+            # Log error but don't fail the handover
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f'Failed to send handover notification: {str(e)}')
+        
+        flash(f'Package successfully marked as handed over to {relief_pkg.relief_request.agency.agency_name if relief_pkg.relief_request.agency else "agency"}.', 'success')
+        return redirect(url_for('packaging.awaiting_dispatch', filter='completed'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error marking handover: {str(e)}', 'danger')
+        return redirect(url_for('packaging.dispatch_details', reliefpkg_id=reliefpkg_id))
+
+
+# ==================== LO/LM DISPATCH RECEIVED QUEUE ====================
+
+@packaging_bp.route('/dispatch/received')
+@login_required
+def dispatch_received():
+    """
+    Logistics Officer/Manager - Dispatch Received queue.
+    Shows packages that have been handed over by Inventory Clerks.
+    Read-only view for tracking completed dispatches.
+    """
+    from app.core.rbac import has_role
+    
+    if not (has_role('LOGISTICS_OFFICER') or has_role('LOGISTICS_MANAGER')):
+        flash('Access denied. This page is for Logistics Officers and Managers only.', 'danger')
+        abort(403)
+    
+    # Get filter parameter
+    current_filter = request.args.get('filter', 'recent')
+    
+    # Query packages that have been handed over (have received_dtime)
+    base_query = db.session.query(ReliefPkg).options(
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.warehouse)
+    ).join(ReliefRqst).filter(
+        ReliefPkg.status_code == rr_service.PKG_STATUS_DISPATCHED,
+        ReliefPkg.received_dtime != None  # Has been handed over
+    )
+    
+    # Apply filters
+    if current_filter == 'recent':
+        # Last 30 days
+        from datetime import timedelta
+        cutoff_date = datetime.now() - timedelta(days=30)
+        packages = base_query.filter(
+            ReliefPkg.received_dtime >= cutoff_date
+        ).order_by(ReliefPkg.received_dtime.desc()).all()
+    else:  # 'all'
+        packages = base_query.order_by(ReliefPkg.received_dtime.desc()).all()
+    
+    # Calculate counts
+    from datetime import timedelta
+    cutoff_date = datetime.now() - timedelta(days=30)
+    global_counts = {
+        'recent': base_query.filter(ReliefPkg.received_dtime >= cutoff_date).count(),
+        'all': base_query.count()
+    }
+    
+    # Prepare package data with warehouse information
+    package_data = []
+    for pkg in packages:
+        # Get unique warehouses for this package
+        warehouse_ids = set(item.fr_inventory_id for item in pkg.items if item.fr_inventory_id)
+        warehouses = Warehouse.query.filter(Warehouse.warehouse_id.in_(warehouse_ids)).all() if warehouse_ids else []
+        warehouse_names = [w.warehouse_name for w in warehouses]
+        
+        package_data.append({
+            'package': pkg,
+            'relief_request': pkg.relief_request,
+            'warehouse_names': ', '.join(warehouse_names) if warehouse_names else 'N/A',
+            'item_count': len(pkg.items),
+            'total_qty': sum(item.item_qty for item in pkg.items if item.item_qty)
+        })
+    
+    counts = global_counts.copy()
+    
+    return render_template('packaging/dispatch_received.html',
+                         packages=package_data,
+                         counts=counts,
+                         current_filter=current_filter,
+                         global_counts=global_counts)
+
+
+@packaging_bp.route('/dispatch/<int:reliefpkg_id>/received-details')
+@login_required
+def dispatch_received_details(reliefpkg_id):
+    """
+    Read-only dispatch details for LO/LM.
+    Shows complete package information after handover by Inventory Clerk.
+    """
+    from app.core.rbac import has_role
+    
+    if not (has_role('LOGISTICS_OFFICER') or has_role('LOGISTICS_MANAGER')):
+        flash('Access denied. This page is for Logistics Officers and Managers only.', 'danger')
+        abort(403)
+    
+    # Load package with all relationships
+    relief_pkg = ReliefPkg.query.options(
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
+        joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.item),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.batch),
+        joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.warehouse)
+    ).get_or_404(reliefpkg_id)
+    
+    # Verify package has been handed over
+    if not relief_pkg.received_dtime:
+        flash('This package has not been handed over yet.', 'warning')
+        return redirect(url_for('packaging.dispatch_received'))
+    
+    # Group items by warehouse
+    from collections import defaultdict
+    items_by_warehouse = defaultdict(list)
+    for item in relief_pkg.items:
+        if item.fr_inventory_id:
+            items_by_warehouse[item.fr_inventory_id].append(item)
+    
+    # Get warehouse objects
+    warehouse_ids = set(item.fr_inventory_id for item in relief_pkg.items if item.fr_inventory_id)
+    warehouses = {w.warehouse_id: w for w in Warehouse.query.filter(
+        Warehouse.warehouse_id.in_(warehouse_ids)
+    ).all()} if warehouse_ids else {}
+    
+    return render_template('packaging/dispatch_received_details.html',
+                         relief_pkg=relief_pkg,
+                         relief_request=relief_pkg.relief_request,
+                         items_by_warehouse=items_by_warehouse,
+                         warehouses=warehouses)

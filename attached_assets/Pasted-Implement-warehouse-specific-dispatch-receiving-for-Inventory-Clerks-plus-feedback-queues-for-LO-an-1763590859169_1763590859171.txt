@@ -1,0 +1,105 @@
+Implement warehouse-specific dispatch receiving for Inventory Clerks, plus feedback queues for LO and LM. Do NOT change any database schema. Reuse existing DRIMS UI style and navigation.
+
+1. Inventory Clerk – “Awaiting Dispatch” by Warehouse
+
+On the Inventory Clerk dashboard, add or update a tab (e.g. “Awaiting Dispatch”) that lists only approved relief packages/items for that clerk’s warehouse/inventory.
+
+Filtering rules:
+
+Only show items where the package has been approved by the LM and is in a “Ready for Dispatch” state.
+
+Only include items whose allocations reference the clerk’s warehouse/inventory_id.
+
+Inventory Clerks must not see items or allocations for other warehouses/inventories.
+
+For each entry, show:
+
+Relief request / package ID
+
+Agency name
+
+Warehouse name (their own)
+
+Item, requested qty, allocated/issue qty for that warehouse
+
+Date/time approved by LM
+
+2. Inventory Clerk – Dispatch Details & Printable Slip
+
+When the clerk opens a dispatch entry:
+
+Show a Dispatch Details page containing:
+
+Request/package information
+
+All items allocated from that warehouse only (no other warehouses).
+
+Requested vs Issued quantities, batch/lot info if available.
+
+Provide a Print Dispatch Slip view/button with a print-friendly layout.
+
+The printed slip must include a signature section for the requesting agency, e.g.:
+
+Agency name
+
+“Received by: ____________________”
+
+“Signature: ____________________”
+
+“Date: ____________________”
+
+The layout must follow existing DRIMS styling (fonts, colours, buttons) but be optimized for printing (no sidebars, minimal chrome).
+
+3. Marking Dispatch as Received
+
+On the Inventory Clerk’s Dispatch Details page, add a control (e.g. “Mark as Dispatched / Handed Over”).
+
+When the clerk confirms:
+
+Update the package/item status to indicate dispatch completed / items handed over for that warehouse.
+
+Trigger notifications and queue updates for LO and LM (see below).
+
+Ensure this action is auditable (who, when).
+
+4. LO & LM – Dispatch Receipt Queue
+
+For Logistics Officer (LO) and Logistics Manager (LM) dashboards, add a tab such as “Dispatch Received” or “Completed Dispatches”.
+
+This tab must list relief packages/items where:
+
+The LM previously approved and dispatched.
+
+The Inventory Clerk has marked the dispatch as handed over/received.
+
+For each record, show:
+
+Request/package ID
+
+Agency name
+
+Warehouse(s) that completed dispatch
+
+Date/time the clerk marked it as handed over
+
+Status (e.g. “Dispatched / Awaiting Signed Slip Return” or “Completed”).
+
+Clicking an entry should open a read-only view of the dispatch details (similar to the clerk’s printable view) so LO/LM can review what was issued.
+
+5. Notifications
+
+When an Inventory Clerk marks a dispatch as handed over:
+
+Send an in-app notification to LO and LM (according to existing notification patterns) indicating:
+
+The package has been dispatched.
+
+Warehouse name and date/time.
+
+Clicking the notification must take LO/LM directly to the dispatch details / completed dispatch view.
+
+6. General Constraints
+
+Do not modify any database tables or schema; use existing package, allocation, inventory, and notification structures.
+
+Maintain all existing RBAC rules and DRIMS visual style; these changes are additional filtering, pages, and queues on top of current logic.

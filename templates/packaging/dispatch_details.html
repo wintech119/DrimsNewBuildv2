@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/relief-requests-ui.css') }}">
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        body { background: white; }
+        .container-fluid { padding: 0; }
+        .signature-section { page-break-before: avoid; margin-top: 3rem; }
+        table { page-break-inside: avoid; }
+    }
+    .signature-section {
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-top: 3rem;
+        background: #f8f9fa;
+    }
+    .signature-line {
+        border-bottom: 2px solid #000;
+        min-width: 300px;
+        display: inline-block;
+        margin: 0 0.5rem;
+    }
+    .print-only {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block title %}Dispatch Details - PKG-{{ '%06d'|format(relief_pkg.reliefpkg_id) }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Action Buttons (No Print) -->
+    <div class="no-print mb-4 d-flex justify-content-between align-items-center">
+        <a href="{{ url_for('packaging.awaiting_dispatch') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dispatch Queue
+        </a>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="bi bi-printer"></i> Print Dispatch Slip
+            </button>
+            {% if not relief_pkg.received_dtime %}
+            <form method="POST" action="{{ url_for('packaging.mark_handover', reliefpkg_id=relief_pkg.reliefpkg_id) }}" 
+                  style="display: inline;" 
+                  onsubmit="return confirm('Confirm that this package has been handed over to the agency?');">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Mark as Handed Over
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="page-title">
+            <i class="bi bi-file-earmark-text page-title-icon"></i>
+            <h1 class="page-title-text">Dispatch Slip</h1>
+        </div>
+        <p class="page-subtitle">Package ID: PKG-{{ '%06d'|format(relief_pkg.reliefpkg_id) }} | Request ID: RR-{{ '%06d'|format(relief_request.reliefrqst_id) }}</p>
+    </div>
+
+    <!-- Package Information Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-3">Agency Information</h6>
+                    <p class="mb-2"><strong>Agency Name:</strong> {{ relief_request.agency.agency_name if relief_request.agency else 'N/A' }}</p>
+                    <p class="mb-2"><strong>Contact Person:</strong> {{ relief_request.agency.contact_name if relief_request.agency else 'N/A' }}</p>
+                    <p class="mb-2"><strong>Contact Phone:</strong> {{ relief_request.agency.contact_phone if relief_request.agency else 'N/A' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-3">Dispatch Information</h6>
+                    <p class="mb-2"><strong>Request Date:</strong> {{ relief_request.request_date.strftime('%Y-%m-%d') if relief_request.request_date else 'N/A' }}</p>
+                    <p class="mb-2"><strong>Dispatched Date:</strong> {{ relief_pkg.dispatch_dtime.strftime('%Y-%m-%d %I:%M %p') if relief_pkg.dispatch_dtime else 'N/A' }}</p>
+                    {% if relief_pkg.received_dtime %}
+                    <p class="mb-2"><strong>Handed Over:</strong> <span class="badge bg-success">{{ relief_pkg.received_dtime.strftime('%Y-%m-%d %I:%M %p') }}</span></p>
+                    <p class="mb-2"><strong>Handed Over By:</strong> {{ relief_pkg.received_by_id }}</p>
+                    {% else %}
+                    <p class="mb-2"><strong>Status:</strong> <span class="badge bg-warning">Awaiting Handover</span></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items by Warehouse -->
+    {% for warehouse_id, items in items_by_warehouse.items() %}
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-building"></i> Warehouse: {{ warehouses[warehouse_id].warehouse_name if warehouse_id in warehouses else 'Unknown' }}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Batch/Lot</th>
+                            <th>Expiry Date</th>
+                            <th>Requested Qty</th>
+                            <th>Issued Qty</th>
+                            <th>UOM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pkg_item in items %}
+                        {% set rqst_item = relief_request.items|selectattr('item_id', 'equalto', pkg_item.item_id)|first %}
+                        <tr>
+                            <td>{{ pkg_item.item.item_name if pkg_item.item else 'N/A' }}</td>
+                            <td>
+                                {% if pkg_item.batch %}
+                                    {{ pkg_item.batch.lot_no or 'N/A' }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pkg_item.batch and pkg_item.batch.expiry_date %}
+                                    {{ pkg_item.batch.expiry_date.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ rqst_item.qty_req|round(2) if rqst_item and rqst_item.qty_req else 'N/A' }}</td>
+                            <td><strong>{{ pkg_item.item_qty|round(2) if pkg_item.item_qty else '0' }}</strong></td>
+                            <td>{{ pkg_item.uom_code or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Total Items:</strong></td>
+                            <td colspan="2"><strong>{{ items|length }} item(s)</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Signature Section (Print-Friendly) -->
+    <div class="signature-section">
+        <h4 class="mb-4 text-center">Agency Receipt Confirmation</h4>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <p class="mb-2"><strong>Agency Name:</strong></p>
+                <p class="mb-4">{{ relief_request.agency.agency_name if relief_request.agency else '___________________________' }}</p>
+            </div>
+            <div class="col-md-6">
+                <p class="mb-2"><strong>Date Received:</strong></p>
+                <p class="signature-line" style="min-width: 200px;"></p>
+            </div>
+        </div>
+        <div class="row g-4 mt-3">
+            <div class="col-md-6">
+                <p class="mb-2"><strong>Received By (Print Name):</strong></p>
+                <p class="signature-line"></p>
+            </div>
+            <div class="col-md-6">
+                <p class="mb-2"><strong>Position/Title:</strong></p>
+                <p class="signature-line"></p>
+            </div>
+        </div>
+        <div class="row g-4 mt-3">
+            <div class="col-md-12">
+                <p class="mb-2"><strong>Signature:</strong></p>
+                <p class="signature-line"></p>
+            </div>
+        </div>
+        <div class="alert alert-info mt-4 print-only">
+            <small><i class="bi bi-info-circle"></i> This document confirms receipt of disaster relief supplies from ODPEM. Please sign and return to the warehouse clerk.</small>
+        </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-only mt-5 text-center">
+        <hr>
+        <p class="text-muted">
+            <small>Office of Disaster Preparedness and Emergency Management (ODPEM)</small><br>
+            <small>Government of Jamaica | Disaster Relief Inventory Management System (DRIMS)</small><br>
+            <small>Printed: {{ now.strftime('%Y-%m-%d %I:%M %p') }}</small>
+        </p>
+    </div>
+</div>
+
+<script>
+const now = new Date();
+</script>
+{% endblock %}

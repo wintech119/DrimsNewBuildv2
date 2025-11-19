@@ -63,6 +63,10 @@ class FeatureRegistry:
         'packaging_prepare': 'packaging.prepare_package',
         'packaging_pending_approval': 'packaging.pending_approval',
         'packaging_review_approval': 'packaging.review_approval',
+        'dispatch_awaiting': 'packaging.awaiting_dispatch',
+        'dispatch_received': 'packaging.dispatch_received',
+        'dispatch_details': 'packaging.dispatch_details',
+        'dispatch_received_details': 'packaging.dispatch_received_details',
         
         # Inventory
         'inventory_list': 'inventory.list_inventory',
@@ -191,6 +195,30 @@ class FeatureRegistry:
             'dashboard_widget': 'approval_queue_widget',
             'navigation_group': 'packaging',
             'priority': 18
+        },
+        'dispatch_awaiting': {
+            'name': 'Awaiting Dispatch',
+            'description': 'Process packages awaiting handover to agencies',
+            'roles': ['INVENTORY_CLERK'],
+            'route': 'packaging.awaiting_dispatch',
+            'url': '/packaging/dispatch/awaiting',
+            'icon': 'bi-truck',
+            'category': 'packaging',
+            'dashboard_widget': 'awaiting_dispatch_widget',
+            'navigation_group': 'packaging',
+            'priority': 17
+        },
+        'dispatch_received': {
+            'name': 'Dispatch Received',
+            'description': 'View packages handed over to agencies',
+            'roles': ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER'],
+            'route': 'packaging.dispatch_received',
+            'url': '/packaging/dispatch/received',
+            'icon': 'bi-check2-square',
+            'category': 'packaging',
+            'dashboard_widget': 'dispatch_received_widget',
+            'navigation_group': 'packaging',
+            'priority': 19
         },
         
         # =================================================================
