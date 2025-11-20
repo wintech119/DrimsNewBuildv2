@@ -60,13 +60,17 @@ def pending_approval():
     ).order_by(ReliefRqst.create_dtime.desc()).all()
     
     # Filter to requests with packages pending LM approval
+    # Package must have: status='P', verify_by_id!=NULL (submitted, not draft), dispatch_dtime=NULL (not dispatched)
     pending_requests = []
     for req in all_requests:
-        # Check if there's a ReliefPkg for this request with status='P' (submitted for approval)
-        relief_pkg = next((pkg for pkg in req.packages if pkg.status_code == rr_service.PKG_STATUS_PENDING), None)
+        # Check if there's a ReliefPkg submitted for approval (verify_by_id is set)
+        relief_pkg = next((pkg for pkg in req.packages 
+                          if pkg.status_code == rr_service.PKG_STATUS_PENDING 
+                          and pkg.verify_by_id is not None  # Only submitted packages (not drafts)
+                          and pkg.dispatch_dtime is None), None)
         
-        if relief_pkg and relief_pkg.dispatch_dtime is None:
-            # Package exists, is pending approval and not yet dispatched
+        if relief_pkg:
+            # Package exists and is submitted for approval (not just a draft)
             pending_requests.append(req)
     
     counts = {
@@ -332,8 +336,11 @@ def approve_package(reliefrqst_id):
 def _save_draft_approval(relief_request, relief_pkg):
     """
     LM saves draft changes during approval workflow.
+    
+    Draft behavior:
     - Updates allocations with delta-based itembatch changes
-    - Keeps package in Pending status
+    - Keeps package in Pending status with verify_by_id set (indicates submitted for approval)
+    - Package stays in "Awaiting Approval" queue for continued LM editing
     - No notifications sent
     - Concurrency control via optimistic locking (version_nbr)
     """
@@ -370,7 +377,8 @@ def _save_draft_approval(relief_request, relief_pkg):
         
         flash(f'Draft saved for relief request #{relief_request.reliefrqst_id}.', 'success')
         
-        return redirect(url_for('packaging.pending_approval'))
+        # Redirect back to approval page so LM can continue editing
+        return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
         
     except OptimisticLockError as e:
         db.session.rollback()
@@ -733,8 +741,16 @@ def pending_fulfillment():
     
     # Helper function to check if request has package pending LM approval
     def has_pending_approval(req):
-        """Check if request has a package submitted for LM approval"""
-        return any(pkg.status_code == rr_service.PKG_STATUS_PENDING and pkg.dispatch_dtime is None 
+        """
+        Check if request has a package submitted for LM approval.
+        
+        Differentiates between:
+        - Draft packages: status='P', verify_by_id=NULL, dispatch_dtime=NULL (shows in "Being Prepared")
+        - Submitted packages: status='P', verify_by_id!=NULL, dispatch_dtime=NULL (shows in "Awaiting Approval")
+        """
+        return any(pkg.status_code == rr_service.PKG_STATUS_PENDING 
+                   and pkg.dispatch_dtime is None 
+                   and pkg.verify_by_id is not None  # Only submitted packages have verify_by_id set
                    for pkg in req.packages)
     
     if filter_type == 'awaiting':
@@ -908,6 +924,12 @@ def _save_draft(relief_request):
     """
     Save packaging progress as draft.
     
+    Draft packages:
+    - Change request status to PART_FILLED (to show in "Being Prepared" tab)
+    - Create ReliefPkg with status='P' but verify_by_id=NULL (not submitted for approval)
+    - Reserve inventory
+    - NO notifications sent
+    
     IMPORTANT: Uses atomic transaction to ensure allocations and reservations stay in sync.
     If inventory reservation fails, entire transaction rolls back to prevent phantom allocations.
     Concurrency control is handled via optimistic locking (version_nbr).
@@ -915,6 +937,12 @@ def _save_draft(relief_request):
     try:
         # Process and validate allocations (creates ReliefPkgItem records in pending transaction)
         new_allocations = _process_allocations(relief_request, validate_complete=False)
+        
+        # Change request status to PART_FILLED to show in "Being Prepared" tab
+        relief_request.status_code = rr_service.STATUS_PART_FILLED
+        relief_request.action_by_id = current_user.user_name
+        relief_request.action_dtime = datetime.now()
+        relief_request.version_nbr += 1
         
         # Flush to database (still in transaction - not committed yet)
         db.session.flush()
@@ -984,11 +1012,19 @@ def _submit_for_approval(relief_request):
         if not relief_pkg:
             raise ValueError('Failed to create relief package')
         
-        # Keep package as Pending - DO NOT modify verify_by_id (preserves audit trail)
-        # "Pending LM approval" = status_code='P' + no lock + verify_by_id is NULL or non-NULL
+        # Mark package as submitted for approval by setting verify_by_id
+        # This differentiates submitted packages from drafts (where verify_by_id=NULL)
         relief_pkg.status_code = rr_service.PKG_STATUS_PENDING
+        relief_pkg.verify_by_id = current_user.user_name  # Set when submitting for LM approval
         relief_pkg.update_by_id = current_user.user_name
         relief_pkg.update_dtime = datetime.now()
+        relief_pkg.version_nbr += 1
+        
+        # Change request status to PART_FILLED (submitted for approval)
+        relief_request.status_code = rr_service.STATUS_PART_FILLED
+        relief_request.action_by_id = current_user.user_name
+        relief_request.action_dtime = datetime.now()
+        relief_request.version_nbr += 1
         
         # Flush to persist allocations before calculating reservation deltas
         db.session.flush()
@@ -1030,8 +1066,6 @@ def _submit_for_approval(relief_request):
                 logger.error(f'Failed to send LM approval notification: {str(e)}', exc_info=True)
         
         db.session.commit()
-        
-        lock_service.release_lock(relief_request.reliefrqst_id, current_user.user_id)
         
         flash(f'Relief request #{relief_request.reliefrqst_id} submitted for Logistics Manager approval', 'success')
         return redirect(url_for('packaging.pending_fulfillment'))
@@ -1145,6 +1179,8 @@ def _process_allocations(relief_request, validate_complete=False):
         tracking_no = str(uuid.uuid4()).replace('-', '').upper()[:7]
         
         # Create a new relief package for tracking allocations
+        # NOTE: verify_by_id and received_by_id are NOT set for drafts
+        # They will be set when package is submitted for approval or dispatched
         relief_pkg = ReliefPkg(
             agency_id=relief_request.agency_id,
             tracking_no=tracking_no,
@@ -1156,8 +1192,8 @@ def _process_allocations(relief_request, validate_complete=False):
             create_dtime=datetime.now(),
             update_by_id=current_user.user_name,
             update_dtime=datetime.now(),
-            verify_by_id=current_user.user_name,
-            received_by_id=current_user.user_name,
+            verify_by_id=None,  # NULL for drafts, set when submitted for approval
+            received_by_id=None,  # NULL until package is received
             version_nbr=1
         )
         db.session.add(relief_pkg)
