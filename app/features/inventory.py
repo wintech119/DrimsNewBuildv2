@@ -43,6 +43,9 @@ def stock_check():
 @login_required
 def list_inventory():
     """List inventory summary"""
+    from app.core.rbac import has_role
+    from flask_login import current_user
+    
     warehouse_id = request.args.get('warehouse_id', type=int)
     
     query = db.session.query(
@@ -52,11 +55,35 @@ def list_inventory():
         Warehouse.warehouse_name
     ).join(Item).join(Warehouse)
     
+    # Inventory Clerks can only see inventory from their assigned warehouses
+    if has_role('INVENTORY_CLERK'):
+        user_warehouse_ids = [w.warehouse_id for w in current_user.warehouses]
+        if user_warehouse_ids:
+            query = query.filter(Inventory.inventory_id.in_(user_warehouse_ids))
+        else:
+            # If no warehouses assigned, show nothing
+            inventory_items = []
+            warehouses = []
+            return render_template('inventory/list.html', 
+                                 inventory_items=inventory_items,
+                                 warehouses=warehouses,
+                                 selected_warehouse_id=warehouse_id)
+    
+    # Apply additional warehouse filter if specified
     if warehouse_id:
         query = query.filter(Inventory.inventory_id == warehouse_id)
     
     inventory_items = query.filter(Inventory.status_code == 'A').all()
-    warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
+    
+    # For Inventory Clerks, only show their assigned warehouses in the dropdown
+    if has_role('INVENTORY_CLERK'):
+        user_warehouse_ids = [w.warehouse_id for w in current_user.warehouses]
+        warehouses = Warehouse.query.filter(
+            Warehouse.warehouse_id.in_(user_warehouse_ids),
+            Warehouse.status_code == 'A'
+        ).order_by(Warehouse.warehouse_name).all()
+    else:
+        warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
     
     return render_template('inventory/list.html', 
                          inventory_items=inventory_items,

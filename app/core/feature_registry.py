@@ -380,7 +380,7 @@ class FeatureRegistry:
         'reports_main': {
             'name': 'Reports',
             'description': 'Access system reports',
-            'roles': ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'INVENTORY_CLERK', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'SYSTEM_ADMINISTRATOR'],
+            'roles': ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'SYSTEM_ADMINISTRATOR'],
             'route': 'reports.index',
             'url': '/reports',
             'icon': 'bi-file-earmark-bar-graph',
@@ -391,7 +391,7 @@ class FeatureRegistry:
         'reports_inventory': {
             'name': 'Inventory Reports',
             'description': 'View inventory summary reports',
-            'roles': ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'INVENTORY_CLERK', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'SYSTEM_ADMINISTRATOR'],
+            'roles': ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'SYSTEM_ADMINISTRATOR'],
             'route': 'reports.inventory_summary',
             'url': '/reports/inventory_summary',
             'icon': 'bi-bar-chart',
@@ -402,7 +402,7 @@ class FeatureRegistry:
         'reports_donations': {
             'name': 'Donation Reports',
             'description': 'View donations summary reports',
-            'roles': ['INVENTORY_CLERK', 'LOGISTICS_MANAGER', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'SYSTEM_ADMINISTRATOR'],
+            'roles': ['LOGISTICS_MANAGER', 'ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'SYSTEM_ADMINISTRATOR'],
             'route': 'reports.donations_summary',
             'url': '/reports/donations_summary',
             'icon': 'bi-graph-up',
