@@ -303,7 +303,7 @@ class FeatureRegistry:
             'url': '/events',
             'icon': 'bi-calendar-event',
             'category': 'master_data',
-            'navigation_group': 'relief_requests',
+            'navigation_group': 'master_data',
             'priority': 8
         },
         'agency_management': {
