@@ -813,11 +813,6 @@ def pending_fulfillment():
                              current_filter=filter_type,
                              now=datetime.now())
     
-    # Security: Only Logistics Managers can access approved_no_allocation filter
-    if filter_type == 'approved_no_allocation' and not is_logistics_manager():
-        flash('Access denied. Only Logistics Managers can view this page.', 'danger')
-        abort(403)
-    
     # Handle approved_no_allocation filter - shows approved packages WITHOUT items allocated
     if filter_type == 'approved_no_allocation':
         # Query all approved packages (status='D')
