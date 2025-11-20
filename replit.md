@@ -14,6 +14,7 @@ DRIMS (Disaster Relief Inventory Management System) is a web-based platform for 
   - Updated validation rules on form to clearly reflect dynamic field behavior.
 - **Phone Number Field Standardization**: Aligned phone number field format between Creating Agency and Creating Donor forms. Both now use `phone-mask.js` for consistent formatting with pattern `+1 (XXX) XXX-XXXX`. Applied to both create and edit templates.
 - **Database Schema Fix**: Created missing `transfer_item` table that was dropped in migration 007 but never recreated. Added all required columns including `reason_text` to match the TransferItem model. Fixed issue preventing item status changes (activate/inactivate) and UOM detail page errors. Migration 008 applied successfully with subsequent column addition.
+- **Processed Donation Protection**: Implemented complete protection against editing processed donations (status 'P'). Added server-side validation to prevent editing, adding items, or deleting processed donations since they're already in warehouse inventory. Updated view template to hide all edit/delete buttons and display lock icon for processed donations. Ensures data integrity by preventing modifications to donations that have been integrated into the warehouse system.
 
 ## User Preferences
 - **Communication style**: Simple, everyday language.

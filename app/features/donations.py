@@ -337,6 +337,11 @@ def edit_donation(donation_id):
     """Edit donation header (optimistic locking)"""
     donation = Donation.query.get_or_404(donation_id)
     
+    # Prevent editing of processed donations (already in warehouse)
+    if donation.status_code == 'P':
+        flash('Cannot edit a processed donation. It has already been added to warehouse inventory.', 'danger')
+        return redirect(url_for('donations.view_donation', donation_id=donation_id))
+    
     if request.method == 'POST':
         try:
             version_nbr = int(request.form.get('version_nbr', 0))
@@ -440,6 +445,11 @@ def delete_donation(donation_id):
     """Delete donation (only if no items exist)"""
     donation = Donation.query.get_or_404(donation_id)
     
+    # Prevent deleting processed donations (already in warehouse)
+    if donation.status_code == 'P':
+        flash('Cannot delete a processed donation. It has already been added to warehouse inventory.', 'danger')
+        return redirect(url_for('donations.view_donation', donation_id=donation_id))
+    
     if donation.items:
         flash('Cannot delete donation with existing items. Remove all items first.', 'danger')
         return redirect(url_for('donations.view_donation', donation_id=donation_id))
@@ -461,6 +471,11 @@ def delete_donation(donation_id):
 def add_donation_item(donation_id):
     """Add item to donation"""
     donation = Donation.query.get_or_404(donation_id)
+    
+    # Prevent adding items to processed donations (already in warehouse)
+    if donation.status_code == 'P':
+        flash('Cannot add items to a processed donation. It has already been added to warehouse inventory.', 'danger')
+        return redirect(url_for('donations.view_donation', donation_id=donation_id))
     
     if request.method == 'POST':
         try:
@@ -551,6 +566,11 @@ def edit_donation_item(donation_id, item_id):
     donation = Donation.query.get_or_404(donation_id)
     donation_item = DonationItem.query.get_or_404((donation_id, item_id))
     
+    # Prevent editing of processed donations (already in warehouse)
+    if donation.status_code == 'P':
+        flash('Cannot edit items from a processed donation. It has already been added to warehouse inventory.', 'danger')
+        return redirect(url_for('donations.view_donation', donation_id=donation_id))
+    
     if request.method == 'POST':
         try:
             version_nbr = int(request.form.get('version_nbr', 0))
@@ -636,7 +656,13 @@ def edit_donation_item(donation_id, item_id):
 @feature_required('donation_management')
 def delete_donation_item(donation_id, item_id):
     """Delete donation item"""
+    donation = Donation.query.get_or_404(donation_id)
     donation_item = DonationItem.query.get_or_404((donation_id, item_id))
+    
+    # Prevent deleting items from processed donations (already in warehouse)
+    if donation.status_code == 'P':
+        flash('Cannot delete items from a processed donation. It has already been added to warehouse inventory.', 'danger')
+        return redirect(url_for('donations.view_donation', donation_id=donation_id))
     
     try:
         db.session.delete(donation_item)
