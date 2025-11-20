@@ -84,6 +84,16 @@
             <span class="filter-tab-count" aria-label="{{ global_counts.get('approved', 0) }} approved">{{ global_counts.get('approved', 0) }}</span>
             {% endif %}
         </a>
+        {% if has_role('LOGISTICS_MANAGER') %}
+        <a href="{{ url_for('packaging.pending_fulfillment', filter='approved_no_allocation') }}" 
+           class="filter-tab {% if current_filter == 'approved_no_allocation' %}active{% endif %}"
+           aria-current="{% if current_filter == 'approved_no_allocation' %}page{% endif %}">
+            Approved (No Allocation)
+            {% if global_counts.get('approved_no_allocation', 0) > 0 %}
+            <span class="filter-tab-count" aria-label="{{ global_counts.get('approved_no_allocation', 0) }} approved no allocation">{{ global_counts.get('approved_no_allocation', 0) }}</span>
+            {% endif %}
+        </a>
+        {% endif %}
         <a href="{{ url_for('packaging.pending_fulfillment', filter='all') }}" 
            class="filter-tab {% if current_filter == 'all' %}active{% endif %}"
            aria-current="{% if current_filter == 'all' %}page{% endif %}">
@@ -166,10 +176,14 @@
     </table>
     </div>
     {% elif packages %}
-    <!-- Approved Packages Table (for approved_for_dispatch filter) -->
+    <!-- Approved Packages Table (for approved_for_dispatch and approved_no_allocation filters) -->
     <div class="alert alert-info mb-4">
         <i class="bi bi-info-circle me-2"></i>
+        {% if current_filter == 'approved_no_allocation' %}
+        <strong>Information:</strong> These packages were approved by the Logistics Manager but have NO items allocated. All requested items were marked as unavailable, denied, or awaiting availability.
+        {% else %}
         <strong>Information:</strong> These packages have been approved by the Logistics Manager and dispatched to Inventory Clerks for handover to agencies. This is for informational purposes only.
+        {% endif %}
     </div>
     <div class="table-responsive-mobile">
         <table class="relief-requests-table" role="table" aria-label="Approved packages">
@@ -177,8 +191,13 @@
             <tr>
                 <th scope="col">Package ID</th>
                 <th scope="col">Agency</th>
+                {% if current_filter == 'approved_no_allocation' %}
+                <th scope="col">Requested Items</th>
+                <th scope="col">Approved By</th>
+                {% else %}
                 <th scope="col">Items</th>
                 <th scope="col">Total Qty</th>
+                {% endif %}
                 <th scope="col">Approved Date</th>
                 <th scope="col">Status</th>
                 <th scope="col">Actions</th>
@@ -203,8 +222,22 @@
                     <div class="table-sku">{{ req.agency.contact_name }}</div>
                     {% endif %}
                 </td>
+                {% if current_filter == 'approved_no_allocation' %}
+                <td>
+                    <strong>{{ req.items|length if req.items else 0 }}</strong> items requested
+                    <div class="table-sku text-danger">0 items allocated</div>
+                </td>
+                <td>
+                    {% if pkg.verify_by_id %}
+                    {{ pkg.verify_by_id }}
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                {% else %}
                 <td>{{ data.item_count }}</td>
                 <td>{{ data.total_qty|round(2) if data.total_qty else '0' }}</td>
+                {% endif %}
                 <td>
                     {% if pkg.dispatch_dtime %}
                     {{ pkg.dispatch_dtime.strftime('%Y-%m-%d %I:%M %p') }}
@@ -239,6 +272,8 @@
         <p class="mt-3 text-muted">
             {% if current_filter == 'approved_for_dispatch' %}
             No packages approved for dispatch.
+            {% elif current_filter == 'approved_no_allocation' %}
+            No approved packages with zero allocation.
             {% else %}
             No relief requests pending fulfillment for this filter.
             {% endif %}

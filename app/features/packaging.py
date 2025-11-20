@@ -775,9 +775,9 @@ def pending_fulfillment():
         flash('Access denied. Only Logistics Managers can view packages awaiting approval.', 'danger')
         abort(403)
     
-    # Handle approved_for_dispatch filter - shows approved packages instead of requests
+    # Handle approved_for_dispatch filter - shows approved packages WITH items allocated
     if filter_type == 'approved_for_dispatch':
-        # Query approved packages (status='D')
+        # Query approved packages (status='D') with items allocated
         approved_packages = ReliefPkg.query.options(
             joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
             joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
@@ -786,25 +786,72 @@ def pending_fulfillment():
             ReliefPkg.status_code == rr_service.PKG_STATUS_DISPATCHED
         ).order_by(ReliefPkg.dispatch_dtime.desc()).all()
         
-        # Calculate package data
+        # Filter to only packages WITH items allocated (exclude zero-allocation packages)
         package_data = []
         for pkg in approved_packages:
-            package_data.append({
-                'package': pkg,
-                'relief_request': pkg.relief_request,
-                'item_count': len(pkg.items),
-                'total_qty': sum(item.item_qty for item in pkg.items if item.item_qty)
-            })
+            item_count = len(pkg.items)
+            if item_count > 0:  # Only packages with allocated items
+                package_data.append({
+                    'package': pkg,
+                    'relief_request': pkg.relief_request,
+                    'item_count': item_count,
+                    'total_qty': sum(item.item_qty for item in pkg.items if item.item_qty)
+                })
         
-        # Count approved packages
-        total_approved = len(approved_packages)
-        awaiting_handover = len([pkg for pkg in approved_packages if not pkg.received_dtime])
+        # Count approved packages with items
+        total_approved = len(package_data)
+        awaiting_handover = len([p['package'] for p in package_data if not p['package'].received_dtime])
+        
+        # Count packages with no allocation for global counts
+        approved_no_allocation_count = len([pkg for pkg in approved_packages if len(pkg.items) == 0])
         
         return render_template('packaging/pending_fulfillment.html',
                              requests=[],
                              packages=package_data,
                              counts={'approved': total_approved, 'awaiting_handover': awaiting_handover},
-                             global_counts={'approved': total_approved},
+                             global_counts={'approved': total_approved, 'approved_no_allocation': approved_no_allocation_count},
+                             current_filter=filter_type,
+                             now=datetime.now())
+    
+    # Security: Only Logistics Managers can access approved_no_allocation filter
+    if filter_type == 'approved_no_allocation' and not is_logistics_manager():
+        flash('Access denied. Only Logistics Managers can view this page.', 'danger')
+        abort(403)
+    
+    # Handle approved_no_allocation filter - shows approved packages WITHOUT items allocated
+    if filter_type == 'approved_no_allocation':
+        # Query all approved packages (status='D')
+        all_approved_packages = ReliefPkg.query.options(
+            joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.agency),
+            joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.eligible_event),
+            joinedload(ReliefPkg.relief_request).joinedload(ReliefRqst.items),
+            joinedload(ReliefPkg.items).joinedload(ReliefPkgItem.item)
+        ).filter(
+            ReliefPkg.status_code == rr_service.PKG_STATUS_DISPATCHED
+        ).order_by(ReliefPkg.dispatch_dtime.desc()).all()
+        
+        # Filter to only packages WITHOUT items allocated (zero-allocation packages)
+        package_data = []
+        for pkg in all_approved_packages:
+            if len(pkg.items) == 0:  # Only packages with NO allocated items
+                package_data.append({
+                    'package': pkg,
+                    'relief_request': pkg.relief_request,
+                    'item_count': 0,
+                    'total_qty': 0
+                })
+        
+        # Count packages with no allocation
+        total_no_allocation = len(package_data)
+        
+        # Count packages with items for global counts
+        approved_with_items_count = len([pkg for pkg in all_approved_packages if len(pkg.items) > 0])
+        
+        return render_template('packaging/pending_fulfillment.html',
+                             requests=[],
+                             packages=package_data,
+                             counts={'approved_no_allocation': total_no_allocation},
+                             global_counts={'approved': approved_with_items_count, 'approved_no_allocation': total_no_allocation},
                              current_filter=filter_type,
                              now=datetime.now())
     
@@ -864,10 +911,16 @@ def pending_fulfillment():
     else:
         filtered_requests = all_requests
     
-    # Count approved packages for the tab
-    approved_packages_count = ReliefPkg.query.filter(
+    # Count approved packages for the tabs
+    # Get all approved packages and split by allocation status
+    all_approved_pkgs = ReliefPkg.query.options(
+        joinedload(ReliefPkg.items)
+    ).filter(
         ReliefPkg.status_code == rr_service.PKG_STATUS_DISPATCHED
-    ).count()
+    ).all()
+    
+    approved_with_items = len([pkg for pkg in all_approved_pkgs if len(pkg.items) > 0])
+    approved_no_allocation = len([pkg for pkg in all_approved_pkgs if len(pkg.items) == 0])
     
     global_counts = {
         'submitted': len([r for r in all_requests 
@@ -879,7 +932,8 @@ def pending_fulfillment():
                            and not has_pending_approval(r)
                            and not has_dispatched_package(r)]),
         'pending_approval': len([r for r in all_requests if has_pending_approval(r)]),
-        'approved': approved_packages_count
+        'approved': approved_with_items,
+        'approved_no_allocation': approved_no_allocation
     }
     
     filtered_counts = {

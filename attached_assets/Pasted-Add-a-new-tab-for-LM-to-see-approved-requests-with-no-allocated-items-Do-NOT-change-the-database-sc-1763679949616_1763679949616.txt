@@ -1,0 +1,61 @@
+Add a new tab for LM to see approved requests with no allocated items. Do NOT change the database schema; reuse existing DRIMS UI and navigation.
+
+1. New Tab
+
+On the Relief Request / Fulfillment screen for the Logistics Manager (LM), add a new tab, for example named:
+“Approved – No Items Allocated” or “Approved (No Allocation)”.
+
+Use the same visual style as the existing tabs (Being Prepared, Awaiting Approval, Approved for Dispatch, etc.).
+
+2. Filtering Logic for the New Tab
+
+This tab must list only relief requests / packages that meet both of the following conditions:
+
+The package has been approved by the LM (i.e. it is in an approved / completed LM status – use the existing LM-approved status code).
+
+No items were allocated in the package, meaning for that relief request/package:
+
+All requested items have allocated_qty = 0 (or issue_qty = 0, depending on your existing allocation/issue field), and
+
+There are no batch allocations recorded against those items.
+
+Requests that have any non-zero allocated/issue quantity must not appear in this tab.
+
+3. Behaviour with Other Tabs
+
+These “approved with no allocation” requests must not appear in normal “Approved for Dispatch” / “Dispatched” tabs that expect items to be issued.
+
+Make sure status filters for:
+
+Being Prepared
+
+Awaiting Approval
+
+Approved for Dispatch
+
+Approved (No Allocation)
+are mutually consistent so that each request appears only where it logically belongs.
+
+4. Display Columns
+
+In the new tab, show at least:
+
+Request ID / Tracking No (e.g. RR-000036)
+
+Agency name
+
+Requested date / Required date
+
+LM approver name
+
+Approval date/time
+
+High-level reason/status (e.g. “No stock available / Unavailable”).
+
+Clicking a row should open the standard read-only view of the request and its items, showing clearly that all items are unallocated (0 issued).
+
+5. General
+
+Do not modify any tables or schema; derive everything from existing request, item, allocation/issue, and status fields.
+
+Keep all existing styling, routing, and navigation; this is an additional tab and filter logic only.
