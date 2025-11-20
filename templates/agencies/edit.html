@@ -121,8 +121,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label for="phone_no" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                                    <input type="tel" class="form-control" id="phone_no" name="phone_no" 
-                                           maxlength="20" value="{{ form_data.get('phone_no', agency.phone_no) }}" required>
+                                    <input type="tel" class="form-control phone-mask" id="phone_no" name="phone_no" 
+                                           maxlength="20" value="{{ form_data.get('phone_no', agency.phone_no) }}" required
+                                           placeholder="+1 (876) XXX-XXXX">
+                                    <small class="form-text text-muted">Format: +1 (XXX) XXX-XXXX</small>
                                 </div>
                                 <div class="col-md-4">
                                     <label for="email_text" class="form-label">Email Address</label>
@@ -164,6 +166,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phone-mask.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const agencyTypeSelect = document.getElementById('agency_type');

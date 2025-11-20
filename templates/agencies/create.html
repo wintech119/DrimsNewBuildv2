@@ -214,14 +214,14 @@
                                         Phone Number <span class="text-danger">*</span>
                                     </label>
                                     <input type="tel" 
-                                           class="form-control {% if errors and errors.get('phone_no') %}is-invalid{% endif %}" 
+                                           class="form-control phone-mask {% if errors and errors.get('phone_no') %}is-invalid{% endif %}" 
                                            id="phone_no" 
                                            name="phone_no" 
                                            maxlength="20"
                                            value="{{ form_data.get('phone_no', '') }}"
                                            required 
-                                           placeholder="+1-876-XXX-XXXX">
-                                    <small class="form-text text-muted">Max 20 characters</small>
+                                           placeholder="+1 (876) XXX-XXXX">
+                                    <small class="form-text text-muted">Format: +1 (XXX) XXX-XXXX</small>
                                     {% if errors and errors.get('phone_no') %}
                                     <div class="invalid-feedback d-block">{{ errors.get('phone_no') }}</div>
                                     {% endif %}
@@ -293,6 +293,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phone-mask.js') }}"></script>
 <script>
 // Handle agency type and warehouse relationship
 document.addEventListener('DOMContentLoaded', function() {
