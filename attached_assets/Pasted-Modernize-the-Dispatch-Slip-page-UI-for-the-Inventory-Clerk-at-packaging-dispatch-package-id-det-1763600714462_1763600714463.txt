@@ -1,0 +1,71 @@
+Modernize the Dispatch Slip page UI for the Inventory Clerk at
+
+/packaging/dispatch/<package_id>/details (example: /packaging/dispatch/6/details), while keeping existing functionality and navigation intact.
+
+1. Keep core actions and behaviour
+
+Do NOT remove or rename the following buttons:
+
+“Print Dispatch Slip” – must continue to open/trigger the printable slip view.
+
+“Mark as Handover” – must continue to update the dispatch status and notify the LM and LO as it currently does.
+
+All existing notification logic, routing, and backend behaviour must remain unchanged. This is a UI/UX refresh only.
+
+2. Modernize layout & visual design
+
+Refresh the page using a clean, modern layout while keeping DRIMS colours, fonts, and branding.
+
+Organize the content into clearly separated sections, for example:
+
+Agency Information (agency name, contact, request ID)
+
+Dispatch Details (date, warehouse, clerk, LM info)
+
+Itemized List (item, requested qty, issued qty, UOM, batch/lot where applicable)
+
+Signature Section for the requesting agency.
+
+Improve spacing, alignment, and typography for readability:
+
+Consistent padding and margins.
+
+Neat column alignment for item rows and quantities.
+
+Use card or panel-style grouping to visually separate sections without clutter.
+
+3. Print-friendly design
+
+Ensure “Print Dispatch Slip” produces a clean, print-optimized layout:
+
+No sidebars or navigation chrome.
+
+Minimal, light borders and clear section headers.
+
+Suitable for A4/Letter printing.
+
+The printed slip must include:
+
+Agency info, request/package ID.
+
+All items for this warehouse, with requested vs issued quantities.
+
+Warehouse and date/time details.
+
+A professional signature block:
+
+Received By (Agency): _______
+
+Signature: _______
+
+Date: _______
+
+Inventory Clerk Name: _______
+
+4. General constraints
+
+Do not change any database schema or business logic.
+
+Preserve existing routing, permissions, and notification behaviour.
+
+Only update the front-end layout and styling so the page looks modern, is easy to read, and works very well as a printable dispatch slip, while still exposing Print Dispatch Slip and Mark as Handover as primary actions.
