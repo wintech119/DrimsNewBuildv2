@@ -6,6 +6,7 @@ from app.db import db
 from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy import CheckConstraint
+from app.utils.timezone import now as jamaica_now
 
 class User(UserMixin, db.Model):
     """User authentication model with MFA and lockout support"""
@@ -29,8 +30,8 @@ class User(UserMixin, db.Model):
     notification_preferences = db.Column(db.Text)
     assigned_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'))
     last_login_at = db.Column(db.DateTime)
-    create_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    create_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
+    update_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     
     mfa_enabled = db.Column(db.Boolean, nullable=False, default=False)
     mfa_secret = db.Column(db.String(64))
@@ -104,7 +105,7 @@ class Role(db.Model):
     code = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=jamaica_now)
     
     users = db.relationship('User', 
                            secondary='user_role',
@@ -118,12 +119,12 @@ class UserRole(db.Model):
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
-    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    assigned_at = db.Column(db.DateTime, default=jamaica_now)
     assigned_by = db.Column(db.Integer, db.ForeignKey('user.user_id'))
     create_by_id = db.Column(db.String(20), nullable=False, default='system')
-    create_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    create_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     update_by_id = db.Column(db.String(20), nullable=False, default='system')
-    update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    update_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
 
 class Permission(db.Model):
@@ -134,9 +135,9 @@ class Permission(db.Model):
     resource = db.Column(db.String(50), nullable=False)
     action = db.Column(db.String(50), nullable=False)
     create_by_id = db.Column(db.String(20), nullable=False)
-    create_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    create_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     update_by_id = db.Column(db.String(20), nullable=False)
-    update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    update_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
 
 class RolePermission(db.Model):
@@ -147,9 +148,9 @@ class RolePermission(db.Model):
     perm_id = db.Column(db.Integer, db.ForeignKey('permission.perm_id'), primary_key=True)
     scope_json = db.Column(db.JSON)
     create_by_id = db.Column(db.String(20), nullable=False)
-    create_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    create_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     update_by_id = db.Column(db.String(20), nullable=False)
-    update_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    update_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
 
 class UserWarehouse(db.Model):
@@ -158,7 +159,7 @@ class UserWarehouse(db.Model):
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), primary_key=True)
     warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.warehouse_id'), primary_key=True)
-    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    assigned_at = db.Column(db.DateTime, default=jamaica_now)
     assigned_by = db.Column(db.Integer, db.ForeignKey('user.user_id'))
 
 class Event(db.Model):
@@ -700,7 +701,7 @@ class ReliefRequestFulfillmentLock(db.Model):
     reliefrqst_id = db.Column(db.Integer, db.ForeignKey('reliefrqst.reliefrqst_id', ondelete='CASCADE'), primary_key=True)
     fulfiller_user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'), nullable=False)
     fulfiller_email = db.Column(db.String(100), nullable=False)
-    acquired_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    acquired_at = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     expires_at = db.Column(db.DateTime)
     
     relief_request = db.relationship('ReliefRqst', backref=db.backref('fulfillment_lock', uselist=False))
@@ -990,7 +991,7 @@ class TransferRequest(db.Model):
     quantity = db.Column(db.Numeric(12,2), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='PENDING')
     requested_by = db.Column(db.Integer, db.ForeignKey('user.user_id'))
-    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    requested_at = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     reviewed_by = db.Column(db.Integer, db.ForeignKey('user.user_id'))
     reviewed_at = db.Column(db.DateTime)
     notes = db.Column(db.Text)
@@ -1289,9 +1290,9 @@ class AgencyAccountRequest(db.Model):
     status_reason = db.Column(db.String(255))
     
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     updated_by_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
     agency = db.relationship('Agency', foreign_keys=[agency_id], backref='account_requests')
@@ -1308,7 +1309,7 @@ class AgencyAccountRequestAudit(db.Model):
     event_type = db.Column(db.String(24), nullable=False)
     event_notes = db.Column(db.String(255))
     actor_user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    event_dtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    event_dtime = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
     request = db.relationship('AgencyAccountRequest', backref='audit_log')
@@ -1329,7 +1330,7 @@ class Notification(db.Model):
     link_url = db.Column(db.String(500))
     payload = db.Column(db.Text)
     is_archived = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=jamaica_now)
     
     user = db.relationship('User', backref='notifications')
     warehouse = db.relationship('Warehouse', backref='notifications')
