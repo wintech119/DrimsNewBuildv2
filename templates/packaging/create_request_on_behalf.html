@@ -12,9 +12,9 @@
     <!-- Back Button -->
     <div class="mb-3">
         {% if is_logistics %}
-            <a href="{{ url_for('packaging.pending_fulfillment') }}" class="btn-back">
+            <a href="{{ url_for('requests.list_requests') }}" class="btn-back">
                 <i class="bi bi-arrow-left"></i>
-                Back to Pending Fulfillment
+                Back to Create Request (On Behalf of Agency)
             </a>
         {% else %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-back">
@@ -112,7 +112,7 @@
                                 Create Request
                             </button>
                             {% if is_logistics %}
-                                <a href="{{ url_for('packaging.pending_fulfillment') }}" class="btn-relief-secondary">
+                                <a href="{{ url_for('requests.list_requests') }}" class="btn-relief-secondary">
                                     <i class="bi bi-x-circle"></i>
                                     Cancel
                                 </a>
