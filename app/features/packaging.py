@@ -408,10 +408,12 @@ def _approve_and_dispatch(relief_request, relief_pkg):
         # Process and validate allocations (can be partial)
         new_allocations = _process_allocations(relief_request, validate_complete=False)
         
-        # Verify at least one item has allocated quantity OR all unallocated items have valid unavailability statuses
-        has_allocated_items = any(alloc['allocated_qty'] > 0 for alloc in new_allocations)
+        # CRITICAL VALIDATION: Ensure package has items before dispatch
+        # Check if any ReliefPkgItem records were created
+        relief_pkg_items_count = ReliefPkgItem.query.filter_by(reliefpkg_id=relief_pkg.reliefpkg_id).count()
         
-        if not has_allocated_items:
+        if relief_pkg_items_count == 0:
+            # No items allocated - package is empty
             # Check if all items have valid unavailability statuses (U, D, W)
             unavailability_statuses = {'U', 'D', 'W'}
             all_items_unavailable = all(
@@ -420,7 +422,14 @@ def _approve_and_dispatch(relief_request, relief_pkg):
             )
             
             if not all_items_unavailable:
-                raise ValueError('Cannot dispatch package: no items have been allocated. Items without allocation must have status Unavailable (U), Denied (D), or Awaiting Availability (W).')
+                raise ValueError('Cannot dispatch package: no items have been allocated. All requested items must either have batch allocations or be marked as Unavailable (U), Denied (D), or Awaiting Availability (W).')
+        
+        # Verify at least one item has allocated quantity OR all unallocated items have valid unavailability statuses
+        has_allocated_items = any(alloc['allocated_qty'] > 0 for alloc in new_allocations)
+        
+        if not has_allocated_items and relief_pkg_items_count == 0:
+            # Double-check: No allocations AND no package items
+            raise ValueError('Cannot dispatch empty package. Please allocate items before dispatching or mark items as unavailable.')
         
         # Update issue_qty for each item based on total allocated quantity
         for item in relief_request.items:
