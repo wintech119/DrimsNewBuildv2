@@ -18,7 +18,6 @@ from app.db.models import (
 )
 from app.core.rbac import has_permission, permission_required
 from app.services import relief_request_service as rr_service
-from app.services import fulfillment_lock_service as lock_service
 from app.services import item_status_service
 from app.services import inventory_reservation_service as reservation_service
 from app.services.batch_allocation_service import BatchAllocationService
@@ -236,8 +235,7 @@ def approve_package(reliefrqst_id):
         joinedload(ReliefRqst.status),
         joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.category),
         joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom),
-        joinedload(ReliefRqst.packages),
-        joinedload(ReliefRqst.fulfillment_lock).joinedload(ReliefRequestFulfillmentLock.fulfiller)
+        joinedload(ReliefRqst.packages)
     ).get_or_404(reliefrqst_id)
     
     # Get the pending package
@@ -251,27 +249,7 @@ def approve_package(reliefrqst_id):
         flash('This package has already been dispatched.', 'warning')
         return redirect(url_for('packaging.pending_approval'))
     
-    # Check lock status
-    can_edit, blocking_user, lock = lock_service.check_lock(reliefrqst_id, current_user.user_id)
-    
     if request.method == 'GET':
-        # BLOCK ACCESS: If another user already has the lock, redirect immediately
-        if not can_edit:
-            flash(f'This relief request is currently being prepared by {blocking_user}. Please try again later.', 'warning')
-            return redirect(url_for('packaging.pending_approval'))
-        
-        # Try to acquire lock if not already held
-        if not lock:
-            success, message, lock = lock_service.acquire_lock(
-                reliefrqst_id,
-                current_user.user_id,
-                current_user.email
-            )
-            if not success:
-                # Lock acquisition failed (race condition) - redirect with blocking message
-                blocking_user = message.replace("Currently being prepared by ", "")
-                flash(f'This relief request is currently being prepared by {blocking_user}. Please try again later.', 'warning')
-                return redirect(url_for('packaging.pending_approval'))
         
         # Load warehouses
         warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
@@ -335,17 +313,10 @@ def approve_package(reliefrqst_id):
                              warehouses=warehouses,
                              item_inventory_map=item_inventory_map,
                              existing_batch_allocations=existing_batch_allocations,
-                             can_edit=can_edit,
-                             blocking_user=blocking_user,
-                             lock=lock,
-                             is_locked_by_me=(lock and lock.fulfiller_user_id == current_user.user_id),
                              status_map=status_map,
                              item_status_options=item_status_options)
     
     # POST: Handle actions
-    if not can_edit:
-        flash(f'This request is currently being edited by {blocking_user}', 'warning')
-        return redirect(url_for('packaging.pending_approval'))
     
     action = request.form.get('action')
     
@@ -360,11 +331,11 @@ def approve_package(reliefrqst_id):
 
 def _save_draft_approval(relief_request, relief_pkg):
     """
-    LM saves draft changes during approval workflow and releases lock.
+    LM saves draft changes during approval workflow.
     - Updates allocations with delta-based itembatch changes
     - Keeps package in Pending status
-    - Releases lock so other LM users can access the package
     - No notifications sent
+    - Concurrency control via optimistic locking (version_nbr)
     """
     try:
         # Process batch allocations and update ReliefPkgItem
@@ -388,35 +359,29 @@ def _save_draft_approval(relief_request, relief_pkg):
         )
         
         if not success:
-            # Reservation failed - rollback and retain lock
+            # Reservation failed - rollback
             db.session.rollback()
-            lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
             flash(f'{error_msg}', 'warning')
-            flash('Draft not saved due to insufficient inventory. Your lock is retained so you can continue editing.', 'info')
+            flash('Draft not saved due to insufficient inventory.', 'info')
             return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
         
         # Commit changes
         db.session.commit()
         
-        # Release lock so other users can access this package
-        lock_service.release_lock(relief_request.reliefrqst_id, current_user.user_id, force=False, release_reservations=False)
-        
-        flash(f'Draft saved for relief request #{relief_request.reliefrqst_id}. Lock released - other users can now access this package.', 'success')
+        flash(f'Draft saved for relief request #{relief_request.reliefrqst_id}.', 'success')
         
         return redirect(url_for('packaging.pending_approval'))
         
-    except ValueError as e:
-        db.session.rollback()
-        lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
-        flash(str(e), 'danger')
-        return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
     except OptimisticLockError as e:
         db.session.rollback()
-        flash(f'Concurrency conflict: {str(e)} Please refresh the page and try again.', 'danger')
+        flash('This relief package has been updated by another user. Please refresh and try again.', 'warning')
+        return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
+    except ValueError as e:
+        db.session.rollback()
+        flash(str(e), 'danger')
         return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
     except Exception as e:
         db.session.rollback()
-        lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
         flash(f'Error saving draft: {str(e)}', 'danger')
         return redirect(url_for('packaging.approve_package', reliefrqst_id=relief_request.reliefrqst_id))
 
@@ -843,34 +808,14 @@ def prepare_package(reliefrqst_id):
         joinedload(ReliefRqst.eligible_event),
         joinedload(ReliefRqst.status),
         joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.category),
-        joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom),
-        joinedload(ReliefRqst.fulfillment_lock).joinedload(ReliefRequestFulfillmentLock.fulfiller)
+        joinedload(ReliefRqst.items).joinedload(ReliefRqstItem.item).joinedload(Item.default_uom)
     ).get_or_404(reliefrqst_id)
     
     if relief_request.status_code not in [rr_service.STATUS_SUBMITTED, rr_service.STATUS_PART_FILLED]:
         flash(f'Only SUBMITTED or PART FILLED requests can be packaged. Current status: {relief_request.status.status_desc}', 'danger')
         return redirect(url_for('packaging.pending_fulfillment'))
     
-    can_edit, blocking_user, lock = lock_service.check_lock(reliefrqst_id, current_user.user_id)
-    
     if request.method == 'GET':
-        # BLOCK ACCESS: If another user already has the lock, redirect immediately
-        if not can_edit:
-            flash(f'This relief request is currently being prepared by {blocking_user}. Please try again later.', 'warning')
-            return redirect(url_for('packaging.pending_fulfillment'))
-        
-        # Try to acquire lock if not already held
-        if not lock:
-            success, message, lock = lock_service.acquire_lock(
-                reliefrqst_id, 
-                current_user.user_id, 
-                current_user.email
-            )
-            if not success:
-                # Lock acquisition failed (race condition) - redirect with blocking message
-                blocking_user = message.replace("Currently being prepared by ", "")
-                flash(f'This relief request is currently being prepared by {blocking_user}. Please try again later.', 'warning')
-                return redirect(url_for('packaging.pending_fulfillment'))
         
         warehouses = Warehouse.query.filter_by(status_code='A').order_by(Warehouse.warehouse_name).all()
         
@@ -946,16 +891,8 @@ def prepare_package(reliefrqst_id):
                              item_inventory_map=item_inventory_map,
                              existing_allocations=existing_allocations,
                              existing_batch_allocations=existing_batch_allocations,
-                             can_edit=can_edit,
-                             blocking_user=blocking_user,
-                             lock=lock,
-                             is_locked_by_me=(lock and lock.fulfiller_user_id == current_user.user_id),
                              status_map=status_map,
                              item_status_options=item_status_options)
-    
-    if not can_edit:
-        flash(f'This request is currently being prepared by {blocking_user}', 'warning')
-        return redirect(url_for('packaging.pending_fulfillment'))
     
     action = request.form.get('action')
     
@@ -972,12 +909,11 @@ def prepare_package(reliefrqst_id):
 
 def _save_draft(relief_request):
     """
-    Save packaging progress as draft and release lock.
+    Save packaging progress as draft.
     
     IMPORTANT: Uses atomic transaction to ensure allocations and reservations stay in sync.
     If inventory reservation fails, entire transaction rolls back to prevent phantom allocations.
-    Lock is retained on failure so user can continue editing and retry.
-    Lock is released on success so other LO/LM users can access the package.
+    Concurrency control is handled via optimistic locking (version_nbr).
     """
     try:
         # Process and validate allocations (creates ReliefPkgItem records in pending transaction)
@@ -998,34 +934,27 @@ def _save_draft(relief_request):
         if not success:
             # Reservation failed - rollback to prevent phantom allocations
             db.session.rollback()
-            # CRITICAL: Rollback clears the lock from session, so we must re-establish it
-            # to let user continue editing
-            lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
             flash(f'{error_msg}', 'warning')
-            flash('Draft not saved due to insufficient inventory. Please adjust allocations or wait for inventory to become available. Your lock is retained so you can continue editing.', 'info')
+            flash('Draft not saved due to insufficient inventory. Please adjust allocations or wait for inventory to become available.', 'info')
             return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
         
         # Reservation succeeded - commit both allocations and reservations atomically
         db.session.commit()
         
-        # Release lock so other users can access this package
-        lock_service.release_lock(relief_request.reliefrqst_id, current_user.user_id, force=False, release_reservations=False)
-        
-        flash(f'Draft saved for relief request #{relief_request.reliefrqst_id} with inventory reserved. Lock released - other users can now access this package.', 'success')
+        flash(f'Draft saved for relief request #{relief_request.reliefrqst_id} with inventory reserved.', 'success')
         
         return redirect(url_for('packaging.pending_fulfillment'))
         
+    except OptimisticLockError as e:
+        db.session.rollback()
+        flash('This relief package has been updated by another user. Please refresh and try again.', 'warning')
+        return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
     except ValueError as e:
         db.session.rollback()
-        # Re-acquire lock after rollback to let user continue editing
-        lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
         flash(str(e), 'danger')
         return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
     except Exception as e:
-        # Catch all other exceptions (OptimisticLockError, database errors, etc.)
         db.session.rollback()
-        # Re-acquire lock after rollback to let user continue editing
-        lock_service.acquire_lock(relief_request.reliefrqst_id, current_user.user_id, current_user.email)
         flash(f'Error saving draft: {str(e)}', 'danger')
         return redirect(url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id))
 
