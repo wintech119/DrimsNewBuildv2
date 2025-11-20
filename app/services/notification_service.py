@@ -313,10 +313,15 @@ class NotificationService:
         for user in recipient_users:
             # Different deep-links for different user types based on role
             user_role_codes = [role.code for role in user.roles]
+            is_inventory_clerk = 'INVENTORY_CLERK' in user_role_codes
             is_logistics_user = any(code in ['LOGISTICS_OFFICER', 'LOGISTICS_MANAGER'] for code in user_role_codes)
             
-            if is_logistics_user:
-                # Logistics/warehouse users: Link to package details
+            if is_inventory_clerk:
+                # Inventory Clerks: Link to awaiting dispatch page
+                link_url = url_for('packaging.awaiting_dispatch', _external=False)
+                message = f'Package for {tracking_no} from {agency_name} approved by {approver_name}. Ready to be handed over to agency.'
+            elif is_logistics_user:
+                # Logistics Officers/Managers: Link to package details
                 link_url = url_for('packaging.prepare_package', reliefrqst_id=relief_request.reliefrqst_id, _external=False)
                 message = f'Package for {tracking_no} from {agency_name} approved by {approver_name}. Ready for dispatch.'
             else:

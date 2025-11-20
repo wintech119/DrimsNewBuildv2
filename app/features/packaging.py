@@ -1212,12 +1212,14 @@ def _process_allocations(relief_request, validate_complete=False):
         # Get requested status from form, or use calculated status
         form_status = request.form.get(f'status_{item_id}')
         
-        # Check if item has unavailability status that allows zero allocation
-        unavailability_statuses = {'U', 'D', 'W'}
-        has_unavailability_status = form_status in unavailability_statuses if form_status else False
+        # Check if item has status that allows partial allocation
+        # U, D, W: Unavailable items (zero allocation allowed)
+        # L, P: Partial fulfillment items (partial allocation allowed)
+        partial_allocation_statuses = {'U', 'D', 'W', 'L', 'P'}
+        allows_partial = form_status in partial_allocation_statuses if form_status else False
         
-        # Validate completeness only if not an unavailable item
-        if validate_complete and total_allocated < request_qty and not has_unavailability_status:
+        # Validate completeness only if status doesn't explicitly allow partial allocation
+        if validate_complete and total_allocated < request_qty and not allows_partial:
             raise ValueError(f'Item {item.item.item_name} is not fully allocated ({total_allocated} of {request_qty})')
         
         # Determine the correct status based on allocation
