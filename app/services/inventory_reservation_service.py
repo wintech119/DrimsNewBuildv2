@@ -13,6 +13,7 @@ Key Functions:
 from decimal import Decimal
 from typing import List, Dict, Tuple, Optional
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 from app.db import db
 from app.db.models import Inventory, ReliefPkgItem, ItemBatch
 
@@ -200,12 +201,16 @@ def reserve_inventory(reliefrqst_id: int, new_allocations: List[Dict], old_alloc
 
 def release_all_reservations(reliefrqst_id: int) -> Tuple[bool, str]:
     """
-    Release all inventory reservations for a relief request.
+    Release all inventory reservations for a relief request at BOTH batch and warehouse levels.
     
     Called when:
     - User cancels package preparation
     - Lock expires without saving
     - Package is abandoned
+    
+    Updates:
+    1. Decreases itembatch.reserved_qty for each batch allocated to this package
+    2. Recalculates inventory.reserved_qty from SUM(itembatch.reserved_qty)
     
     Args:
         reliefrqst_id: Relief request ID
@@ -216,19 +221,66 @@ def release_all_reservations(reliefrqst_id: int) -> Tuple[bool, str]:
     Note: inventory_id IS the warehouse_id (composite PK pattern)
     """
     try:
-        current_reservations = get_current_reservations(reliefrqst_id)
+        # Get batch-level reservations for this package
+        batch_reservations = get_current_batch_reservations(reliefrqst_id)
         
-        for (item_id, inventory_id), reserved_qty in current_reservations.items():
+        # Track affected (item_id, inventory_id) pairs for warehouse-level recalculation
+        affected_inventory = set()
+        
+        # Release batch-level reservations (itembatch.reserved_qty)
+        for (item_id, inventory_id, batch_id), reserved_qty in batch_reservations.items():
             if reserved_qty > 0:
-                # Use inventory_id (which IS the warehouse_id) in composite PK
-                inventory = Inventory.query.filter_by(
+                # Skip entries with NULL inventory_id (invalid data)
+                if inventory_id is None:
+                    from flask import current_app
+                    current_app.logger.warning(
+                        f'Skipping batch release for NULL inventory_id: '
+                        f'batch_id={batch_id}, item_id={item_id}, reserved_qty={reserved_qty}'
+                    )
+                    continue
+                
+                # Get the batch and release reservation
+                batch = ItemBatch.query.filter_by(
+                    batch_id=batch_id,
                     item_id=item_id,
-                    inventory_id=inventory_id,  # Use inventory_id, not warehouse_id
-                    status_code='A'
+                    inventory_id=inventory_id
                 ).with_for_update().first()
                 
-                if inventory:
-                    inventory.reserved_qty = max(Decimal('0'), inventory.reserved_qty - reserved_qty)
+                if batch:
+                    # Reduce batch reserved_qty, ensuring it doesn't go below zero
+                    batch.reserved_qty = max(Decimal('0'), batch.reserved_qty - reserved_qty)
+                    # Track this warehouse for inventory-level recalculation
+                    affected_inventory.add((item_id, inventory_id))
+                else:
+                    # Log warning if batch not found but continue releasing other batches
+                    from flask import current_app
+                    current_app.logger.warning(
+                        f'Batch not found during release: '
+                        f'batch_id={batch_id}, item_id={item_id}, inventory_id={inventory_id}'
+                    )
+                    # Still track for warehouse recalculation
+                    affected_inventory.add((item_id, inventory_id))
+        
+        # Recalculate warehouse-level reservations (inventory.reserved_qty) from batch sums
+        for item_id, inventory_id in affected_inventory:
+            # Sum all batch reservations for this item+warehouse
+            batch_totals = db.session.query(
+                func.sum(ItemBatch.reserved_qty).label('total_reserved')
+            ).filter(
+                ItemBatch.item_id == item_id,
+                ItemBatch.inventory_id == inventory_id
+            ).first()
+            
+            # Get the inventory record
+            inventory = Inventory.query.filter_by(
+                item_id=item_id,
+                inventory_id=inventory_id,
+                status_code='A'
+            ).with_for_update().first()
+            
+            if inventory:
+                # Update inventory reserved_qty from batch sum
+                inventory.reserved_qty = batch_totals.total_reserved if batch_totals.total_reserved is not None else Decimal('0')
         
         return True, ''
         
