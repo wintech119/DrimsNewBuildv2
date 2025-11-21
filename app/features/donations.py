@@ -157,7 +157,7 @@ def create_donation():
                 items = Item.query.filter_by(status_code='A').order_by(Item.item_name).all()
                 uoms = UnitOfMeasure.query.filter_by(status_code='A').order_by(UnitOfMeasure.uom_desc).all()
                 adhoc_event = _get_adhoc_event()
-                items_json = [{'item_id': item.item_id, 'item_name': item.item_name} for item in items]
+                items_json = [{'item_id': item.item_id, 'item_name': item.item_name, 'sku_code': item.sku_code, 'default_uom_code': item.default_uom_code} for item in items]
                 uoms_json = [{'uom_code': uom.uom_code, 'uom_desc': uom.uom_desc} for uom in uoms]
                 return render_template('donations/create.html', 
                                      donors=donors, 
@@ -218,7 +218,7 @@ def create_donation():
             items = Item.query.filter_by(status_code='A').order_by(Item.item_name).all()
             uoms = UnitOfMeasure.query.filter_by(status_code='A').order_by(UnitOfMeasure.uom_desc).all()
             adhoc_event = _get_adhoc_event()
-            items_json = [{'item_id': item.item_id, 'item_name': item.item_name} for item in items]
+            items_json = [{'item_id': item.item_id, 'item_name': item.item_name, 'sku_code': item.sku_code, 'default_uom_code': item.default_uom_code} for item in items]
             uoms_json = [{'uom_code': uom.uom_code, 'uom_desc': uom.uom_desc} for uom in uoms]
             return render_template('donations/create.html', 
                                  donors=donors, 
@@ -238,7 +238,7 @@ def create_donation():
             items = Item.query.filter_by(status_code='A').order_by(Item.item_name).all()
             uoms = UnitOfMeasure.query.filter_by(status_code='A').order_by(UnitOfMeasure.uom_desc).all()
             adhoc_event = _get_adhoc_event()
-            items_json = [{'item_id': item.item_id, 'item_name': item.item_name} for item in items]
+            items_json = [{'item_id': item.item_id, 'item_name': item.item_name, 'sku_code': item.sku_code, 'default_uom_code': item.default_uom_code} for item in items]
             uoms_json = [{'uom_code': uom.uom_code, 'uom_desc': uom.uom_desc} for uom in uoms]
             return render_template('donations/create.html', 
                                  donors=donors, 
@@ -293,7 +293,7 @@ def create_donation():
         flash('No units of measure available. Please create UOMs first.', 'warning')
         return redirect(url_for('donations.list_donations'))
     
-    items_json = [{'item_id': item.item_id, 'item_name': item.item_name} for item in items]
+    items_json = [{'item_id': item.item_id, 'item_name': item.item_name, 'sku_code': item.sku_code, 'default_uom_code': item.default_uom_code} for item in items]
     uoms_json = [{'uom_code': uom.uom_code, 'uom_desc': uom.uom_desc} for uom in uoms]
     
     return render_template('donations/create.html', 
