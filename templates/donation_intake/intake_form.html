@@ -182,22 +182,26 @@ input[type=number] {
                                     <div class="col-md-3">
                                         <label for="batch_no_{{ di.item_id }}" class="field-label">Batch No</label>
                                         <input type="text" 
-                                               class="form-control form-control-sm" 
+                                               class="form-control form-control-sm batch-no-input" 
                                                id="batch_no_{{ di.item_id }}"
                                                name="batch_no_{{ di.item_id }}" 
+                                               data-item-id="{{ di.item_id }}"
+                                               data-is-batched="{{ 'true' if di.item.is_batched_flag else 'false' }}"
                                                placeholder="{% if di.item.is_batched_flag %}Required{% else %}Optional{% endif %}"
                                                {% if di.item.is_batched_flag %}required{% endif %}
+                                               oninput="validateBatchPairing({{ di.item_id }})"
                                                style="text-transform: uppercase;">
                                     </div>
                                     <div class="col-md-3">
                                         <label for="batch_date_{{ di.item_id }}" class="field-label">Batch Date</label>
                                         <input type="text" 
-                                               class="form-control form-control-sm iso-date-picker batch-date" 
+                                               class="form-control form-control-sm iso-date-picker batch-date batch-date-input" 
                                                id="batch_date_{{ di.item_id }}"
                                                name="batch_date_{{ di.item_id }}" 
+                                               data-item-id="{{ di.item_id }}"
                                                data-max-date="{{ today }}"
                                                placeholder="YYYY-MM-DD"
-                                               required>
+                                               onchange="validateBatchPairing({{ di.item_id }})">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="expiry_date_{{ di.item_id }}" class="field-label">Expiry Date</label>
@@ -287,6 +291,16 @@ input[type=number] {
                                                data-item-id="{{ di.item_id }}"
                                                oninput="enforceDecimalPlaces(this, 2); autoAdjustUsableQty({{ di.item_id }});"
                                                onchange="validateQuantities({{ di.item_id }})">
+                                    </div>
+                                </div>
+                                
+                                <!-- Batch Pairing Validation Error Messages -->
+                                <div class="row g-2 mt-1">
+                                    <div class="col-12">
+                                        <div class="invalid-feedback d-block batch-pair-error-{{ di.item_id }}" style="display:none !important;">
+                                            <i class="bi bi-exclamation-circle"></i>
+                                            <span class="batch-pair-error-text-{{ di.item_id }}"></span>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -548,10 +562,80 @@ function validateQuantities(itemId) {
     }
 }
 
+// Validate batch number and batch date pairing
+function validateBatchPairing(itemId) {
+    const batchNoInput = document.querySelector(`input[name="batch_no_${itemId}"]`);
+    const batchDateInput = document.querySelector(`input[name="batch_date_${itemId}"]`);
+    const errorDiv = document.querySelector(`.batch-pair-error-${itemId}`);
+    const errorText = document.querySelector(`.batch-pair-error-text-${itemId}`);
+    
+    if (!batchNoInput || !batchDateInput) return;
+    
+    const batchNo = batchNoInput.value.trim();
+    const batchDate = batchDateInput.value.trim();
+    const isBatched = batchNoInput.dataset.isBatched === 'true';
+    
+    // Remove existing error states
+    batchNoInput.classList.remove('is-invalid');
+    batchDateInput.classList.remove('is-invalid');
+    if (errorDiv && errorText) {
+        errorText.textContent = '';
+        errorDiv.style.display = 'none';
+    }
+    
+    // For batched items, both fields are always required
+    if (isBatched) {
+        if (!batchNo) {
+            batchNoInput.classList.add('is-invalid');
+            if (errorDiv && errorText) {
+                errorText.textContent = 'Batch number is required for batched items.';
+                errorDiv.style.display = 'block';
+            }
+        }
+        if (!batchDate) {
+            batchDateInput.classList.add('is-invalid');
+            if (errorDiv && errorText) {
+                errorText.textContent = 'Batch date is required for batched items.';
+                errorDiv.style.display = 'block';
+            }
+        }
+        return;
+    }
+    
+    // For non-batched items, enforce pairing: both filled or both empty
+    if (batchNo && !batchDate) {
+        batchDateInput.classList.add('is-invalid');
+        if (errorDiv && errorText) {
+            errorText.textContent = 'Please enter a Batch Date when a Batch No is provided.';
+            errorDiv.style.display = 'block';
+        }
+    } else if (!batchNo && batchDate) {
+        batchNoInput.classList.add('is-invalid');
+        if (errorDiv && errorText) {
+            errorText.textContent = 'Please enter a Batch No when a Batch Date is provided.';
+            errorDiv.style.display = 'block';
+        }
+    }
+}
+
 document.getElementById('intakeForm').addEventListener('submit', function(e) {
     let hasError = false;
     let errorMessages = [];
     const itemIds = [...new Set([...document.querySelectorAll('[data-item-id]')].map(el => el.dataset.itemId))];
+    
+    // Validate batch pairing
+    itemIds.forEach(itemId => {
+        validateBatchPairing(itemId);
+        const batchNoInput = document.querySelector(`input[name="batch_no_${itemId}"]`);
+        const batchDateInput = document.querySelector(`input[name="batch_date_${itemId}"]`);
+        if (batchNoInput.classList.contains('is-invalid') || batchDateInput.classList.contains('is-invalid')) {
+            hasError = true;
+            const errorDiv = document.querySelector(`.batch-pair-error-text-${itemId}`);
+            if (errorDiv && errorDiv.textContent) {
+                errorMessages.push(errorDiv.textContent);
+            }
+        }
+    });
     
     // Validate quantities
     itemIds.forEach(itemId => {
