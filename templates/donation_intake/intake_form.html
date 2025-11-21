@@ -190,6 +190,7 @@ input[type=number] {
                                                placeholder="{% if di.item.is_batched_flag %}Required{% else %}Optional{% endif %}"
                                                {% if di.item.is_batched_flag %}required{% endif %}
                                                oninput="validateBatchPairing({{ di.item_id }})"
+                                               onblur="validateBatchPairing({{ di.item_id }})"
                                                style="text-transform: uppercase;">
                                     </div>
                                     <div class="col-md-3">
@@ -203,7 +204,8 @@ input[type=number] {
                                                data-max-date="{{ today }}"
                                                placeholder="YYYY-MM-DD"
                                                {% if di.item.is_batched_flag %}required{% endif %}
-                                               onchange="validateBatchPairing({{ di.item_id }})">
+                                               onchange="validateBatchPairing({{ di.item_id }})"
+                                               onblur="validateBatchPairing({{ di.item_id }})">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="expiry_date_{{ di.item_id }}" class="field-label">Expiry Date</label>
@@ -299,7 +301,7 @@ input[type=number] {
                                 <!-- Batch Pairing Validation Error Messages -->
                                 <div class="row g-2 mt-1">
                                     <div class="col-12">
-                                        <div class="invalid-feedback d-block batch-pair-error-{{ di.item_id }}" style="display:none !important;">
+                                        <div class="invalid-feedback d-block batch-pair-error-{{ di.item_id }}" style="display:none;">
                                             <i class="bi bi-exclamation-circle"></i>
                                             <span class="batch-pair-error-text-{{ di.item_id }}"></span>
                                         </div>
