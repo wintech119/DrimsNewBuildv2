@@ -237,8 +237,9 @@ def _process_intake_submission(donation, warehouse):
             errors.append(f'{donation_item.item.item_name}: Missing intake data in form submission')
             continue
             
-        batch_no = request.form.get(batch_no_key, '').strip().upper()
-        batch_date_str = request.form.get(f'batch_date_{item_id}')
+        # Get form data for this item (read raw values once)
+        batch_no_raw = request.form.get(batch_no_key, '').strip().upper()
+        batch_date_str = request.form.get(f'batch_date_{item_id}', '').strip()
         expiry_date_str = request.form.get(f'expiry_date_{item_id}')
         uom_code = request.form.get(f'uom_code_{item_id}')
         avg_unit_value_str = request.form.get(f'avg_unit_value_{item_id}')
@@ -250,39 +251,61 @@ def _process_intake_submission(donation, warehouse):
         # Get item details from donation_item (already loaded from DB)
         item = donation_item.item
         
+        # Initialize normalized values before validation (single-pass normalization pattern)
+        normalized_batch_no = None
+        normalized_batch_date = None
+        
         # Paired validation for batch_no and batch_date
         # For batched items: both fields are required
         # For non-batched items: both must be provided or both must be empty
         if item.is_batched_flag:
             # Batched items require both batch_no and batch_date
-            if not batch_no:
+            if not batch_no_raw:
                 errors.append(f'{item.item_name} requires a batch number')
                 continue
             if not batch_date_str:
                 errors.append(f'{item.item_name} requires a batch date')
                 continue
+            # Validate and parse batch_date for batched items
+            try:
+                normalized_batch_date = datetime.strptime(batch_date_str, '%Y-%m-%d').date()
+                if normalized_batch_date > date.today():
+                    errors.append(f'Batch date cannot be in the future for {item.item_name}')
+                    continue
+            except ValueError:
+                errors.append(f'Invalid batch date format for {item.item_name}')
+                continue
+            # Set normalized batch_no after validation passes
+            normalized_batch_no = batch_no_raw
         else:
             # Non-batched items: enforce pairing (both filled or both empty)
-            if batch_no and not batch_date_str:
+            if batch_no_raw and not batch_date_str:
                 errors.append(f'{item.item_name}: Please enter a Batch Date when a Batch No is provided')
                 continue
-            elif not batch_no and batch_date_str:
+            elif not batch_no_raw and batch_date_str:
                 errors.append(f'{item.item_name}: Please enter a Batch No when a Batch Date is provided')
                 continue
             
+            # If both are provided, validate and parse batch date
+            if batch_no_raw and batch_date_str:
+                try:
+                    normalized_batch_date = datetime.strptime(batch_date_str, '%Y-%m-%d').date()
+                    if normalized_batch_date > date.today():
+                        errors.append(f'Batch date cannot be in the future for {item.item_name}')
+                        continue
+                except ValueError:
+                    errors.append(f'Invalid batch date format for {item.item_name}')
+                    continue
+                # Set normalized values after validation passes
+                normalized_batch_no = batch_no_raw
             # If both are empty, use auto-generated NOBATCH placeholder
-            if not batch_no and not batch_date_str:
-                batch_no = f'NOBATCH-{item_id}'
-                batch_date = None  # Will default to today in BatchCreationService
-            
-        # Validate and parse batch date if provided
-        if batch_date_str:
-            batch_date = datetime.strptime(batch_date_str, '%Y-%m-%d').date()
-            if batch_date > date.today():
-                errors.append(f'Batch date cannot be in the future for {item.item_name}')
-                continue
-        else:
-            batch_date = None  # Will default to today in BatchCreationService
+            else:  # not batch_no_raw and not batch_date_str
+                normalized_batch_no = f'NOBATCH-{item_id}'
+                normalized_batch_date = None  # Will default to today in BatchCreationService
+        
+        # Use normalized values for batch_no and batch_date going forward
+        batch_no = normalized_batch_no
+        batch_date = normalized_batch_date
         
         # Validate expiry date
         expiry_date = None

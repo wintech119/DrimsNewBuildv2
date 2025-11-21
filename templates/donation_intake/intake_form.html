@@ -199,8 +199,10 @@ input[type=number] {
                                                id="batch_date_{{ di.item_id }}"
                                                name="batch_date_{{ di.item_id }}" 
                                                data-item-id="{{ di.item_id }}"
+                                               data-is-batched="{{ 'true' if di.item.is_batched_flag else 'false' }}"
                                                data-max-date="{{ today }}"
                                                placeholder="YYYY-MM-DD"
+                                               {% if di.item.is_batched_flag %}required{% endif %}
                                                onchange="validateBatchPairing({{ di.item_id }})">
                                     </div>
                                     <div class="col-md-4">
@@ -569,7 +571,7 @@ function validateBatchPairing(itemId) {
     const errorDiv = document.querySelector(`.batch-pair-error-${itemId}`);
     const errorText = document.querySelector(`.batch-pair-error-text-${itemId}`);
     
-    if (!batchNoInput || !batchDateInput) return;
+    if (!batchNoInput || !batchDateInput) return true; // No inputs to validate
     
     const batchNo = batchNoInput.value.trim();
     const batchDate = batchDateInput.value.trim();
@@ -583,14 +585,16 @@ function validateBatchPairing(itemId) {
         errorDiv.style.display = 'none';
     }
     
-    // For batched items, both fields are always required
+    // For batched items, both fields are always required (HTML required attribute handles this, but double-check)
     if (isBatched) {
+        let hasError = false;
         if (!batchNo) {
             batchNoInput.classList.add('is-invalid');
             if (errorDiv && errorText) {
                 errorText.textContent = 'Batch number is required for batched items.';
                 errorDiv.style.display = 'block';
             }
+            hasError = true;
         }
         if (!batchDate) {
             batchDateInput.classList.add('is-invalid');
@@ -598,24 +602,36 @@ function validateBatchPairing(itemId) {
                 errorText.textContent = 'Batch date is required for batched items.';
                 errorDiv.style.display = 'block';
             }
+            hasError = true;
         }
-        return;
+        return !hasError; // Return true if valid, false if error
     }
     
     // For non-batched items, enforce pairing: both filled or both empty
-    if (batchNo && !batchDate) {
+    // Check all four cases explicitly
+    const hasBatchNo = batchNo.length > 0;
+    const hasBatchDate = batchDate.length > 0;
+    
+    if (hasBatchNo && !hasBatchDate) {
+        // Has batch number but no batch date
         batchDateInput.classList.add('is-invalid');
         if (errorDiv && errorText) {
             errorText.textContent = 'Please enter a Batch Date when a Batch No is provided.';
             errorDiv.style.display = 'block';
         }
-    } else if (!batchNo && batchDate) {
+        return false;
+    } else if (!hasBatchNo && hasBatchDate) {
+        // Has batch date but no batch number
         batchNoInput.classList.add('is-invalid');
         if (errorDiv && errorText) {
             errorText.textContent = 'Please enter a Batch No when a Batch Date is provided.';
             errorDiv.style.display = 'block';
         }
+        return false;
     }
+    
+    // Either both are filled or both are empty - valid
+    return true;
 }
 
 document.getElementById('intakeForm').addEventListener('submit', function(e) {
@@ -625,10 +641,8 @@ document.getElementById('intakeForm').addEventListener('submit', function(e) {
     
     // Validate batch pairing
     itemIds.forEach(itemId => {
-        validateBatchPairing(itemId);
-        const batchNoInput = document.querySelector(`input[name="batch_no_${itemId}"]`);
-        const batchDateInput = document.querySelector(`input[name="batch_date_${itemId}"]`);
-        if (batchNoInput.classList.contains('is-invalid') || batchDateInput.classList.contains('is-invalid')) {
+        const isValid = validateBatchPairing(itemId);
+        if (!isValid) {
             hasError = true;
             const errorDiv = document.querySelector(`.batch-pair-error-text-${itemId}`);
             if (errorDiv && errorDiv.textContent) {
