@@ -1559,8 +1559,10 @@ def _process_allocations(relief_request, validate_complete=False):
     existing_allocations_map = {}
     items_with_existing_pkg_records = set()  # Track which items have allocation activity
     for pkg_item in existing_pkg_items:
-        # Track by (item_id, batch_id) for batch-level reservations
-        existing_allocations_map[(pkg_item.item_id, pkg_item.batch_id)] = pkg_item.item_qty
+        # Track by (item_id, inventory_id, batch_id) for batch-level reservations
+        # fr_inventory_id IS the warehouse_id (inventory_id in the composite PK)
+        key = (pkg_item.item_id, pkg_item.fr_inventory_id, pkg_item.batch_id)
+        existing_allocations_map[key] = pkg_item.item_qty
         # Track items that have ReliefPkgItem records (allocation activity)
         items_with_existing_pkg_records.add(pkg_item.item_id)
     
