@@ -424,7 +424,7 @@ class ItemBatch(db.Model):
     batch_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
     item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), nullable=False)
-    batch_no = db.Column(db.String(20), nullable=False)
+    batch_no = db.Column(db.String(20), nullable=True)
     batch_date = db.Column(db.Date, nullable=True)
     expiry_date = db.Column(db.Date)
     usable_qty = db.Column(db.Numeric(15, 4), nullable=False, default=0)
