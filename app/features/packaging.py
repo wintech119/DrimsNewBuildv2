@@ -359,22 +359,32 @@ def approve_package(reliefrqst_id):
         
         # Compute item status options
         item_status_options = {}
+        
+        # Build set of items that have package records (drawer has been opened/saved)
+        items_with_pkg_records = {pkg_item.item_id for pkg_item in relief_pkg.items}
+        
         for item in relief_request.items:
             total_allocated = Decimal('0')
             if item.item_id in existing_batch_allocations:
                 for batch_allocation in existing_batch_allocations[item.item_id]:
                     total_allocated += Decimal(str(batch_allocation['qty']))
             
+            # Check if item has allocation activity (drawer opened/saved)
+            # An item has activity if a ReliefPkgItem record exists, even with qty=0
+            has_allocation_activity = item.item_id in items_with_pkg_records
+            
             auto_status, allowed_codes = item_status_service.compute_allowed_statuses(
                 item.status_code,
                 total_allocated,
-                item.request_qty
+                item.request_qty,
+                has_allocation_activity
             )
             
             item_status_options[item.item_id] = {
                 'auto_status': auto_status,
                 'allowed_codes': allowed_codes,
-                'total_allocated': float(total_allocated)
+                'total_allocated': float(total_allocated),
+                'has_allocation_activity': has_allocation_activity
             }
         
         return render_template('packaging/approve.html',
@@ -1173,6 +1183,12 @@ def prepare_package(reliefrqst_id):
         
         # Compute allowed status options for each item based on allocation state
         item_status_options = {}
+        
+        # Build set of items that have package records (drawer has been opened/saved)
+        items_with_pkg_records = set()
+        if existing_package:
+            items_with_pkg_records = {pkg_item.item_id for pkg_item in existing_package.items}
+        
         for item in relief_request.items:
             # Calculate total allocated for this item
             total_allocated = Decimal('0')
@@ -1180,17 +1196,23 @@ def prepare_package(reliefrqst_id):
                 for warehouse_qty in existing_allocations[item.item_id].values():
                     total_allocated += warehouse_qty
             
+            # Check if item has allocation activity (drawer opened/saved)
+            # An item has activity if a ReliefPkgItem record exists, even with qty=0
+            has_allocation_activity = item.item_id in items_with_pkg_records
+            
             # Get auto status and allowed transitions
             auto_status, allowed_codes = item_status_service.compute_allowed_statuses(
                 item.status_code,
                 total_allocated,
-                item.request_qty
+                item.request_qty,
+                has_allocation_activity
             )
             
             item_status_options[item.item_id] = {
                 'auto_status': auto_status,
                 'allowed_codes': allowed_codes,
-                'total_allocated': float(total_allocated)
+                'total_allocated': float(total_allocated),
+                'has_allocation_activity': has_allocation_activity
             }
         
         return render_template('packaging/prepare.html',
