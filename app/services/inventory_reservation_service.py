@@ -213,6 +213,9 @@ def commit_inventory(reliefrqst_id: int) -> Tuple[bool, str]:
         
         pkg_items = ReliefPkgItem.query.filter_by(reliefpkg_id=pkg.reliefpkg_id).all()
         
+        # Track affected (item_id, inventory_id) combinations for inventory table update
+        affected_inventory = set()
+        
         # Process each batch allocation
         for pkg_item in pkg_items:
             if pkg_item.item_qty and pkg_item.item_qty > 0:
@@ -233,13 +236,36 @@ def commit_inventory(reliefrqst_id: int) -> Tuple[bool, str]:
                     warehouse_name = warehouse.warehouse_name if warehouse else f'ID {pkg_item.fr_inventory_id}'
                     return False, f'Insufficient inventory at warehouse {warehouse_name}: need {pkg_item.item_qty}, have {batch.usable_qty}'
                 
-                # Commit batch allocation - deduct from batch only
+                # Commit batch allocation - deduct from batch
                 batch.usable_qty -= pkg_item.item_qty
                 batch.reserved_qty = max(Decimal('0'), batch.reserved_qty - pkg_item.item_qty)
+                
+                # Track this inventory record for update
+                affected_inventory.add((pkg_item.item_id, pkg_item.fr_inventory_id))
         
-        # Note: Warehouse-level inventory is NOT updated here.
-        # The Inventory table usable_qty should be calculated as SUM(ItemBatch.usable_qty)
-        # for the given (inventory_id, item_id). Updating both creates sync issues.
+        # Update inventory table totals by recalculating from batch sums
+        # This ensures inventory.usable_qty and inventory.reserved_qty match the sum of their batches
+        for item_id, inventory_id in affected_inventory:
+            # Recalculate totals from itembatch table
+            batch_totals = db.session.query(
+                db.func.sum(ItemBatch.usable_qty).label('total_usable'),
+                db.func.sum(ItemBatch.reserved_qty).label('total_reserved')
+            ).filter(
+                ItemBatch.item_id == item_id,
+                ItemBatch.inventory_id == inventory_id
+            ).first()
+            
+            # Get the inventory record (with lock for update)
+            inventory = Inventory.query.filter_by(
+                item_id=item_id,
+                inventory_id=inventory_id
+            ).with_for_update().first()
+            
+            if inventory:
+                # Update inventory totals based on batch sums
+                # Use coalesce to handle NULL (when all batches are deleted)
+                inventory.usable_qty = batch_totals.total_usable if batch_totals.total_usable is not None else Decimal('0')
+                inventory.reserved_qty = batch_totals.total_reserved if batch_totals.total_reserved is not None else Decimal('0')
         
         return True, ''
         
