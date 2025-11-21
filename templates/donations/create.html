@@ -156,14 +156,15 @@
                                         </div>
                                         <div class="col-md-3 mb-3">
                                             <label for="new_uom_code" class="form-label">UOM *</label>
-                                            <select class="form-select" id="new_uom_code">
-                                                <option value="">Select...</option>
+                                            <select class="form-select" id="new_uom_code" disabled style="background-color: #e9ecef;">
+                                                <option value="">Select item first</option>
                                                 {% for uom in uoms %}
                                                 <option value="{{ uom.uom_code }}" data-desc="{{ uom.uom_desc }}">
                                                     {{ uom.uom_desc }}
                                                 </option>
                                                 {% endfor %}
                                             </select>
+                                            <small class="text-muted">Auto-filled from Item Master</small>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -219,15 +220,26 @@
 let itemCounter = 0;
 const donationItems = [];
 
-// Update UOM hint when item is selected
+// Auto-populate UOM from Item Master when item is selected
 document.getElementById('new_item_id').addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
-    const uomCode = selectedOption.getAttribute('data-uom');
+    const defaultUomCode = selectedOption.getAttribute('data-uom');
+    const uomSelect = document.getElementById('new_uom_code');
     const uomHint = document.getElementById('selected_uom');
-    if (uomCode) {
-        uomHint.textContent = uomCode;
+    
+    if (defaultUomCode) {
+        // Auto-select the UOM from item's default_uom_code
+        uomSelect.value = defaultUomCode;
+        uomHint.textContent = defaultUomCode;
+        // Keep UOM field disabled (read-only)
+        uomSelect.disabled = true;
+        uomSelect.style.backgroundColor = '#e9ecef';
     } else {
+        // No item selected - reset UOM
+        uomSelect.value = '';
         uomHint.textContent = '—';
+        uomSelect.disabled = true;
+        uomSelect.style.backgroundColor = '#e9ecef';
     }
 });
 
