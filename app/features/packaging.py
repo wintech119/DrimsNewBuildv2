@@ -1108,9 +1108,14 @@ def prepare_package(reliefrqst_id):
         flash(f'Only SUBMITTED or PART FILLED requests can be packaged. Current status: {relief_request.status.status_desc}', 'danger')
         return redirect(url_for('packaging.pending_fulfillment'))
     
-    # NOTE: Read-only enforcement for LOs after submission cannot be implemented without schema changes
-    # Both _save_draft() and _submit_for_approval() set identical fields (status='P', update_by_id),
-    # making it impossible to distinguish draft packages from submitted packages using existing schema.
+    # ACCESS CONTROL: LOs viewing submitted packages should see read-only UI
+    # A package is "submitted to LM" when relief request status is PART_FILLED
+    # Draft packages have request status = SUBMITTED
+    is_read_only_for_lo = (
+        relief_request.status_code == rr_service.STATUS_PART_FILLED and 
+        is_logistics_officer() and 
+        not is_logistics_manager()
+    )
     
     if request.method == 'GET':
         
