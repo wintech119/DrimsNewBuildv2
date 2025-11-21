@@ -292,15 +292,22 @@ class BatchAllocationService:
     def validate_batch_allocation(
         batch_id: int,
         item_id: int,
-        allocated_qty: Decimal
+        allocated_qty: Decimal,
+        current_allocated_qty: Decimal = Decimal('0')
     ) -> Tuple[bool, str]:
         """
         Validate a batch allocation.
+        
+        When re-allocating from an existing package, the current package's allocation
+        is "released" from reserved_qty to calculate true availability. This allows
+        users to modify their existing allocations without false "no inventory" errors.
         
         Args:
             batch_id: Batch ID to allocate from
             item_id: Item being allocated
             allocated_qty: Quantity to allocate
+            current_allocated_qty: Current allocation from this package for this batch (default: 0)
+                                   This qty is "released" from reserved_qty when calculating availability
             
         Returns:
             Tuple of (is_valid, error_message)
@@ -321,7 +328,9 @@ class BatchAllocationService:
             return False, f'Batch {batch.batch_no} is expired (expiry: {batch.expiry_date})'
         
         # Check quantity
-        available_qty = batch.usable_qty - batch.reserved_qty
+        # CRITICAL: "Release" current package's allocation when calculating availability
+        # This prevents false "no inventory" errors when re-allocating from existing packages
+        available_qty = batch.usable_qty - (batch.reserved_qty - current_allocated_qty)
         if allocated_qty > available_qty:
             if available_qty <= 0:
                 return False, (f'Batch {batch.batch_no} has no available inventory (all {batch.usable_qty} units are reserved or allocated). '

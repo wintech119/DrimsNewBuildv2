@@ -1592,21 +1592,26 @@ def _process_allocations(relief_request, validate_complete=False):
                 batch_id = int(parts[3])
                 allocated_qty = Decimal(request.form.get(key) or '0')
                 
-                # Validate batch allocation (even for zero qty to catch errors)
-                if allocated_qty > 0:
-                    is_valid, error_msg = BatchAllocationService.validate_batch_allocation(
-                        batch_id, item_id, allocated_qty
-                    )
-                    if not is_valid:
-                        raise ValueError(error_msg)
-                
-                # Get batch details for warehouse tracking
+                # Get batch details first (needed for warehouse_id and validation)
                 batch = ItemBatch.query.options(
                     joinedload(ItemBatch.inventory).joinedload(Inventory.warehouse)
                 ).get(batch_id)
                 
                 if not batch:
                     raise ValueError(f'Batch {batch_id} not found')
+                
+                # Look up current allocation for this batch from existing package
+                # Key: (item_id, inventory_id, batch_id)
+                existing_key = (item_id, batch.inventory_id, batch_id)
+                current_allocated_qty = existing_allocations_map.get(existing_key, Decimal('0'))
+                
+                # Validate batch allocation (with "release" logic for re-allocation)
+                if allocated_qty > 0:
+                    is_valid, error_msg = BatchAllocationService.validate_batch_allocation(
+                        batch_id, item_id, allocated_qty, current_allocated_qty
+                    )
+                    if not is_valid:
+                        raise ValueError(error_msg)
                 
                 total_allocated += allocated_qty
                 # CRITICAL: Include zero-qty allocations to track drawer activity
