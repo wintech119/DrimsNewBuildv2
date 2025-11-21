@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict zwe4BbGIfAcNi5hdVh8OcBiHgd15d2fbUxJ5TKn5UCTiaCoYghuguE6Mb41qTy0
+\restrict 27Tp6XNxTmBHNpT4T5yXsEoY6SERqawpmnbWlRRU3D2ZBBLzgZHZlgecxVbweKX
 
 -- Dumped from database version 16.9 (415ebe8)
 -- Dumped by pg_dump version 16.10
@@ -18,301 +18,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-ALTER TABLE IF EXISTS ONLY public.xfreturn_item DROP CONSTRAINT IF EXISTS xfreturn_item_xfreturn_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.xfreturn_item DROP CONSTRAINT IF EXISTS xfreturn_item_uom_code_fkey;
-ALTER TABLE IF EXISTS ONLY public.warehouse DROP CONSTRAINT IF EXISTS warehouse_parish_code_fkey;
-ALTER TABLE IF EXISTS ONLY public.warehouse DROP CONSTRAINT IF EXISTS warehouse_custodian_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.user_warehouse DROP CONSTRAINT IF EXISTS user_warehouse_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.user_warehouse DROP CONSTRAINT IF EXISTS user_warehouse_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.user_warehouse DROP CONSTRAINT IF EXISTS user_warehouse_assigned_by_fkey;
-ALTER TABLE IF EXISTS ONLY public.user_role DROP CONSTRAINT IF EXISTS user_role_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.user_role DROP CONSTRAINT IF EXISTS user_role_role_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.user_role DROP CONSTRAINT IF EXISTS user_role_assigned_by_fkey;
-ALTER TABLE IF EXISTS ONLY public."user" DROP CONSTRAINT IF EXISTS user_assigned_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public."user" DROP CONSTRAINT IF EXISTS user_agency_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transfer_request DROP CONSTRAINT IF EXISTS transfer_request_to_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transfer_request DROP CONSTRAINT IF EXISTS transfer_request_reviewed_by_fkey;
-ALTER TABLE IF EXISTS ONLY public.transfer_request DROP CONSTRAINT IF EXISTS transfer_request_requested_by_fkey;
-ALTER TABLE IF EXISTS ONLY public.transfer_request DROP CONSTRAINT IF EXISTS transfer_request_item_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transfer_request DROP CONSTRAINT IF EXISTS transfer_request_from_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transaction DROP CONSTRAINT IF EXISTS transaction_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transaction DROP CONSTRAINT IF EXISTS transaction_item_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transaction DROP CONSTRAINT IF EXISTS transaction_event_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.transaction DROP CONSTRAINT IF EXISTS transaction_donor_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.rtintake DROP CONSTRAINT IF EXISTS rtintake_xfreturn_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.rtintake_item DROP CONSTRAINT IF EXISTS rtintake_item_uom_code_fkey;
-ALTER TABLE IF EXISTS ONLY public.rtintake_item DROP CONSTRAINT IF EXISTS rtintake_item_location3_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.rtintake_item DROP CONSTRAINT IF EXISTS rtintake_item_location2_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.rtintake_item DROP CONSTRAINT IF EXISTS rtintake_item_location1_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg DROP CONSTRAINT IF EXISTS reliefpkg_reliefrqst_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.relief_request_fulfillment_lock DROP CONSTRAINT IF EXISTS relief_request_fulfillment_lock_reliefrqst_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.relief_request_fulfillment_lock DROP CONSTRAINT IF EXISTS relief_request_fulfillment_lock_fulfiller_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.notification DROP CONSTRAINT IF EXISTS notification_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.notification DROP CONSTRAINT IF EXISTS notification_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.notification DROP CONSTRAINT IF EXISTS notification_reliefrqst_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.item_location DROP CONSTRAINT IF EXISTS item_location_location_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.xfreturn DROP CONSTRAINT IF EXISTS fk_xfreturn_to_warehouse;
-ALTER TABLE IF EXISTS ONLY public.xfreturn_item DROP CONSTRAINT IF EXISTS fk_xfreturn_item_inventory;
-ALTER TABLE IF EXISTS ONLY public.xfreturn DROP CONSTRAINT IF EXISTS fk_xfreturn_fr_warehouse;
-ALTER TABLE IF EXISTS ONLY public.transfer DROP CONSTRAINT IF EXISTS fk_transfer_warehouse2;
-ALTER TABLE IF EXISTS ONLY public.transfer DROP CONSTRAINT IF EXISTS fk_transfer_warehouse1;
-ALTER TABLE IF EXISTS ONLY public.transfer_item DROP CONSTRAINT IF EXISTS fk_transfer_item_uom;
-ALTER TABLE IF EXISTS ONLY public.transfer_item DROP CONSTRAINT IF EXISTS fk_transfer_item_transfer;
-ALTER TABLE IF EXISTS ONLY public.transfer_item DROP CONSTRAINT IF EXISTS fk_transfer_item_item;
-ALTER TABLE IF EXISTS ONLY public.transfer_item DROP CONSTRAINT IF EXISTS fk_transfer_item_inventory;
-ALTER TABLE IF EXISTS ONLY public.transfer_item DROP CONSTRAINT IF EXISTS fk_transfer_item_batch;
-ALTER TABLE IF EXISTS ONLY public.transfer DROP CONSTRAINT IF EXISTS fk_transfer_event;
-ALTER TABLE IF EXISTS ONLY public.rtintake DROP CONSTRAINT IF EXISTS fk_rtintake_warehouse;
-ALTER TABLE IF EXISTS ONLY public.rtintake_item DROP CONSTRAINT IF EXISTS fk_rtintake_item_intake;
-ALTER TABLE IF EXISTS ONLY public.role_permission DROP CONSTRAINT IF EXISTS fk_role_permission_role;
-ALTER TABLE IF EXISTS ONLY public.role_permission DROP CONSTRAINT IF EXISTS fk_role_permission_perm;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst DROP CONSTRAINT IF EXISTS fk_reliefrqst_reliefrqst_status;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst_item DROP CONSTRAINT IF EXISTS fk_reliefrqst_item_reliefrqstitem_status;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst_item DROP CONSTRAINT IF EXISTS fk_reliefrqst_item_reliefrqst;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst_item DROP CONSTRAINT IF EXISTS fk_reliefrqst_item_item;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst DROP CONSTRAINT IF EXISTS fk_reliefrqst_event;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst DROP CONSTRAINT IF EXISTS fk_reliefrqst_agency;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg DROP CONSTRAINT IF EXISTS fk_reliefpkg_warehouse;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg_item DROP CONSTRAINT IF EXISTS fk_reliefpkg_item_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg_item DROP CONSTRAINT IF EXISTS fk_reliefpkg_item_reliefpkg;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg_item DROP CONSTRAINT IF EXISTS fk_reliefpkg_item_itembatch;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg DROP CONSTRAINT IF EXISTS fk_reliefpkg_event;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg DROP CONSTRAINT IF EXISTS fk_reliefpkg_agency;
-ALTER TABLE IF EXISTS ONLY public.location DROP CONSTRAINT IF EXISTS fk_location_warehouse;
-ALTER TABLE IF EXISTS ONLY public.itembatch DROP CONSTRAINT IF EXISTS fk_itembatch_warehouse;
-ALTER TABLE IF EXISTS ONLY public.itembatch DROP CONSTRAINT IF EXISTS fk_itembatch_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.itembatch DROP CONSTRAINT IF EXISTS fk_itembatch_item;
-ALTER TABLE IF EXISTS ONLY public.item DROP CONSTRAINT IF EXISTS fk_item_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.item_location DROP CONSTRAINT IF EXISTS fk_item_location_inventory;
-ALTER TABLE IF EXISTS ONLY public.item DROP CONSTRAINT IF EXISTS fk_item_itemcatg;
-ALTER TABLE IF EXISTS ONLY public.inventory DROP CONSTRAINT IF EXISTS fk_inventory_warehouse;
-ALTER TABLE IF EXISTS ONLY public.inventory DROP CONSTRAINT IF EXISTS fk_inventory_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.inventory DROP CONSTRAINT IF EXISTS fk_inventory_item;
-ALTER TABLE IF EXISTS ONLY public.donation_item DROP CONSTRAINT IF EXISTS fk_donation_item_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.donation_item DROP CONSTRAINT IF EXISTS fk_donation_item_item;
-ALTER TABLE IF EXISTS ONLY public.donation_item DROP CONSTRAINT IF EXISTS fk_donation_item_donation;
-ALTER TABLE IF EXISTS ONLY public.donation DROP CONSTRAINT IF EXISTS fk_donation_event;
-ALTER TABLE IF EXISTS ONLY public.donation DROP CONSTRAINT IF EXISTS fk_donation_donor;
-ALTER TABLE IF EXISTS ONLY public.donation DROP CONSTRAINT IF EXISTS fk_donation_custodian;
-ALTER TABLE IF EXISTS ONLY public.dnintake DROP CONSTRAINT IF EXISTS fk_dnintake_warehouse;
-ALTER TABLE IF EXISTS ONLY public.dnintake_item DROP CONSTRAINT IF EXISTS fk_dnintake_item_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.dnintake_item DROP CONSTRAINT IF EXISTS fk_dnintake_item_intake;
-ALTER TABLE IF EXISTS ONLY public.dnintake_item DROP CONSTRAINT IF EXISTS fk_dnintake_item_donation_item;
-ALTER TABLE IF EXISTS ONLY public.dbintake DROP CONSTRAINT IF EXISTS fk_dbintake_warehouse;
-ALTER TABLE IF EXISTS ONLY public.custodian DROP CONSTRAINT IF EXISTS fk_custodian_parish;
-ALTER TABLE IF EXISTS ONLY public.batchlocation DROP CONSTRAINT IF EXISTS fk_batchlocation_warehouse;
-ALTER TABLE IF EXISTS ONLY public.batchlocation DROP CONSTRAINT IF EXISTS fk_batchlocation_location;
-ALTER TABLE IF EXISTS ONLY public.batchlocation DROP CONSTRAINT IF EXISTS fk_batchlocation_itembatch;
-ALTER TABLE IF EXISTS ONLY public.batchlocation DROP CONSTRAINT IF EXISTS fk_batchlocation_inventory;
-ALTER TABLE IF EXISTS ONLY public.agency DROP CONSTRAINT IF EXISTS fk_agency_warehouse;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request DROP CONSTRAINT IF EXISTS fk_aar_user;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request DROP CONSTRAINT IF EXISTS fk_aar_updated_by;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request DROP CONSTRAINT IF EXISTS fk_aar_created_by;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request_audit DROP CONSTRAINT IF EXISTS fk_aar_audit_req;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request DROP CONSTRAINT IF EXISTS fk_aar_agency;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request_audit DROP CONSTRAINT IF EXISTS fk_aar_actor;
-ALTER TABLE IF EXISTS ONLY public.donor DROP CONSTRAINT IF EXISTS donor_country_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.dnintake DROP CONSTRAINT IF EXISTS dnintake_donation_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package DROP CONSTRAINT IF EXISTS distribution_package_recipient_agency_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package_item DROP CONSTRAINT IF EXISTS distribution_package_item_package_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package_item DROP CONSTRAINT IF EXISTS distribution_package_item_item_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package DROP CONSTRAINT IF EXISTS distribution_package_event_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package DROP CONSTRAINT IF EXISTS distribution_package_assigned_warehouse_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake DROP CONSTRAINT IF EXISTS dbintake_reliefpkg_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake_item DROP CONSTRAINT IF EXISTS dbintake_item_uom_code_fkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake_item DROP CONSTRAINT IF EXISTS dbintake_item_reliefpkg_id_inventory_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake_item DROP CONSTRAINT IF EXISTS dbintake_item_location3_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake_item DROP CONSTRAINT IF EXISTS dbintake_item_location2_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake_item DROP CONSTRAINT IF EXISTS dbintake_item_location1_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.agency DROP CONSTRAINT IF EXISTS agency_parish_code_fkey;
-ALTER TABLE IF EXISTS ONLY public.agency DROP CONSTRAINT IF EXISTS agency_ineligible_event_id_fkey;
-DROP TRIGGER IF EXISTS trg_user_set_updated_at ON public."user";
-DROP TRIGGER IF EXISTS trg_aar_set_updated_at ON public.agency_account_request;
-DROP INDEX IF EXISTS public.uk_user_username;
-DROP INDEX IF EXISTS public.uk_itembatch_inventory_batch_item;
-DROP INDEX IF EXISTS public.uk_itembatch_inventory_batch;
-DROP INDEX IF EXISTS public.uk_itembatch_1;
-DROP INDEX IF EXISTS public.uk_inventory_1;
-DROP INDEX IF EXISTS public.uk_aar_active_email;
-DROP INDEX IF EXISTS public.ix_user_role_user_id;
-DROP INDEX IF EXISTS public.ix_user_role_role_id;
-DROP INDEX IF EXISTS public.ix_role_permission_role_id;
-DROP INDEX IF EXISTS public.ix_role_permission_perm_id;
-DROP INDEX IF EXISTS public.idx_transfer_item_item;
-DROP INDEX IF EXISTS public.idx_transfer_item_batch;
-DROP INDEX IF EXISTS public.idx_role_code;
-DROP INDEX IF EXISTS public.idx_notification_warehouse;
-DROP INDEX IF EXISTS public.idx_notification_user_status;
-DROP INDEX IF EXISTS public.idx_itemcatg_status_code;
-DROP INDEX IF EXISTS public.idx_fulfillment_lock_user;
-DROP INDEX IF EXISTS public.idx_fulfillment_lock_expires;
-DROP INDEX IF EXISTS public.idx_distribution_package_warehouse;
-DROP INDEX IF EXISTS public.idx_distribution_package_item_package;
-DROP INDEX IF EXISTS public.idx_distribution_package_item_item;
-DROP INDEX IF EXISTS public.idx_distribution_package_event;
-DROP INDEX IF EXISTS public.idx_distribution_package_agency;
-DROP INDEX IF EXISTS public.dk_xfreturn_3;
-DROP INDEX IF EXISTS public.dk_xfreturn_2;
-DROP INDEX IF EXISTS public.dk_xfreturn_1;
-DROP INDEX IF EXISTS public.dk_user_agency_id;
-DROP INDEX IF EXISTS public.dk_transfer_3;
-DROP INDEX IF EXISTS public.dk_transfer_2;
-DROP INDEX IF EXISTS public.dk_transfer_1;
-DROP INDEX IF EXISTS public.dk_rtintake_item_2;
-DROP INDEX IF EXISTS public.dk_rtintake_item_1;
-DROP INDEX IF EXISTS public.dk_reliefrqst_item_2;
-DROP INDEX IF EXISTS public.dk_reliefrqst_3;
-DROP INDEX IF EXISTS public.dk_reliefrqst_2;
-DROP INDEX IF EXISTS public.dk_reliefrqst_1;
-DROP INDEX IF EXISTS public.dk_reliefpkg_item_3;
-DROP INDEX IF EXISTS public.dk_reliefpkg_item_2;
-DROP INDEX IF EXISTS public.dk_reliefpkg_item_1;
-DROP INDEX IF EXISTS public.dk_reliefpkg_3;
-DROP INDEX IF EXISTS public.dk_reliefpkg_1;
-DROP INDEX IF EXISTS public.dk_location_1;
-DROP INDEX IF EXISTS public.dk_itembatch_4;
-DROP INDEX IF EXISTS public.dk_itembatch_3;
-DROP INDEX IF EXISTS public.dk_itembatch_2;
-DROP INDEX IF EXISTS public.dk_itembatch_1;
-DROP INDEX IF EXISTS public.dk_item_location_1;
-DROP INDEX IF EXISTS public.dk_item_3;
-DROP INDEX IF EXISTS public.dk_item_2;
-DROP INDEX IF EXISTS public.dk_item_1;
-DROP INDEX IF EXISTS public.dk_inventory_1;
-DROP INDEX IF EXISTS public.dk_dnintake_item_2;
-DROP INDEX IF EXISTS public.dk_dnintake_item_1;
-DROP INDEX IF EXISTS public.dk_dbintake_item_2;
-DROP INDEX IF EXISTS public.dk_dbintake_item_1;
-DROP INDEX IF EXISTS public.dk_batchlocation_1;
-DROP INDEX IF EXISTS public.dk_aar_status_created;
-DROP INDEX IF EXISTS public.dk_aar_audit_req_time;
-ALTER TABLE IF EXISTS ONLY public.xfreturn DROP CONSTRAINT IF EXISTS xfreturn_pkey;
-ALTER TABLE IF EXISTS ONLY public.warehouse DROP CONSTRAINT IF EXISTS warehouse_pkey;
-ALTER TABLE IF EXISTS ONLY public.user_warehouse DROP CONSTRAINT IF EXISTS user_warehouse_pkey;
-ALTER TABLE IF EXISTS ONLY public.user_role DROP CONSTRAINT IF EXISTS user_role_pkey;
-ALTER TABLE IF EXISTS ONLY public."user" DROP CONSTRAINT IF EXISTS user_pkey;
-ALTER TABLE IF EXISTS ONLY public."user" DROP CONSTRAINT IF EXISTS user_email_key;
-ALTER TABLE IF EXISTS ONLY public.permission DROP CONSTRAINT IF EXISTS uq_permission_resource_action;
-ALTER TABLE IF EXISTS ONLY public.itemcatg DROP CONSTRAINT IF EXISTS uk_itemcatg_1;
-ALTER TABLE IF EXISTS ONLY public.item DROP CONSTRAINT IF EXISTS uk_item_3;
-ALTER TABLE IF EXISTS ONLY public.item DROP CONSTRAINT IF EXISTS uk_item_2;
-ALTER TABLE IF EXISTS ONLY public.item DROP CONSTRAINT IF EXISTS uk_item_1;
-ALTER TABLE IF EXISTS ONLY public.donor DROP CONSTRAINT IF EXISTS uk_donor_1;
-ALTER TABLE IF EXISTS ONLY public.custodian DROP CONSTRAINT IF EXISTS uk_custodian_1;
-ALTER TABLE IF EXISTS ONLY public.agency DROP CONSTRAINT IF EXISTS uk_agency_1;
-ALTER TABLE IF EXISTS ONLY public.transfer_request DROP CONSTRAINT IF EXISTS transfer_request_pkey;
-ALTER TABLE IF EXISTS ONLY public.transaction DROP CONSTRAINT IF EXISTS transaction_pkey;
-ALTER TABLE IF EXISTS ONLY public.role DROP CONSTRAINT IF EXISTS role_pkey;
-ALTER TABLE IF EXISTS ONLY public.role DROP CONSTRAINT IF EXISTS role_code_key;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg DROP CONSTRAINT IF EXISTS reliefpkg_pkey;
-ALTER TABLE IF EXISTS ONLY public.relief_request_fulfillment_lock DROP CONSTRAINT IF EXISTS relief_request_fulfillment_lock_pkey;
-ALTER TABLE IF EXISTS ONLY public.xfreturn_item DROP CONSTRAINT IF EXISTS pk_xfreturn_item;
-ALTER TABLE IF EXISTS ONLY public.unitofmeasure DROP CONSTRAINT IF EXISTS pk_unitofmeasure;
-ALTER TABLE IF EXISTS ONLY public.transfer_item DROP CONSTRAINT IF EXISTS pk_transfer_item;
-ALTER TABLE IF EXISTS ONLY public.transfer DROP CONSTRAINT IF EXISTS pk_transfer;
-ALTER TABLE IF EXISTS ONLY public.rtintake_item DROP CONSTRAINT IF EXISTS pk_rtintake_item;
-ALTER TABLE IF EXISTS ONLY public.rtintake DROP CONSTRAINT IF EXISTS pk_rtintake;
-ALTER TABLE IF EXISTS ONLY public.role_permission DROP CONSTRAINT IF EXISTS pk_role_permission;
-ALTER TABLE IF EXISTS ONLY public.reliefrqstitem_status DROP CONSTRAINT IF EXISTS pk_reliefrqstitem_status;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst_status DROP CONSTRAINT IF EXISTS pk_reliefrqst_status;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst_item DROP CONSTRAINT IF EXISTS pk_reliefrqst_item;
-ALTER TABLE IF EXISTS ONLY public.reliefrqst DROP CONSTRAINT IF EXISTS pk_reliefrqst;
-ALTER TABLE IF EXISTS ONLY public.reliefpkg_item DROP CONSTRAINT IF EXISTS pk_reliefpkg_item;
-ALTER TABLE IF EXISTS ONLY public.itemcatg DROP CONSTRAINT IF EXISTS pk_itemcatg;
-ALTER TABLE IF EXISTS ONLY public.itembatch DROP CONSTRAINT IF EXISTS pk_itembatch;
-ALTER TABLE IF EXISTS ONLY public.item DROP CONSTRAINT IF EXISTS pk_item;
-ALTER TABLE IF EXISTS ONLY public.inventory DROP CONSTRAINT IF EXISTS pk_inventory;
-ALTER TABLE IF EXISTS ONLY public.event DROP CONSTRAINT IF EXISTS pk_event;
-ALTER TABLE IF EXISTS ONLY public.donation_item DROP CONSTRAINT IF EXISTS pk_donation_item;
-ALTER TABLE IF EXISTS ONLY public.donation DROP CONSTRAINT IF EXISTS pk_donation;
-ALTER TABLE IF EXISTS ONLY public.dnintake_item DROP CONSTRAINT IF EXISTS pk_dnintake_item;
-ALTER TABLE IF EXISTS ONLY public.custodian DROP CONSTRAINT IF EXISTS pk_custodian;
-ALTER TABLE IF EXISTS ONLY public.batchlocation DROP CONSTRAINT IF EXISTS pk_batchlocation;
-ALTER TABLE IF EXISTS ONLY public.permission DROP CONSTRAINT IF EXISTS permission_pkey;
-ALTER TABLE IF EXISTS ONLY public.parish DROP CONSTRAINT IF EXISTS parish_pkey;
-ALTER TABLE IF EXISTS ONLY public.notification DROP CONSTRAINT IF EXISTS notification_pkey;
-ALTER TABLE IF EXISTS ONLY public.location DROP CONSTRAINT IF EXISTS location_pkey;
-ALTER TABLE IF EXISTS ONLY public.item_location DROP CONSTRAINT IF EXISTS item_location_pkey;
-ALTER TABLE IF EXISTS ONLY public.donor DROP CONSTRAINT IF EXISTS donor_pkey;
-ALTER TABLE IF EXISTS ONLY public.dnintake DROP CONSTRAINT IF EXISTS dnintake_pkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package DROP CONSTRAINT IF EXISTS distribution_package_pkey;
-ALTER TABLE IF EXISTS ONLY public.distribution_package DROP CONSTRAINT IF EXISTS distribution_package_package_number_key;
-ALTER TABLE IF EXISTS ONLY public.distribution_package_item DROP CONSTRAINT IF EXISTS distribution_package_item_pkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake DROP CONSTRAINT IF EXISTS dbintake_pkey;
-ALTER TABLE IF EXISTS ONLY public.dbintake_item DROP CONSTRAINT IF EXISTS dbintake_item_pkey;
-ALTER TABLE IF EXISTS ONLY public.country DROP CONSTRAINT IF EXISTS country_pkey;
-ALTER TABLE IF EXISTS ONLY public.agency DROP CONSTRAINT IF EXISTS agency_pkey;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request DROP CONSTRAINT IF EXISTS agency_account_request_pkey;
-ALTER TABLE IF EXISTS ONLY public.agency_account_request_audit DROP CONSTRAINT IF EXISTS agency_account_request_audit_pkey;
-ALTER TABLE IF EXISTS public.xfreturn ALTER COLUMN xfreturn_id DROP DEFAULT;
-ALTER TABLE IF EXISTS public."user" ALTER COLUMN user_id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.transfer_request ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.transaction ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.role ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.notification ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.distribution_package_item ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.distribution_package ALTER COLUMN id DROP DEFAULT;
-DROP SEQUENCE IF EXISTS public.xfreturn_xfreturn_id_seq;
-DROP TABLE IF EXISTS public.xfreturn_item;
-DROP TABLE IF EXISTS public.xfreturn;
-DROP TABLE IF EXISTS public.warehouse;
-DROP VIEW IF EXISTS public.v_status4reliefrqst_processed;
-DROP VIEW IF EXISTS public.v_status4reliefrqst_create;
-DROP VIEW IF EXISTS public.v_status4reliefrqst_action;
-DROP TABLE IF EXISTS public.user_warehouse;
-DROP TABLE IF EXISTS public.user_role;
-DROP SEQUENCE IF EXISTS public.user_id_seq;
-DROP TABLE IF EXISTS public."user";
-DROP TABLE IF EXISTS public.unitofmeasure;
-DROP SEQUENCE IF EXISTS public.transfer_request_id_seq;
-DROP TABLE IF EXISTS public.transfer_request;
-DROP TABLE IF EXISTS public.transfer_item;
-DROP TABLE IF EXISTS public.transfer;
-DROP SEQUENCE IF EXISTS public.transaction_id_seq;
-DROP TABLE IF EXISTS public.transaction;
-DROP TABLE IF EXISTS public.rtintake_item;
-DROP TABLE IF EXISTS public.rtintake;
-DROP TABLE IF EXISTS public.role_permission;
-DROP SEQUENCE IF EXISTS public.role_id_seq;
-DROP TABLE IF EXISTS public.role;
-DROP TABLE IF EXISTS public.reliefrqstitem_status;
-DROP TABLE IF EXISTS public.reliefrqst_status;
-DROP TABLE IF EXISTS public.reliefrqst_item;
-DROP TABLE IF EXISTS public.reliefrqst;
-DROP TABLE IF EXISTS public.reliefpkg_item;
-DROP TABLE IF EXISTS public.reliefpkg;
-DROP TABLE IF EXISTS public.relief_request_fulfillment_lock;
-DROP TABLE IF EXISTS public.permission;
-DROP TABLE IF EXISTS public.parish;
-DROP SEQUENCE IF EXISTS public.notification_id_seq;
-DROP TABLE IF EXISTS public.notification;
-DROP TABLE IF EXISTS public.location;
-DROP TABLE IF EXISTS public.itemcatg;
-DROP TABLE IF EXISTS public.itembatch;
-DROP TABLE IF EXISTS public.item_location;
-DROP TABLE IF EXISTS public.item;
-DROP TABLE IF EXISTS public.inventory;
-DROP TABLE IF EXISTS public.event;
-DROP TABLE IF EXISTS public.donor;
-DROP TABLE IF EXISTS public.donation_item;
-DROP TABLE IF EXISTS public.donation;
-DROP TABLE IF EXISTS public.dnintake_item;
-DROP TABLE IF EXISTS public.dnintake;
-DROP SEQUENCE IF EXISTS public.distribution_package_item_id_seq;
-DROP TABLE IF EXISTS public.distribution_package_item;
-DROP SEQUENCE IF EXISTS public.distribution_package_id_seq;
-DROP TABLE IF EXISTS public.distribution_package;
-DROP TABLE IF EXISTS public.dbintake_item;
-DROP TABLE IF EXISTS public.dbintake;
-DROP TABLE IF EXISTS public.custodian;
-DROP TABLE IF EXISTS public.country;
-DROP TABLE IF EXISTS public.batchlocation;
-DROP TABLE IF EXISTS public.agency_account_request_audit;
-DROP TABLE IF EXISTS public.agency_account_request;
-DROP TABLE IF EXISTS public.agency;
-DROP FUNCTION IF EXISTS public.set_updated_at();
-DROP EXTENSION IF EXISTS pgcrypto;
-DROP EXTENSION IF EXISTS citext;
 --
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -688,8 +393,8 @@ CREATE TABLE public.dnintake_item (
     donation_id integer NOT NULL,
     inventory_id integer NOT NULL,
     item_id integer NOT NULL,
-    batch_no character varying(20) NOT NULL,
-    batch_date date NOT NULL,
+    batch_no character varying(20),
+    batch_date date,
     expiry_date date,
     uom_code character varying(25) NOT NULL,
     avg_unit_value numeric(10,2) NOT NULL,
@@ -703,8 +408,9 @@ CREATE TABLE public.dnintake_item (
     update_by_id character varying(20) NOT NULL,
     update_dtime timestamp(0) without time zone NOT NULL,
     version_nbr integer NOT NULL,
-    CONSTRAINT c_dnintake_item_1a CHECK (((batch_no)::text = upper((batch_no)::text))),
-    CONSTRAINT c_dnintake_item_1b CHECK ((batch_date <= CURRENT_DATE)),
+    intake_item_id integer NOT NULL,
+    CONSTRAINT c_dnintake_item_1a CHECK (((batch_no IS NULL) OR ((batch_no)::text = upper((batch_no)::text)))),
+    CONSTRAINT c_dnintake_item_1b CHECK (((batch_date IS NULL) OR (batch_date <= CURRENT_DATE))),
     CONSTRAINT c_dnintake_item_1c CHECK (((expiry_date >= CURRENT_DATE) OR (expiry_date IS NULL))),
     CONSTRAINT c_dnintake_item_1d CHECK ((avg_unit_value > 0.00)),
     CONSTRAINT c_dnintake_item_2 CHECK ((usable_qty >= 0.00)),
@@ -712,6 +418,26 @@ CREATE TABLE public.dnintake_item (
     CONSTRAINT c_dnintake_item_4 CHECK ((expired_qty >= 0.00)),
     CONSTRAINT c_dnintake_item_5 CHECK ((status_code = ANY (ARRAY['P'::bpchar, 'V'::bpchar])))
 );
+
+
+--
+-- Name: dnintake_item_intake_item_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dnintake_item_intake_item_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dnintake_item_intake_item_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dnintake_item_intake_item_id_seq OWNED BY public.dnintake_item.intake_item_id;
 
 
 --
@@ -1903,6 +1629,13 @@ ALTER TABLE ONLY public.distribution_package_item ALTER COLUMN id SET DEFAULT ne
 
 
 --
+-- Name: dnintake_item intake_item_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dnintake_item ALTER COLUMN intake_item_id SET DEFAULT nextval('public.dnintake_item_intake_item_id_seq'::regclass);
+
+
+--
 -- Name: notification id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2064,6 +1797,7 @@ COPY public.dnintake (donation_id, inventory_id, intake_date, comments_text, sta
 28	10	2025-11-21	\N	V	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1
 29	1	2025-11-21	\N	V	LINCOLN@GOV.JM	2025-11-21 02:34:29	LINCOLN@GOV.JM	2025-11-21 02:34:29	LINCOLN@GOV.JM	2025-11-21 02:34:29	1
 32	8	2025-11-21	\N	V	CLAUDINE@GOV.JM	2025-11-21 18:03:44	CLAUDINE@GOV.JM	2025-11-21 18:03:44	CLAUDINE@GOV.JM	2025-11-21 18:03:44	1
+31	11	2025-11-21	\N	V	CLAUDINE@GOV.JM	2025-11-21 18:51:44	CLAUDINE@GOV.JM	2025-11-21 18:51:44	CLAUDINE@GOV.JM	2025-11-21 18:51:44	1
 \.
 
 
@@ -2071,49 +1805,50 @@ COPY public.dnintake (donation_id, inventory_id, intake_date, comments_text, sta
 -- Data for Name: dnintake_item; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.dnintake_item (donation_id, inventory_id, item_id, batch_no, batch_date, expiry_date, uom_code, avg_unit_value, usable_qty, defective_qty, expired_qty, status_code, comments_text, create_by_id, create_dtime, update_by_id, update_dtime, version_nbr) FROM stdin;
-3	1	8	B001	2025-11-17	2026-02-28	UNIT	100.00	1000.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	1
-3	1	7	B002	2025-11-17	2025-12-31	UNIT	5000.00	500.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	1
-4	8	7	B002	2025-11-18	2026-01-01	UNIT	5000.00	493.00	5.00	2.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-18 18:06:15	LOGISTICS.MANAGER@GO	2025-11-18 18:06:15	1
-5	8	7	MED-KIT-01	2025-11-18	2025-12-26	UNIT	10000.00	190.00	0.00	10.00	V	\N	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	1
-5	8	8	NOBATCH-8	2025-11-18	2025-12-31	UNIT	5000.00	295.00	5.00	0.00	V	\N	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	1
-7	1	8	NOBATCH-8	2025-11-19	2026-01-10	UNIT	1000.00	400.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 16:59:13	LOGISTICS.MANAGER@GO	2025-11-19 16:59:13	1
-8	8	11	BATCH-WATA-01	2025-11-19	2025-12-31	BOTTLE	100.00	1000.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:30:58	LOGISTICS.MANAGER@GO	2025-11-19 20:30:58	1
-9	8	11	BATCH-WATA-02	2025-11-19	2025-11-20	BOTTLE	100.00	500.00	0.00	0.00	V	\N	LOGISTICS.OFFICER@GO	2025-11-19 20:35:00	LOGISTICS.OFFICER@GO	2025-11-19 20:35:00	1
-10	8	11	BATCH-WATA-03	2025-11-19	2025-11-19	BOTTLE	100.00	50.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:36:58	LOGISTICS.MANAGER@GO	2025-11-19 20:36:58	1
-11	1	11	BATCH-WATA-05	2025-11-17	2025-11-20	BOTTLE	100.00	80.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:40:50	LOGISTICS.MANAGER@GO	2025-11-19 20:40:50	1
-13	8	9	NOBATCH-9	2025-11-20	\N	UNIT	11500.00	14.00	1.00	0.00	V	\N	MONIQUE@GOV.JM	2025-11-20 17:00:58	MONIQUE@GOV.JM	2025-11-20 17:00:58	1
-14	8	8	NOBATCH-8	2025-11-20	2026-10-31	UNIT	30000.00	297.00	0.00	3.00	V	\N	CLAUDINE@GOV.JM	2025-11-20 17:05:25	CLAUDINE@GOV.JM	2025-11-20 17:05:25	1
-15	1	10	SDGHSGF58555	2025-11-20	2025-11-27	SHEET	54600.00	25.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1
-15	1	8	JKDFKD	2025-11-13	2025-11-28	BOX	50000.00	50.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1
-15	1	12	SFJHKH56546	2025-11-14	2025-11-21	BOTTLE	50000.00	50.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1
-15	1	9	JGTDYHSG585	2025-11-13	2025-11-28	BOX	42552.00	85.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1
-12	1	6	YU2856	2025-11-13	2025-11-27	KG	100.00	25.00	0.00	0.00	V	\N	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	1
-12	1	11	FG2580	2025-11-10	2025-11-27	BOTTLE	100.00	25.00	0.00	0.00	V	\N	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	1
-6	8	6	PB1025	2025-11-12	2025-11-30	SACK	1000.00	100.00	0.00	0.00	V	\N	PATRICIA.RAYMOND@ICT	2025-11-20 18:25:21	PATRICIA.RAYMOND@ICT	2025-11-20 18:25:21	1
-17	1	11	123456	2025-11-20	2026-01-31	BOTTLE	12000.00	100.00	10.00	10.00	V	\N	MONIQUE@GOV.JM	2025-11-20 19:18:51	MONIQUE@GOV.JM	2025-11-20 19:18:51	1
-20	1	14	12378	2025-11-20	\N	UNIT	175000.00	15000.00	0.00	0.00	V	\N	MONIQUE@GOV.JM	2025-11-20 23:05:46	MONIQUE@GOV.JM	2025-11-20 23:05:46	1
-22	11	16	BC1-002	2025-07-08	\N	UNIT	300.00	29.00	1.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
-22	11	17	BC1-001	2025-07-08	\N	UNIT	200.00	5.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
-22	11	18	BF1-001	2025-07-08	2026-02-10	UNIT	350.00	75.00	5.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
-22	11	19	BF1-002	2025-11-19	2025-11-30	UNIT	200.00	50.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
-23	11	16	BC2-002	2025-08-30	\N	UNIT	430.00	20.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1
-23	11	17	BC2-001	2025-06-05	\N	UNIT	250.00	30.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1
-23	11	18	BF2-001	2025-10-15	2025-11-30	UNIT	280.00	10.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1
-23	11	19	BF2-002	2025-11-18	2025-12-05	UNIT	360.00	30.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1
-24	11	16	BC3-002	2025-09-01	\N	UNIT	270.00	70.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1
-24	11	17	BC3-001	2025-07-10	\N	UNIT	300.00	10.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1
-24	11	18	BF3-001	2025-10-05	2025-12-14	UNIT	180.00	40.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1
-24	11	19	BF3-002	2025-11-19	2026-01-06	UNIT	450.00	20.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1
-25	11	18	BC4-001	2025-11-03	2025-12-14	UNIT	220.00	5.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:15:03	KAY@GOV.JM	2025-11-21 02:15:03	1
-26	10	16	BC5-001	2025-07-10	\N	UNIT	100.00	16.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	1
-26	10	18	BF5-001	2025-07-10	2026-01-18	UNIT	500.00	55.00	5.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	1
-27	10	16	BC6-001	2025-06-05	\N	UNIT	190.00	10.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:24:11	KAY@GOV.JM	2025-11-21 02:24:11	1
-27	10	18	BF6-001	2025-08-05	2025-12-10	UNIT	60.00	30.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:24:11	KAY@GOV.JM	2025-11-21 02:24:11	1
-28	10	16	BC7-001	2025-10-03	\N	UNIT	300.00	25.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1
-28	10	18	BF7-001	2025-06-05	2026-02-20	UNIT	270.00	100.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1
-29	1	7	9KJD	2025-11-12	2025-11-29	BOX	4.00	15.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-21 02:34:29	LINCOLN@GOV.JM	2025-11-21 02:34:29	1
-32	8	6	BAT-WRP-X011	2025-11-21	\N	SACK	25000.00	9.00	0.00	0.00	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:03:44	CLAUDINE@GOV.JM	2025-11-21 18:03:44	1
+COPY public.dnintake_item (donation_id, inventory_id, item_id, batch_no, batch_date, expiry_date, uom_code, avg_unit_value, usable_qty, defective_qty, expired_qty, status_code, comments_text, create_by_id, create_dtime, update_by_id, update_dtime, version_nbr, intake_item_id) FROM stdin;
+3	1	8	B001	2025-11-17	2026-02-28	UNIT	100.00	1000.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	1	1
+3	1	7	B002	2025-11-17	2025-12-31	UNIT	5000.00	500.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	1	2
+4	8	7	B002	2025-11-18	2026-01-01	UNIT	5000.00	493.00	5.00	2.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-18 18:06:15	LOGISTICS.MANAGER@GO	2025-11-18 18:06:15	1	3
+5	8	7	MED-KIT-01	2025-11-18	2025-12-26	UNIT	10000.00	190.00	0.00	10.00	V	\N	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	1	4
+5	8	8	NOBATCH-8	2025-11-18	2025-12-31	UNIT	5000.00	295.00	5.00	0.00	V	\N	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	1	5
+7	1	8	NOBATCH-8	2025-11-19	2026-01-10	UNIT	1000.00	400.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 16:59:13	LOGISTICS.MANAGER@GO	2025-11-19 16:59:13	1	6
+8	8	11	BATCH-WATA-01	2025-11-19	2025-12-31	BOTTLE	100.00	1000.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:30:58	LOGISTICS.MANAGER@GO	2025-11-19 20:30:58	1	7
+9	8	11	BATCH-WATA-02	2025-11-19	2025-11-20	BOTTLE	100.00	500.00	0.00	0.00	V	\N	LOGISTICS.OFFICER@GO	2025-11-19 20:35:00	LOGISTICS.OFFICER@GO	2025-11-19 20:35:00	1	8
+10	8	11	BATCH-WATA-03	2025-11-19	2025-11-19	BOTTLE	100.00	50.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:36:58	LOGISTICS.MANAGER@GO	2025-11-19 20:36:58	1	9
+11	1	11	BATCH-WATA-05	2025-11-17	2025-11-20	BOTTLE	100.00	80.00	0.00	0.00	V	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:40:50	LOGISTICS.MANAGER@GO	2025-11-19 20:40:50	1	10
+13	8	9	NOBATCH-9	2025-11-20	\N	UNIT	11500.00	14.00	1.00	0.00	V	\N	MONIQUE@GOV.JM	2025-11-20 17:00:58	MONIQUE@GOV.JM	2025-11-20 17:00:58	1	11
+14	8	8	NOBATCH-8	2025-11-20	2026-10-31	UNIT	30000.00	297.00	0.00	3.00	V	\N	CLAUDINE@GOV.JM	2025-11-20 17:05:25	CLAUDINE@GOV.JM	2025-11-20 17:05:25	1	12
+15	1	10	SDGHSGF58555	2025-11-20	2025-11-27	SHEET	54600.00	25.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1	13
+15	1	8	JKDFKD	2025-11-13	2025-11-28	BOX	50000.00	50.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1	14
+15	1	12	SFJHKH56546	2025-11-14	2025-11-21	BOTTLE	50000.00	50.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1	15
+15	1	9	JGTDYHSG585	2025-11-13	2025-11-28	BOX	42552.00	85.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1	16
+12	1	6	YU2856	2025-11-13	2025-11-27	KG	100.00	25.00	0.00	0.00	V	\N	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	1	17
+12	1	11	FG2580	2025-11-10	2025-11-27	BOTTLE	100.00	25.00	0.00	0.00	V	\N	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	PATRICIA.RAYMOND@ICT	2025-11-20 18:17:12	1	18
+6	8	6	PB1025	2025-11-12	2025-11-30	SACK	1000.00	100.00	0.00	0.00	V	\N	PATRICIA.RAYMOND@ICT	2025-11-20 18:25:21	PATRICIA.RAYMOND@ICT	2025-11-20 18:25:21	1	19
+17	1	11	123456	2025-11-20	2026-01-31	BOTTLE	12000.00	100.00	10.00	10.00	V	\N	MONIQUE@GOV.JM	2025-11-20 19:18:51	MONIQUE@GOV.JM	2025-11-20 19:18:51	1	20
+20	1	14	12378	2025-11-20	\N	UNIT	175000.00	15000.00	0.00	0.00	V	\N	MONIQUE@GOV.JM	2025-11-20 23:05:46	MONIQUE@GOV.JM	2025-11-20 23:05:46	1	21
+22	11	16	BC1-002	2025-07-08	\N	UNIT	300.00	29.00	1.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1	22
+22	11	17	BC1-001	2025-07-08	\N	UNIT	200.00	5.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1	23
+22	11	18	BF1-001	2025-07-08	2026-02-10	UNIT	350.00	75.00	5.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1	24
+22	11	19	BF1-002	2025-11-19	2025-11-30	UNIT	200.00	50.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1	25
+23	11	16	BC2-002	2025-08-30	\N	UNIT	430.00	20.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1	26
+23	11	17	BC2-001	2025-06-05	\N	UNIT	250.00	30.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1	27
+23	11	18	BF2-001	2025-10-15	2025-11-30	UNIT	280.00	10.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1	28
+23	11	19	BF2-002	2025-11-18	2025-12-05	UNIT	360.00	30.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1	29
+24	11	16	BC3-002	2025-09-01	\N	UNIT	270.00	70.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1	30
+24	11	17	BC3-001	2025-07-10	\N	UNIT	300.00	10.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1	31
+24	11	18	BF3-001	2025-10-05	2025-12-14	UNIT	180.00	40.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1	32
+24	11	19	BF3-002	2025-11-19	2026-01-06	UNIT	450.00	20.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	1	33
+25	11	18	BC4-001	2025-11-03	2025-12-14	UNIT	220.00	5.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:15:03	KAY@GOV.JM	2025-11-21 02:15:03	1	34
+26	10	16	BC5-001	2025-07-10	\N	UNIT	100.00	16.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	1	35
+26	10	18	BF5-001	2025-07-10	2026-01-18	UNIT	500.00	55.00	5.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	1	36
+27	10	16	BC6-001	2025-06-05	\N	UNIT	190.00	10.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:24:11	KAY@GOV.JM	2025-11-21 02:24:11	1	37
+27	10	18	BF6-001	2025-08-05	2025-12-10	UNIT	60.00	30.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:24:11	KAY@GOV.JM	2025-11-21 02:24:11	1	38
+28	10	16	BC7-001	2025-10-03	\N	UNIT	300.00	25.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1	39
+28	10	18	BF7-001	2025-06-05	2026-02-20	UNIT	270.00	100.00	0.00	0.00	V	\N	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1	40
+29	1	7	9KJD	2025-11-12	2025-11-29	BOX	4.00	15.00	0.00	0.00	V	\N	LINCOLN@GOV.JM	2025-11-21 02:34:29	LINCOLN@GOV.JM	2025-11-21 02:34:29	1	41
+32	8	6	BAT-WRP-X011	2025-11-21	\N	SACK	25000.00	9.00	0.00	0.00	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:03:44	CLAUDINE@GOV.JM	2025-11-21 18:03:44	1	42
+31	11	9	\N	\N	\N	UNIT	30000.00	10.00	0.00	0.00	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:51:44	CLAUDINE@GOV.JM	2025-11-21 18:51:44	1	43
 \.
 
 
@@ -2123,6 +1858,7 @@ COPY public.dnintake_item (donation_id, inventory_id, item_id, batch_no, batch_d
 
 COPY public.donation (donation_id, donor_id, donation_desc, event_id, custodian_id, received_date, status_code, comments_text, create_by_id, create_dtime, verify_by_id, verify_dtime, version_nbr, update_by_id, update_dtime) FROM stdin;
 32	6	RELIEF FOR ST ELIZABETH	2	1	2025-11-21	P	RELIEF ST ELIZABETH	CLAUDINE@GOV.JM	2025-11-21 17:56:15	CLAUDINE@GOV.JM	2025-11-21 17:56:15	2	CLAUDINE@GOV.JM	2025-11-21 18:03:44.362568
+31	5	HURRICANE MELISSA RELIEF	2	1	2025-11-21	P	\N	CLAUDINE@GOV.JM	2025-11-21 17:14:22	CLAUDINE@GOV.JM	2025-11-21 17:14:22	2	CLAUDINE@GOV.JM	2025-11-21 18:51:44.449015
 17	4	WHAT AM I LOOKING FOR?\r\nBUG - EDITED AFTER PROCESSING	3	1	2025-11-20	P	\N	MONIQUE@GOV.JM	2025-11-20 19:15:22	MONIQUE@GOV.JM	2025-11-20 19:15:22	4	MONIQUE@GOV.JM	2025-11-20 19:25:29.273482
 18	2	BOARDS, SHEET, MATTRESS ETC	2	1	2025-11-20	V	N/A	PATRICIA.RAYMOND@ICT	2025-11-20 20:37:19	PATRICIA.RAYMOND@ICT	2025-11-20 20:37:19	1	PATRICIA.RAYMOND@ICT	2025-11-20 20:37:18.826297
 3	2	HYGIENE AND TOILETRY AND FIRST AID KITS	2	1	2025-11-14	P	\N	LOGISTICS.OFFICER@GO	2025-11-18 16:02:39	LOGISTICS.OFFICER@GO	2025-11-18 16:02:39	5	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37.318332
@@ -2151,7 +1887,8 @@ COPY public.donation (donation_id, donor_id, donation_desc, event_id, custodian_
 28	6	GOODS ASSORTMENT #7	2	1	2025-11-21	P	\N	KAY@GOV.JM	2025-11-21 02:19:43	KAY@GOV.JM	2025-11-21 02:19:43	2	KAY@GOV.JM	2025-11-21 02:26:32.76077
 29	5	FOOD	2	1	2025-11-20	P	\N	LINCOLN@GOV.JM	2025-11-21 02:32:09	LINCOLN@GOV.JM	2025-11-21 02:32:09	2	LINCOLN@GOV.JM	2025-11-21 02:34:29.146005
 30	3	TAR	2	1	2025-11-21	V	\N	LOGISTICS.MANAGER@GO	2025-11-21 14:56:17	LOGISTICS.MANAGER@GO	2025-11-21 14:56:17	1	LOGISTICS.MANAGER@GO	2025-11-21 14:56:16.875458
-31	5	HURRICANE MELISSA RELIEF	2	1	2025-11-21	V	\N	CLAUDINE@GOV.JM	2025-11-21 17:14:22	CLAUDINE@GOV.JM	2025-11-21 17:14:22	1	CLAUDINE@GOV.JM	2025-11-21 17:14:21.980256
+33	5	SUPPORT AND RELIEF HURRICANE MELISSA	2	1	2025-11-21	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:54:22	CLAUDINE@GOV.JM	2025-11-21 18:54:22	1	CLAUDINE@GOV.JM	2025-11-21 18:54:22.044922
+34	5	SUPPORT AND RELIEF	2	1	2025-11-21	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:55:59	CLAUDINE@GOV.JM	2025-11-21 18:55:59	1	CLAUDINE@GOV.JM	2025-11-21 18:55:58.708416
 \.
 
 
@@ -2208,6 +1945,8 @@ COPY public.donation_item (donation_id, item_id, item_qty, uom_code, location_na
 30	9	100.00	SHEET	DONATION RECEIVED	V	\N	LOGISTICS.MANAGER@GO	2025-11-21 14:56:17	LOGISTICS.MANAGER@GO	2025-11-21 14:56:17	1
 31	9	10.00	UNIT	DONATION RECEIVED	V	\N	CLAUDINE@GOV.JM	2025-11-21 17:14:22	CLAUDINE@GOV.JM	2025-11-21 17:14:22	1
 32	6	9.00	SACK	DONATION RECEIVED	V	\N	CLAUDINE@GOV.JM	2025-11-21 17:56:15	CLAUDINE@GOV.JM	2025-11-21 17:56:15	1
+33	20	80.00	UNIT	DONATION RECEIVED	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:54:22	CLAUDINE@GOV.JM	2025-11-21 18:54:22	1
+34	16	80.00	UNIT	DONATION RECEIVED	V	\N	CLAUDINE@GOV.JM	2025-11-21 18:55:59	CLAUDINE@GOV.JM	2025-11-21 18:55:59	1
 \.
 
 
@@ -2252,13 +1991,14 @@ COPY public.inventory (inventory_id, item_id, usable_qty, reserved_qty, defectiv
 1	12	50.00	50.00	0.00	0.00	BOTTLE	\N	\N	A	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	2	0.00
 8	11	1500.00	250.00	0.00	0.00	BOTTLE	\N	\N	A	\N	LOGISTICS.MANAGER@GO	2025-11-19 20:30:58	LOGISTICS.MANAGER@GO	2025-11-19 20:36:58	9	0.00
 1	14	15000.00	600.00	0.00	0.00	UNIT	\N	\N	A	\N	MONIQUE@GOV.JM	2025-11-20 23:05:46	MONIQUE@GOV.JM	2025-11-20 23:05:46	2	0.00
-11	16	119.00	0.00	1.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:13:34	3	0.00
+10	16	25.00	0.00	0.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:26:33	5	0.00
+11	16	90.00	0.00	1.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:13:34	5	0.00
+11	9	10.00	0.00	0.00	0.00	UNIT	\N	\N	A	\N	CLAUDINE@GOV.JM	2025-11-21 18:51:44	CLAUDINE@GOV.JM	2025-11-21 18:51:44	1	0.00
 8	10	250.00	0.00	5.00	0.00	UNIT	\N	\N	A	\N	ADMIN@ODPEM.GOV.JM	2025-11-17 15:13:53	ADMIN@ODPEM.GOV.JM	2025-11-17 15:13:53	1	0.00
 11	19	100.00	0.00	0.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:13:34	3	0.00
 11	18	130.00	0.00	5.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:15:03	4	0.00
 1	7	715.00	90.00	3.00	10.00	UNIT	\N	\N	A	\N	ADMIN@ODPEM.GOV.JM	2025-11-17 15:13:49	LINCOLN@GOV.JM	2025-11-21 02:34:29	11	0.00
 8	6	289.00	0.00	2.00	0.00	SACK	\N	\N	A	\N	ADMIN@ODPEM.GOV.JM	2025-11-17 15:13:53	CLAUDINE@GOV.JM	2025-11-21 18:03:44	3	0.00
-10	16	36.00	0.00	0.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:26:33	3	0.00
 1	8	1603.00	0.00	0.00	0.00	UNIT	\N	\N	A	\N	ADMIN@ODPEM.GOV.JM	2025-11-17 15:13:49	LINCOLN@GOV.JM	2025-11-20 17:37:35	18	0.00
 10	18	185.00	50.00	5.00	0.00	UNIT	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:26:33	4	0.00
 \.
@@ -2320,7 +2060,6 @@ COPY public.itembatch (batch_id, inventory_id, item_id, batch_no, batch_date, ex
 36	1	11	123456	2025-11-20	2026-01-31	100.0000	0.0000	10.0000	10.0000	BOTTLE	\N	12000.00	\N	\N	A	\N	MONIQUE@GOV.JM	2025-11-20 19:18:51	MONIQUE@GOV.JM	2025-11-20 19:18:51	1
 16	1	8	NOBATCH-8	2025-11-19	2026-01-10	380.0000	0.0000	0.0000	0.0000	UNIT	\N	1000.00	\N	\N	A	\N	LOGISTICS.MANAGER@GO	2025-11-19 16:59:13	LOGISTICS.MANAGER@GO	2025-11-19 16:59:13	2
 37	1	14	12378	2025-11-20	\N	13378.0000	0.0000	0.0000	0.0000	UNIT	\N	175000.00	\N	\N	A	\N	MONIQUE@GOV.JM	2025-11-20 23:05:46	MONIQUE@GOV.JM	2025-11-20 23:05:46	3
-38	11	16	BC1-002	2025-07-08	\N	29.0000	0.0000	1.0000	0.0000	UNIT	\N	300.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
 39	11	17	BC1-001	2025-07-08	\N	5.0000	0.0000	0.0000	0.0000	UNIT	\N	200.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
 31	1	12	SFJHKH56546	2025-11-14	2025-11-21	50.0000	0.0000	0.0000	0.0000	BOTTLE	\N	50000.00	\N	\N	A	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1
 32	1	9	JGTDYHSG585	2025-11-13	2025-11-28	85.0000	0.0000	0.0000	0.0000	BOX	\N	42552.00	\N	\N	A	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	1
@@ -2330,7 +2069,6 @@ COPY public.itembatch (batch_id, inventory_id, item_id, batch_no, batch_date, ex
 28	8	9	NOBATCH-9	2025-11-20	\N	0.0000	0.0000	1.0000	0.0000	UNIT	\N	11500.00	\N	\N	A	\N	MONIQUE@GOV.JM	2025-11-20 17:00:58	MONIQUE@GOV.JM	2025-11-20 17:00:58	2
 40	11	18	BF1-001	2025-07-08	2026-02-10	75.0000	0.0000	5.0000	0.0000	UNIT	\N	350.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
 41	11	19	BF1-002	2025-11-19	2025-11-30	50.0000	0.0000	0.0000	0.0000	UNIT	\N	200.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	1
-42	11	16	BC2-002	2025-08-30	\N	20.0000	0.0000	0.0000	0.0000	UNIT	\N	430.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	1
 52	10	18	BF5-001	2025-07-10	2026-01-18	55.0000	20.0000	5.0000	0.0000	UNIT	\N	500.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	2
 12	1	7	B002	2025-11-17	2025-12-31	470.0000	0.0000	0.0000	0.0000	UNIT	\N	5000.00	\N	\N	A	\N	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	LOGISTICS.MANAGER@GO	2025-11-18 17:54:37	2
 14	8	7	MED-KIT-01	2025-11-18	2025-12-26	175.0000	0.0000	0.0000	10.0000	UNIT	\N	10000.00	\N	\N	A	\N	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	LOGISTICS.OFFICER@GO	2025-11-18 23:41:35	2
@@ -2344,13 +2082,16 @@ COPY public.itembatch (batch_id, inventory_id, item_id, batch_no, batch_date, ex
 55	10	16	BC7-001	2025-10-03	\N	25.0000	0.0000	0.0000	0.0000	UNIT	\N	300.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1
 56	10	18	BF7-001	2025-06-05	2026-02-20	100.0000	0.0000	0.0000	0.0000	UNIT	\N	270.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:26:33	KAY@GOV.JM	2025-11-21 02:26:33	1
 29	1	10	SDGHSGF58555	2025-11-20	2025-11-27	0.0000	0.0000	0.0000	0.0000	SHEET	\N	54600.00	\N	\N	A	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	3
-51	10	16	BC5-001	2025-07-10	\N	11.0000	0.0000	0.0000	0.0000	UNIT	\N	100.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	2
+51	10	16	BC5-001	2025-07-10	\N	0.0000	0.0000	0.0000	0.0000	UNIT	\N	100.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:22:33	KAY@GOV.JM	2025-11-21 02:22:33	4
 30	1	8	JKDFKD	2025-11-13	2025-11-28	293.0000	0.0000	0.0000	0.0000	BOX	\N	50000.00	\N	\N	A	\N	LINCOLN@GOV.JM	2025-11-20 17:37:35	LINCOLN@GOV.JM	2025-11-20 17:37:35	7
 43	11	17	BC2-001	2025-06-05	\N	30.0000	10.0000	0.0000	0.0000	UNIT	\N	250.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	2
 47	11	17	BC3-001	2025-07-10	\N	10.0000	10.0000	0.0000	0.0000	UNIT	\N	300.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:13:34	KAY@GOV.JM	2025-11-21 02:13:34	2
+38	11	16	BC1-002	2025-07-08	\N	20.0000	0.0000	1.0000	0.0000	UNIT	\N	300.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:05:08	KAY@GOV.JM	2025-11-21 02:05:08	3
 58	8	6	BAT-WRP-X011	2025-11-21	\N	9.0000	0.0000	0.0000	0.0000	SACK	\N	25000.00	\N	\N	A	\N	CLAUDINE@GOV.JM	2025-11-21 18:03:44	CLAUDINE@GOV.JM	2025-11-21 18:03:44	1
 53	10	16	BC6-001	2025-06-05	\N	0.0000	0.0000	0.0000	0.0000	UNIT	\N	190.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:24:11	KAY@GOV.JM	2025-11-21 02:24:11	2
 54	10	18	BF6-001	2025-08-05	2025-12-10	30.0000	30.0000	0.0000	0.0000	UNIT	\N	60.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:24:11	KAY@GOV.JM	2025-11-21 02:24:11	2
+42	11	16	BC2-002	2025-08-30	\N	0.0000	0.0000	0.0000	0.0000	UNIT	\N	430.00	\N	\N	A	\N	KAY@GOV.JM	2025-11-21 02:10:04	KAY@GOV.JM	2025-11-21 02:10:04	2
+59	11	9	\N	\N	\N	10.0000	0.0000	0.0000	0.0000	UNIT	\N	30000.00	\N	\N	A	\N	CLAUDINE@GOV.JM	2025-11-21 18:51:44	CLAUDINE@GOV.JM	2025-11-21 18:51:44	1
 \.
 
 
@@ -2460,6 +2201,9 @@ COPY public.notification (id, user_id, warehouse_id, reliefrqst_id, title, messa
 349	20	\N	54	Relief Request Approved	RR-000054 from POOR RELIEF #1 (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	read	/packaging/54/prepare	\N	f	2025-11-20 21:42:46.51034
 423	20	\N	49	Package Dispatched	Relief package for RR-000049 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/49	\N	f	2025-11-21 14:49:19.891479
 424	24	\N	49	Package Dispatched	Relief package for RR-000049 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/49	\N	f	2025-11-21 14:49:19.891521
+465	4	\N	64	Package Dispatched	Relief package for RR-000064 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/64	\N	f	2025-11-21 17:20:12.091001
+466	20	\N	64	Package Dispatched	Relief package for RR-000064 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/64	\N	f	2025-11-21 17:20:12.091145
+467	24	\N	64	Package Dispatched	Relief package for RR-000064 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/64	\N	f	2025-11-21 17:20:12.091186
 138	23	\N	38	New Relief Request Submitted	Agency POOR RELIEF #2 submitted RR-000038 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/38	\N	f	2025-11-20 14:42:50.0372
 140	12	\N	39	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000039 for event: hurricane beryl. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/39	\N	f	2025-11-20 14:46:53.268807
 141	8	\N	39	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000039 for event: hurricane beryl. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/39	\N	f	2025-11-20 14:46:53.268874
@@ -2628,6 +2372,9 @@ COPY public.notification (id, user_id, warehouse_id, reliefrqst_id, title, messa
 305	21	\N	50	Relief Request Approved	RR-000050 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	read	/packaging/50/prepare	\N	f	2025-11-20 19:54:36.433077
 365	20	\N	53	Package Dispatched	Relief package for RR-000053 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/53	\N	f	2025-11-21 07:51:13.849746
 366	24	\N	53	Package Dispatched	Relief package for RR-000053 has been dispatched by Anthony Bailey. Click to track delivery.	package_dispatched	unread	/relief-requests/53	\N	f	2025-11-21 07:51:13.849787
+481	4	\N	67	Package Dispatched	Relief package for RR-000067 has been dispatched by Lincoln Brown. Click to track delivery.	package_dispatched	unread	/relief-requests/67	\N	f	2025-11-21 18:07:57.675233
+482	20	\N	67	Package Dispatched	Relief package for RR-000067 has been dispatched by Lincoln Brown. Click to track delivery.	package_dispatched	unread	/relief-requests/67	\N	f	2025-11-21 18:07:57.675369
+483	24	\N	67	Package Dispatched	Relief package for RR-000067 has been dispatched by Lincoln Brown. Click to track delivery.	package_dispatched	unread	/relief-requests/67	\N	f	2025-11-21 18:07:57.675407
 307	25	\N	50	Relief Request Approved	RR-000050 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/50/prepare	\N	f	2025-11-20 19:54:36.51453
 341	12	\N	53	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000053 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/53	\N	f	2025-11-20 21:40:24.412939
 342	8	\N	53	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000053 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/53	\N	f	2025-11-20 21:40:24.413077
@@ -2653,7 +2400,6 @@ COPY public.notification (id, user_id, warehouse_id, reliefrqst_id, title, messa
 417	3	\N	61	Relief Request Approved	RR-000061 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	read	/packaging/61/prepare	\N	f	2025-11-21 13:45:22.342041
 426	12	\N	62	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000062 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/62	\N	f	2025-11-21 14:57:12.929023
 427	8	\N	62	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000062 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/62	\N	f	2025-11-21 14:57:12.929062
-425	6	\N	62	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000062 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	read	/eligibility/review/62	\N	f	2025-11-21 14:57:12.928893
 428	9	\N	62	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000062 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/62	\N	f	2025-11-21 14:57:12.929095
 431	24	\N	62	Relief Request Approved	RR-000062 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/62/prepare	\N	f	2025-11-21 14:57:29.910455
 432	3	\N	62	Relief Request Approved	RR-000062 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/62/prepare	\N	f	2025-11-21 14:57:29.950873
@@ -2665,7 +2411,6 @@ COPY public.notification (id, user_id, warehouse_id, reliefrqst_id, title, messa
 438	12	\N	64	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000064 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/64	\N	f	2025-11-21 15:33:39.382307
 439	8	\N	64	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000064 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/64	\N	f	2025-11-21 15:33:39.382369
 440	9	\N	64	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000064 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/64	\N	f	2025-11-21 15:33:39.382415
-437	6	\N	64	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000064 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	read	/eligibility/review/64	\N	f	2025-11-21 15:33:39.382099
 441	4	\N	64	Relief Request Approved	RR-000064 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/64/prepare	\N	f	2025-11-21 15:36:19.463905
 442	20	\N	64	Relief Request Approved	RR-000064 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/64/prepare	\N	f	2025-11-21 15:36:19.504134
 443	24	\N	64	Relief Request Approved	RR-000064 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/64/prepare	\N	f	2025-11-21 15:36:19.544788
@@ -2677,7 +2422,6 @@ COPY public.notification (id, user_id, warehouse_id, reliefrqst_id, title, messa
 450	12	\N	65	New Relief Request Submitted	Agency PORTMORE COMMUNITY CENTER submitted RR-000065 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/65	\N	f	2025-11-21 16:23:15.413028
 451	8	\N	65	New Relief Request Submitted	Agency PORTMORE COMMUNITY CENTER submitted RR-000065 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/65	\N	f	2025-11-21 16:23:15.413094
 452	9	\N	65	New Relief Request Submitted	Agency PORTMORE COMMUNITY CENTER submitted RR-000065 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/65	\N	f	2025-11-21 16:23:15.41315
-449	6	\N	65	New Relief Request Submitted	Agency PORTMORE COMMUNITY CENTER submitted RR-000065 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	read	/eligibility/review/65	\N	f	2025-11-21 16:23:15.412837
 453	4	\N	65	Relief Request Approved	RR-000065 from PORTMORE COMMUNITY CENTER (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/65/prepare	\N	f	2025-11-21 16:23:24.527647
 454	20	\N	65	Relief Request Approved	RR-000065 from PORTMORE COMMUNITY CENTER (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/65/prepare	\N	f	2025-11-21 16:23:24.5703
 455	24	\N	65	Relief Request Approved	RR-000065 from PORTMORE COMMUNITY CENTER (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/65/prepare	\N	f	2025-11-21 16:23:24.612436
@@ -2686,10 +2430,22 @@ COPY public.notification (id, user_id, warehouse_id, reliefrqst_id, title, messa
 458	22	\N	65	Relief Request Approved	RR-000065 from PORTMORE COMMUNITY CENTER (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/65/prepare	\N	f	2025-11-21 16:23:24.738585
 459	25	\N	65	Relief Request Approved	RR-000065 from PORTMORE COMMUNITY CENTER (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/65/prepare	\N	f	2025-11-21 16:23:24.781312
 460	23	\N	65	Relief Request Approved	RR-000065 from PORTMORE COMMUNITY CENTER (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/65/prepare	\N	f	2025-11-21 16:23:24.82384
-461	6	\N	66	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000066 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/66	\N	f	2025-11-21 16:57:15.179634
 462	12	\N	66	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000066 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/66	\N	f	2025-11-21 16:57:15.17984
 463	8	\N	66	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000066 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/66	\N	f	2025-11-21 16:57:15.179895
 464	9	\N	66	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000066 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/66	\N	f	2025-11-21 16:57:15.179943
+469	12	\N	67	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000067 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/67	\N	f	2025-11-21 17:24:30.5133
+470	8	\N	67	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000067 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/67	\N	f	2025-11-21 17:24:30.513362
+471	9	\N	67	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000067 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	unread	/eligibility/review/67	\N	f	2025-11-21 17:24:30.513433
+472	4	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.607359
+473	20	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.652116
+474	24	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.694612
+475	3	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.736917
+476	21	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.778963
+477	22	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.820886
+478	25	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.862852
+479	23	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.904461
+480	27	\N	67	Relief Request Approved	RR-000067 from FOOD FOR THE POOR (Event: Hurricane Melissa 2025) approved by Sarah Johnson. Click to prepare fulfillment package.	reliefrqst_approved	unread	/packaging/67/prepare	\N	f	2025-11-21 17:25:27.946001
+468	6	\N	67	New Relief Request Submitted	Agency FOOD FOR THE POOR submitted RR-000067 for event: Hurricane Melissa 2025. Click to review eligibility.	reliefrqst_submitted	read	/eligibility/review/67	\N	f	2025-11-21 17:24:30.513109
 \.
 
 
@@ -2776,7 +2532,6 @@ COPY public.reliefpkg (reliefpkg_id, to_inventory_id, reliefrqst_id, start_date,
 33	1	42	2025-11-20	2025-11-21 00:46:50	\N	\N	D	CLAUDINE@GOV.JM	2025-11-20 23:14:22	LOGISTICS.MANAGER@GO	2025-11-21 00:46:50	LOGISTICS.MANAGER@GO	2025-11-21 00:46:50	3	\N	\N	5	18A6D8E	\N
 18	1	41	2025-11-20	2025-11-21 00:46:55	\N	\N	D	CLAUDINE@GOV.JM	2025-11-20 21:02:29	LOGISTICS.MANAGER@GO	2025-11-21 00:46:55	LOGISTICS.MANAGER@GO	2025-11-21 00:46:55	2	CLAUDINE@GOV.JM	\N	5	B8DB0E9	\N
 17	1	40	2025-11-20	2025-11-21 00:47:02	\N	\N	D	LINCOLN@GOV.JM	2025-11-20 20:56:19	LOGISTICS.MANAGER@GO	2025-11-21 00:47:02	LOGISTICS.MANAGER@GO	2025-11-21 00:47:02	2	LINCOLN@GOV.JM	\N	5	82679A0	\N
-45	1	64	2025-11-21	\N	\N	\N	P	CLAUDINE@GOV.JM	2025-11-21 20:43:23	CLAUDINE@GOV.JM	2025-11-21 20:43:24	__PENDING_LM__	2025-11-21 20:43:24	2	\N	\N	5	AD61969	\N
 5	1	16	2025-11-17	2025-11-21 00:47:19	\N	\N	D	LOGISTICS.OFFICER@GO	2025-11-17 18:30:27	LOGISTICS.MANAGER@GO	2025-11-21 00:47:19	LOGISTICS.MANAGER@GO	2025-11-21 00:47:19	6	LOGISTICS.OFFICER@GO	\N	1	0000005	2
 35	1	33	2025-11-21	2025-11-21 00:39:29	\N	\N	D	MONIQUE@GOV.JM	2025-11-21 00:31:34	INVENTORY2@ODPEM.GOV	2025-11-21 00:47:36	LOGISTICS.MANAGER@GO	2025-11-21 00:39:29	5	INVENTORY2@ODPEM.GOV	2025-11-21 00:47:36	1	F8D0430	\N
 29	1	46	2025-11-20	2025-11-20 23:02:03	\N	\N	D	LINCOLN@GOV.JM	2025-11-20 23:02:03	INVENTORY2@ODPEM.GOV	2025-11-21 00:47:47	LINCOLN@GOV.JM	2025-11-20 23:02:03	3	INVENTORY2@ODPEM.GOV	2025-11-21 00:47:47	5	B06497C	\N
@@ -2787,8 +2542,10 @@ COPY public.reliefpkg (reliefpkg_id, to_inventory_id, reliefrqst_id, start_date,
 36	1	49	2025-11-21	2025-11-21 19:49:20	\N	\N	D	MONIQUE@GOV.JM	2025-11-21 01:06:34	INVENTORY@ODPEM.GOV.	2025-11-21 21:28:12	LOGISTICS.MANAGER@GO	2025-11-21 19:49:20	4	INVENTORY@ODPEM.GOV.	2025-11-21 21:28:12	5	E720D77	\N
 39	1	52	2025-11-21	2025-11-21 02:26:52	\N	\N	D	LINCOLN@GOV.JM	2025-11-21 02:26:52	INVENTORY@ODPEM.GOV.	2025-11-21 21:28:18	LINCOLN@GOV.JM	2025-11-21 02:26:52	3	INVENTORY@ODPEM.GOV.	2025-11-21 21:28:18	5	7C8103F	\N
 6	1	17	2025-11-17	2025-11-19 22:09:54	\N	\N	D	LOGISTICS.OFFICER@GO	2025-11-17 19:23:15	INVENTORY@ODPEM.GOV.	2025-11-20 01:25:45	LOGISTICS.MANAGER@GO	2025-11-19 22:09:54	4	INVENTORY@ODPEM.GOV.	2025-11-20 01:25:45	1	0000006	2
+45	1	64	2025-11-21	2025-11-21 17:20:12	\N	\N	D	CLAUDINE@GOV.JM	2025-11-21 20:43:23	LOGISTICS.MANAGER@GO	2025-11-21 17:20:12	LOGISTICS.MANAGER@GO	2025-11-21 17:20:12	3	\N	\N	5	AD61969	\N
 13	1	29	2025-11-20	2025-11-20 02:36:51	\N	\N	D	LOGISTICS.OFFICER@GO	2025-11-20 02:30:17	INVENTORY@ODPEM.GOV.	2025-11-20 02:38:16	LOGISTICS.MANAGER@GO	2025-11-20 02:36:51	4	INVENTORY@ODPEM.GOV.	2025-11-20 02:38:16	1	228B2C3	\N
 32	1	44	2025-11-20	2025-11-20 23:08:53	\N	\N	D	LOGISTICS.MANAGER@GO	2025-11-20 23:08:53	LOGISTICS.MANAGER@GO	2025-11-20 23:08:53	LOGISTICS.MANAGER@GO	2025-11-20 23:08:53	2	\N	\N	6	11F4116	\N
+46	1	67	2025-11-21	2025-11-21 18:07:57	\N	\N	D	CLAUDINE@GOV.JM	2025-11-21 17:30:41	LINCOLN@GOV.JM	2025-11-21 18:07:57	LINCOLN@GOV.JM	2025-11-21 18:07:57	3	\N	\N	5	25AC209	\N
 34	1	37	2025-11-20	2025-11-21 00:29:09	\N	\N	D	MONIQUE@GOV.JM	2025-11-20 23:42:39	LOGISTICS.MANAGER@GO	2025-11-21 00:29:09	LOGISTICS.MANAGER@GO	2025-11-21 00:29:09	3	\N	\N	3	D8E21D6	\N
 38	1	51	2025-11-21	2025-11-21 01:30:34	\N	\N	D	MONIQUE@GOV.JM	2025-11-21 01:21:12	INVENTORY@ODPEM.GOV.	2025-11-21 01:31:22	LOGISTICS.MANAGER@GO	2025-11-21 01:30:34	4	INVENTORY@ODPEM.GOV.	2025-11-21 01:31:22	3	AC0CE57	\N
 37	1	50	2025-11-21	2025-11-21 01:42:24	\N	\N	D	MONIQUE@GOV.JM	2025-11-21 01:19:24	LINCOLN@GOV.JM	2025-11-21 01:42:24	LINCOLN@GOV.JM	2025-11-21 01:42:24	3	\N	\N	5	ADC2AFF	\N
@@ -2820,6 +2577,9 @@ COPY public.reliefpkg_item (reliefpkg_id, fr_inventory_id, batch_id, item_id, it
 41	10	53	16	10.0000	UNIT	\N	LINCOLN@GOV.JM	2025-11-21 18:32:12	LINCOLN@GOV.JM	2025-11-21 18:32:12	1
 42	11	43	17	5.0000	UNIT	\N	CLAUDINE@GOV.JM	2025-11-21 18:52:53	CLAUDINE@GOV.JM	2025-11-21 18:52:53	1
 36	1	30	8	7.0000	BOX	\N	LOGISTICS.MANAGER@GO	2025-11-21 19:49:20	LOGISTICS.MANAGER@GO	2025-11-21 19:49:20	1
+46	10	51	16	11.0000	UNIT	\N	CLAUDINE@GOV.JM	2025-11-21 17:30:41	LINCOLN@GOV.JM	2025-11-21 18:07:57	2
+46	11	38	16	9.0000	UNIT	\N	CLAUDINE@GOV.JM	2025-11-21 17:30:41	LINCOLN@GOV.JM	2025-11-21 18:07:57	2
+46	11	42	16	20.0000	UNIT	\N	LINCOLN@GOV.JM	2025-11-21 18:07:57	LINCOLN@GOV.JM	2025-11-21 18:07:57	1
 \.
 
 
@@ -2829,10 +2589,12 @@ COPY public.reliefpkg_item (reliefpkg_id, fr_inventory_id, batch_id, item_id, it
 
 COPY public.reliefrqst (reliefrqst_id, agency_id, request_date, urgency_ind, status_code, create_by_id, create_dtime, review_by_id, review_dtime, action_by_id, action_dtime, version_nbr, eligible_event_id, rqst_notes_text, review_notes_text, tracking_no, status_reason_desc, receive_by_id, receive_dtime) FROM stdin;
 32	1	2025-11-20	H	5	CLAUDINE@GOV.JM	2025-11-20 17:46:23	EXECUTIVE@ODPEM.GOV.	2025-11-20 18:11:37	LINCOLN@GOV.JM	2025-11-20 20:38:29	4	2		\N	2DC9BC8	\N	\N	\N
-66	5	2025-11-21	M	1	CLAUDINE@GOV.JM	2025-11-21 21:56:49	\N	\N	\N	\N	2	2		\N	A21F2A3	\N	\N	\N
 29	1	2025-11-20	L	5	LOGISTICS.OFFICER@GO	2025-11-20 02:25:38	EXECUTIVE@ODPEM.GOV.	2025-11-20 02:29:02	LOGISTICS.MANAGER@GO	2025-11-20 02:36:51	4	2		\N	B35EB82	\N	\N	\N
 30	1	2025-11-20	H	0	CLAUDINE@GOV.JM	2025-11-20 17:36:40	\N	\N	\N	\N	1	2		\N	54E06BF	\N	\N	\N
+64	5	2025-11-21	M	5	CLAUDINE@GOV.JM	2025-11-21 20:32:46	EXECUTIVE@ODPEM.GOV.	2025-11-21 20:36:19	LOGISTICS.MANAGER@GO	2025-11-21 17:20:12	5	2		\N	C9F6100	\N	\N	\N
 31	1	2025-11-20	H	0	CLAUDINE@GOV.JM	2025-11-20 17:37:29	\N	\N	\N	\N	1	2		\N	2EF8344	\N	\N	\N
+66	5	2025-11-21	M	8	CLAUDINE@GOV.JM	2025-11-21 21:56:49	EXECUTIVE@ODPEM.GOV.	2025-11-21 17:25:10	EXECUTIVE@ODPEM.GOV.	2025-11-21 17:25:10	3	2		\N	A21F2A3	Ineligible	\N	\N
+67	5	2025-11-21	M	5	CLAUDINE@GOV.JM	2025-11-21 17:23:50	EXECUTIVE@ODPEM.GOV.	2025-11-21 17:25:27	LINCOLN@GOV.JM	2025-11-21 18:07:58	5	2		\N	684C2FD	\N	\N	\N
 43	5	2025-11-20	M	0	LINCOLN@GOV.JM	2025-11-20 22:01:27	\N	\N	\N	\N	1	2	lol	\N	85911B0	\N	\N	\N
 47	5	2025-11-20	M	0	CLAUDINE@GOV.JM	2025-11-20 23:06:52	\N	\N	\N	\N	1	2		\N	212791C	\N	\N	\N
 44	6	2025-11-20	M	5	MONIQUE@GOV.JM	2025-11-20 22:32:49	EXECUTIVE@ODPEM.GOV.	2025-11-20 22:42:35	LOGISTICS.MANAGER@GO	2025-11-20 23:08:53	8	2	Testing for relief request screen	\N	5AB6374	\N	\N	\N
@@ -2876,7 +2638,6 @@ COPY public.reliefrqst (reliefrqst_id, agency_id, request_date, urgency_ind, sta
 49	5	2025-11-21	M	5	CLAUDINE@GOV.JM	2025-11-21 00:50:05	EXECUTIVE@ODPEM.GOV.	2025-11-21 00:54:29	LOGISTICS.MANAGER@GO	2025-11-21 19:49:20	6	2		\N	EF960E5	\N	\N	\N
 62	5	2025-11-21	M	5	CLAUDINE@GOV.JM	2025-11-21 19:55:46	EXECUTIVE@ODPEM.GOV.	2025-11-21 19:57:30	CLAUDINE@GOV.JM	2025-11-21 20:08:50	4	2		\N	2948F47	\N	\N	\N
 63	5	2025-11-21	M	0	CLAUDINE@GOV.JM	2025-11-21 20:31:05	\N	\N	\N	\N	1	2		\N	013BD62	\N	\N	\N
-64	5	2025-11-21	M	5	CLAUDINE@GOV.JM	2025-11-21 20:32:46	EXECUTIVE@ODPEM.GOV.	2025-11-21 20:36:19	CLAUDINE@GOV.JM	2025-11-21 20:43:24	4	2		\N	C9F6100	\N	\N	\N
 65	1	2025-11-21	L	3	LOGISTICS.MANAGER@GO	2025-11-21 21:22:54	EXECUTIVE@ODPEM.GOV.	2025-11-21 21:23:24	\N	\N	3	2		\N	30F16AA	\N	\N	\N
 \.
 
@@ -2933,9 +2694,10 @@ COPY public.reliefrqst_item (reliefrqst_id, item_id, request_qty, issue_qty, urg
 40	9	70.00	0.00	H	Roof Leak	2025-11-28	U	\N	LOGISTICS.MANAGER@GO	2025-11-21 00:47:01	3
 26	10	50.00	0.00	M		\N	U	\N	LOGISTICS.MANAGER@GO	2025-11-21 00:47:08	6
 62	18	100.00	50.00	M		\N	P	\N	CLAUDINE@GOV.JM	2025-11-21 20:08:50	2
-64	17	80.00	20.00	M		\N	P	\N	CLAUDINE@GOV.JM	2025-11-21 20:43:23	2
 65	18	20.00	0.00	M		\N	R	\N	\N	\N	1
 66	16	10.00	0.00	M		\N	R	\N	\N	\N	1
+64	17	80.00	0.00	M		\N	U	\N	LOGISTICS.MANAGER@GO	2025-11-21 17:20:12	3
+67	16	50.00	40.00	M		\N	L	yes	LINCOLN@GOV.JM	2025-11-21 18:07:57	3
 \.
 
 
@@ -3133,9 +2895,9 @@ COPY public.user_role (user_id, role_id, assigned_at, assigned_by, create_by_id,
 25	3	2025-11-20 18:14:55.37349	\N	system	2025-11-20 18:14:55	system	2025-11-20 18:14:55	1
 23	3	2025-11-20 20:20:26.42608	\N	system	2025-11-20 20:20:26	system	2025-11-20 20:20:26	1
 26	19	2025-11-21 12:07:42.860409	\N	system	2025-11-21 12:07:43	system	2025-11-21 12:07:43	1
-5	7	2025-11-21 13:36:36.364752	\N	system	2025-11-21 13:36:36	system	2025-11-21 13:36:36	1
 27	3	2025-11-21 16:45:28.719294	\N	system	2025-11-21 16:45:29	system	2025-11-21 16:45:29	1
 27	7	2025-11-21 16:45:28.719311	\N	system	2025-11-21 16:45:29	system	2025-11-21 16:45:29	1
+5	7	2025-11-21 17:21:35.26477	\N	system	2025-11-21 17:21:35	system	2025-11-21 17:21:35	1
 \.
 
 
@@ -3167,9 +2929,10 @@ COPY public.user_warehouse (user_id, warehouse_id, assigned_at, assigned_by) FRO
 25	1	2025-11-20 18:14:55.423942	\N
 23	8	2025-11-20 20:20:26.471089	\N
 23	1	2025-11-20 20:20:26.471104	\N
-5	1	2025-11-21 13:36:36.411264	\N
-5	10	2025-11-21 13:36:36.41128	\N
-5	11	2025-11-21 13:36:36.411284	\N
+5	8	2025-11-21 17:21:35.310359	\N
+5	10	2025-11-21 17:21:35.310373	\N
+5	11	2025-11-21 17:21:35.310377	\N
+5	1	2025-11-21 17:21:35.31038	\N
 \.
 
 
@@ -3244,10 +3007,17 @@ SELECT pg_catalog.setval('public.distribution_package_item_id_seq', 1, false);
 
 
 --
+-- Name: dnintake_item_intake_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.dnintake_item_intake_item_id_seq', 43, true);
+
+
+--
 -- Name: donation_donation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.donation_donation_id_seq', 32, true);
+SELECT pg_catalog.setval('public.donation_donation_id_seq', 34, true);
 
 
 --
@@ -3275,7 +3045,7 @@ SELECT pg_catalog.setval('public.item_new_item_id_seq', 20, true);
 -- Name: itembatch_batch_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.itembatch_batch_id_seq', 58, true);
+SELECT pg_catalog.setval('public.itembatch_batch_id_seq', 59, true);
 
 
 --
@@ -3296,7 +3066,7 @@ SELECT pg_catalog.setval('public.location_location_id_seq', 1, false);
 -- Name: notification_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.notification_id_seq', 464, true);
+SELECT pg_catalog.setval('public.notification_id_seq', 483, true);
 
 
 --
@@ -3310,14 +3080,14 @@ SELECT pg_catalog.setval('public.permission_perm_id_seq', 32, true);
 -- Name: reliefpkg_reliefpkg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.reliefpkg_reliefpkg_id_seq', 45, true);
+SELECT pg_catalog.setval('public.reliefpkg_reliefpkg_id_seq', 46, true);
 
 
 --
 -- Name: reliefrqst_reliefrqst_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.reliefrqst_reliefrqst_id_seq', 66, true);
+SELECT pg_catalog.setval('public.reliefrqst_reliefrqst_id_seq', 67, true);
 
 
 --
@@ -3442,6 +3212,14 @@ ALTER TABLE ONLY public.distribution_package
 
 
 --
+-- Name: dnintake_item dnintake_item_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dnintake_item
+    ADD CONSTRAINT dnintake_item_pkey PRIMARY KEY (intake_item_id);
+
+
+--
 -- Name: dnintake dnintake_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3511,14 +3289,6 @@ ALTER TABLE ONLY public.batchlocation
 
 ALTER TABLE ONLY public.custodian
     ADD CONSTRAINT pk_custodian PRIMARY KEY (custodian_id);
-
-
---
--- Name: dnintake_item pk_dnintake_item; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dnintake_item
-    ADD CONSTRAINT pk_dnintake_item PRIMARY KEY (donation_id, inventory_id, item_id, batch_no);
 
 
 --
@@ -4202,6 +3972,20 @@ CREATE INDEX ix_user_role_user_id ON public.user_role USING btree (user_id);
 --
 
 CREATE UNIQUE INDEX uk_aar_active_email ON public.agency_account_request USING btree (lower((contact_email)::text)) WHERE (status_code = ANY (ARRAY['S'::bpchar, 'R'::bpchar]));
+
+
+--
+-- Name: uk_dnintake_item_batch; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uk_dnintake_item_batch ON public.dnintake_item USING btree (donation_id, inventory_id, item_id, batch_no) WHERE (batch_no IS NOT NULL);
+
+
+--
+-- Name: uk_dnintake_item_null_batch; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uk_dnintake_item_null_batch ON public.dnintake_item USING btree (donation_id, inventory_id, item_id) WHERE (batch_no IS NULL);
 
 
 --
@@ -5121,5 +4905,5 @@ ALTER TABLE ONLY public.xfreturn_item
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zwe4BbGIfAcNi5hdVh8OcBiHgd15d2fbUxJ5TKn5UCTiaCoYghuguE6Mb41qTy0
+\unrestrict 27Tp6XNxTmBHNpT4T5yXsEoY6SERqawpmnbWlRRU3D2ZBBLzgZHZlgecxVbweKX
 
