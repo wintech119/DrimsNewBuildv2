@@ -338,9 +338,18 @@ def approve_package(reliefrqst_id):
         
         # Load existing BATCH-LEVEL allocations from the pending package
         # This ensures LM sees LO's prepared allocations exactly as submitted
+        # CRITICAL: Build set of items with allocation activity BEFORE processing allocations
+        items_with_pkg_records = set()
+        
+        # CRITICAL: Explicitly query ReliefPkgItem records to ensure zero-qty markers are loaded
         existing_batch_allocations = {}
-        for pkg_item in relief_pkg.items:
+        pkg_items = ReliefPkgItem.query.filter_by(reliefpkg_id=relief_pkg.reliefpkg_id).all()
+        for pkg_item in pkg_items:
             item_id = pkg_item.item_id
+            
+            # CRITICAL: Mark this item as having allocation activity
+            items_with_pkg_records.add(item_id)
+            
             warehouse_id = pkg_item.fr_inventory_id  # fr_inventory_id IS the warehouse_id
             batch_id = pkg_item.batch_id
             
@@ -360,8 +369,8 @@ def approve_package(reliefrqst_id):
         # Compute item status options
         item_status_options = {}
         
-        # Build set of items that have package records (drawer has been opened/saved)
-        items_with_pkg_records = {pkg_item.item_id for pkg_item in relief_pkg.items}
+        # items_with_pkg_records was already built from the explicit ReliefPkgItem query above
+        # This includes zero-qty records that serve as activity markers
         
         for item in relief_request.items:
             total_allocated = Decimal('0')
@@ -1148,13 +1157,24 @@ def prepare_package(reliefrqst_id):
         
         # Get existing package for this relief request (should only be one)
         existing_package = ReliefPkg.query.filter_by(reliefrqst_id=reliefrqst_id).first()
-        existing_packages = [existing_package] if existing_package else []
         
         existing_allocations = {}
         existing_batch_allocations = {}
-        for pkg in existing_packages:
-            for pkg_item in pkg.items:
+        
+        # CRITICAL: Build set of items with allocation activity BEFORE processing allocations
+        # This includes items with zero-qty ReliefPkgItem records (activity markers)
+        items_with_pkg_records = set()
+        
+        # CRITICAL: Explicitly query ReliefPkgItem records to ensure zero-qty markers are loaded
+        # SQLAlchemy relationships may not eagerly load all records, so we query directly
+        if existing_package:
+            pkg_items = ReliefPkgItem.query.filter_by(reliefpkg_id=existing_package.reliefpkg_id).all()
+            for pkg_item in pkg_items:
                 item_id = pkg_item.item_id
+                
+                # CRITICAL: Mark this item as having allocation activity
+                items_with_pkg_records.add(item_id)
+                
                 # fr_inventory_id IS the warehouse_id (inventory_id = warehouse_id in schema)
                 warehouse_id = pkg_item.fr_inventory_id
                 batch_id = pkg_item.batch_id
@@ -1184,10 +1204,8 @@ def prepare_package(reliefrqst_id):
         # Compute allowed status options for each item based on allocation state
         item_status_options = {}
         
-        # Build set of items that have package records (drawer has been opened/saved)
-        items_with_pkg_records = set()
-        if existing_package:
-            items_with_pkg_records = {pkg_item.item_id for pkg_item in existing_package.items}
+        # items_with_pkg_records was already built from the explicit ReliefPkgItem query above
+        # This includes zero-qty records that serve as activity markers
         
         for item in relief_request.items:
             # Calculate total allocated for this item
@@ -1569,9 +1587,12 @@ def _process_allocations(relief_request, validate_complete=False):
     # CRITICAL: Capture existing allocations BEFORE deletion for reservation delta calculation
     existing_pkg_items = ReliefPkgItem.query.filter_by(reliefpkg_id=relief_pkg.reliefpkg_id).all()
     existing_allocations_map = {}
+    items_with_existing_pkg_records = set()  # Track which items have allocation activity
     for pkg_item in existing_pkg_items:
         # Track by (item_id, batch_id) for batch-level reservations
         existing_allocations_map[(pkg_item.item_id, pkg_item.batch_id)] = pkg_item.item_qty
+        # Track items that have ReliefPkgItem records (allocation activity)
+        items_with_existing_pkg_records.add(pkg_item.item_id)
     
     # Store old allocations on relief_request object for access in save/submit functions
     relief_request._old_allocations = existing_allocations_map
@@ -1598,26 +1619,29 @@ def _process_allocations(relief_request, validate_complete=False):
                 batch_id = int(parts[3])
                 allocated_qty = Decimal(request.form.get(key) or '0')
                 
+                # Validate batch allocation (even for zero qty to catch errors)
                 if allocated_qty > 0:
-                    # Validate batch allocation
                     is_valid, error_msg = BatchAllocationService.validate_batch_allocation(
                         batch_id, item_id, allocated_qty
                     )
                     if not is_valid:
                         raise ValueError(error_msg)
-                    
-                    # Get batch details for warehouse tracking
-                    batch = ItemBatch.query.options(
-                        joinedload(ItemBatch.inventory).joinedload(Inventory.warehouse)
-                    ).get(batch_id)
-                    
-                    if not batch:
-                        raise ValueError(f'Batch {batch_id} not found')
-                    
-                    total_allocated += allocated_qty
-                    batch_allocations.append((batch_id, batch.inventory_id, allocated_qty, batch.uom_code))
-                    
-                    # Collect for reservation service (track by warehouse for aggregation)
+                
+                # Get batch details for warehouse tracking
+                batch = ItemBatch.query.options(
+                    joinedload(ItemBatch.inventory).joinedload(Inventory.warehouse)
+                ).get(batch_id)
+                
+                if not batch:
+                    raise ValueError(f'Batch {batch_id} not found')
+                
+                total_allocated += allocated_qty
+                # CRITICAL: Include zero-qty allocations to track drawer activity
+                # This ensures ReliefPkgItem records persist even when qty=0
+                batch_allocations.append((batch_id, batch.inventory_id, allocated_qty, batch.uom_code))
+                
+                # Collect for reservation service (only non-zero allocations)
+                if allocated_qty > 0:
                     new_allocations.append({
                         'item_id': item_id,
                         'batch_id': batch_id,
@@ -1668,13 +1692,22 @@ def _process_allocations(relief_request, validate_complete=False):
         # Get custom reason if provided (for D/L statuses)
         custom_reason = request.form.get(f'status_reason_{item_id}', '').strip()
         
+        # Determine if item has allocation activity
+        # CRITICAL: Check database for existing records OR form keys
+        # This prevents bypassing validation by manipulating form data
+        has_allocation_activity = (
+            item_id in items_with_existing_pkg_records or  # Database check (persisted records)
+            len(allocation_keys) > 0  # Form check (current submission)
+        )
+        
         # Validate status transition using service
         is_valid, error_msg = item_status_service.validate_status_transition(
             item_id,
             item.status_code,
             requested_status,
             total_allocated,
-            request_qty
+            request_qty,
+            has_allocation_activity
         )
         if not is_valid:
             raise ValueError(error_msg)
@@ -1723,23 +1756,24 @@ def _process_allocations(relief_request, validate_complete=False):
         
         item.version_nbr += 1
         
-        # Create ReliefPkgItem records for each batch allocation
+        # Create ReliefPkgItem records for each batch allocation (including zero-qty)
+        # CRITICAL: Zero-qty records serve as markers that the drawer was opened/used
+        # This ensures has_allocation_activity persists across page reloads
         for batch_id, inventory_id, allocated_qty, uom_code in batch_allocations:
-            if allocated_qty > 0:
-                pkg_item = ReliefPkgItem(
-                    reliefpkg_id=relief_pkg.reliefpkg_id,
-                    fr_inventory_id=inventory_id,
-                    item_id=item_id,
-                    batch_id=batch_id,  # REQUIRED in new schema
-                    item_qty=allocated_qty,
-                    uom_code=uom_code,
-                    create_by_id=current_user.user_name,
-                    create_dtime=datetime.now(),
-                    update_by_id=current_user.user_name,
-                    update_dtime=datetime.now(),
-                    version_nbr=1
-                )
-                db.session.add(pkg_item)
+            pkg_item = ReliefPkgItem(
+                reliefpkg_id=relief_pkg.reliefpkg_id,
+                fr_inventory_id=inventory_id,
+                item_id=item_id,
+                batch_id=batch_id,  # REQUIRED in new schema
+                item_qty=allocated_qty,  # Can be zero
+                uom_code=uom_code,
+                create_by_id=current_user.user_name,
+                create_dtime=datetime.now(),
+                update_by_id=current_user.user_name,
+                update_dtime=datetime.now(),
+                version_nbr=1
+            )
+            db.session.add(pkg_item)
     
     return new_allocations
 

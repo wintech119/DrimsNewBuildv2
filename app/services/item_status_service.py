@@ -111,10 +111,19 @@ def validate_status_transition(
     current_status: str,
     new_status: str,
     total_allocated: Decimal,
-    requested_qty: Decimal
+    requested_qty: Decimal,
+    has_allocation_activity: bool = False
 ) -> Tuple[bool, str]:
     """
     Validate if a status transition is allowed based on allocation state.
+    
+    Args:
+        item_id: The item ID being validated
+        current_status: Current status code
+        new_status: Requested new status code
+        total_allocated: Total quantity allocated
+        requested_qty: Requested quantity
+        has_allocation_activity: Whether the batch drawer has been opened/used for this item
     
     Returns:
         Tuple of (is_valid, error_message)
@@ -124,7 +133,7 @@ def validate_status_transition(
         return True, ""
     
     auto_status, allowed_statuses = compute_allowed_statuses(
-        current_status, total_allocated, requested_qty
+        current_status, total_allocated, requested_qty, has_allocation_activity
     )
     
     if new_status not in allowed_statuses:
