@@ -893,9 +893,8 @@ def pending_fulfillment():
             # Skip requests with pending approval or dispatched packages
             if has_pending_approval(req) or has_dispatched_package(req):
                 continue
-            # Apply role filter
-            if is_lm or is_lo_involved_with_request(req):
-                results.append(req)
+            # All LOs and LMs see all approved/eligible requests (no ownership filtering)
+            results.append(req)
         return results
     
     def get_in_progress_requests():
@@ -915,9 +914,8 @@ def pending_fulfillment():
             # Skip requests with pending approval or dispatched packages
             if has_pending_approval(req) or has_dispatched_package(req):
                 continue
-            # Apply role filter
-            if is_lm or is_lo_involved_with_request(req):
-                results.append(req)
+            # All LOs and LMs see all approved/eligible requests (no ownership filtering)
+            results.append(req)
         return results
     
     def get_pending_approval_requests():
@@ -936,9 +934,8 @@ def pending_fulfillment():
         for req in all_requests:
             if not has_pending_approval(req):
                 continue
-            # Apply role filter
-            if is_lm or is_lo_involved_with_request(req):
-                results.append(req)
+            # All LOs and LMs see all approved/eligible requests (no ownership filtering)
+            results.append(req)
         return results
     
     def get_approved_packages_with_items():
@@ -959,9 +956,8 @@ def pending_fulfillment():
             # Only packages WITH total quantity > 0
             if total_qty == 0:
                 continue
-            # Apply role filter
-            if is_lm or is_lo_involved_with_package(pkg):
-                results.append(pkg)
+            # All LOs and LMs see all approved packages (no ownership filtering)
+            results.append(pkg)
         return results
     
     def get_approved_packages_no_items():
@@ -983,9 +979,8 @@ def pending_fulfillment():
             # Only packages WITHOUT total quantity (zero or no items)
             if total_qty > 0:
                 continue
-            # Apply role filter
-            if is_lm or is_lo_involved_with_package(pkg):
-                results.append(pkg)
+            # All LOs and LMs see all approved packages (no ownership filtering)
+            results.append(pkg)
         return results
     
     # Build ALL tab datasets and calculate counts from them

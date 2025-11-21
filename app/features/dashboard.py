@@ -5,7 +5,7 @@ Provides role-specific dashboard views matching the Relief Package preparation
 UI/UX standards with summary cards, filter tabs, and modern styling.
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, flash, abort
 from flask_login import login_required, current_user
 from sqlalchemy import func, desc, or_, and_
 from app.db.models import (
@@ -57,13 +57,19 @@ def logistics_dashboard():
     Logistics dashboard with modern UI matching Relief Package preparation.
     For Logistics Officers and Logistics Managers.
     """
+    # RBAC: Only LO and LM can access this dashboard
+    from app.core.rbac import is_logistics_officer, is_logistics_manager
+    if not (is_logistics_officer() or is_logistics_manager()):
+        flash('Access denied. Only Logistics Officers and Managers can view this dashboard.', 'danger')
+        abort(403)
+    
     # Get dashboard data from service
     dashboard_data = DashboardService.get_dashboard_data(current_user)
     
     # Get filter parameter
     current_filter = request.args.get('filter', 'pending')
     
-    # Determine if user is LM (sees global data) or LO (sees only their work)
+    # Determine if user is LM or LO (both see global data for approved/eligible requests)
     is_lm = has_role('LOGISTICS_MANAGER')
     is_lo = has_role('LOGISTICS_OFFICER') and not is_lm
     
@@ -78,17 +84,7 @@ def logistics_dashboard():
         joinedload(ReliefRqst.fulfillment_lock).joinedload(ReliefRequestFulfillmentLock.fulfiller)
     )
     
-    # For LOs: Filter to only show requests they're involved with
-    if is_lo:
-        base_query = base_query.outerjoin(ReliefPkg).filter(
-            or_(
-                ReliefRqst.create_by_id == current_user.user_name,
-                ReliefRqst.action_by_id == current_user.user_name,
-                ReliefPkg.create_by_id == current_user.user_name,
-                ReliefPkg.update_by_id == current_user.user_name,
-                ReliefRqst.fulfillment_lock.has(ReliefRequestFulfillmentLock.fulfiller_user_id == current_user.user_id)
-            )
-        )
+    # All LOs and LMs see all approved/eligible requests (no ownership filtering)
     
     # Apply filters
     if current_filter == 'pending':
@@ -118,51 +114,22 @@ def logistics_dashboard():
         ).order_by(desc(ReliefRqst.request_date)).all()
     
     # Calculate counts for filter tabs
-    # LMs see global counts (supervisory), LOs see only their own work
-    if is_lo:
-        # Build count queries with LO filtering
-        count_base = ReliefRqst.query.outerjoin(ReliefPkg).filter(
-            or_(
-                ReliefRqst.create_by_id == current_user.user_name,
-                ReliefRqst.action_by_id == current_user.user_name,
-                ReliefPkg.create_by_id == current_user.user_name,
-                ReliefPkg.update_by_id == current_user.user_name,
-                ReliefRqst.fulfillment_lock.has(ReliefRequestFulfillmentLock.fulfiller_user_id == current_user.user_id)
-            )
-        )
-        
-        counts = {
-            'pending': count_base.filter(
-                ReliefRqst.status_code == rr_service.STATUS_SUBMITTED,
-                ~ReliefRqst.fulfillment_lock.has()
-            ).count(),
-            'in_progress': count_base.filter(
-                ReliefRqst.fulfillment_lock.has()
-            ).count(),
-            'ready': count_base.filter(
-                ReliefRqst.status_code == rr_service.STATUS_PART_FILLED
-            ).count(),
-            'completed': count_base.filter(
-                ReliefRqst.status_code == rr_service.STATUS_FILLED
-            ).count(),
-        }
-    else:
-        # LMs see global counts
-        counts = {
-            'pending': ReliefRqst.query.filter(
-                ReliefRqst.status_code == rr_service.STATUS_SUBMITTED,
-                ~ReliefRqst.fulfillment_lock.has()
-            ).count(),
-            'in_progress': ReliefRqst.query.filter(
-                ReliefRqst.fulfillment_lock.has()
-            ).count(),
-            'ready': ReliefRqst.query.filter(
-                ReliefRqst.status_code == rr_service.STATUS_PART_FILLED
-            ).count(),
-            'completed': ReliefRqst.query.filter(
-                ReliefRqst.status_code == rr_service.STATUS_FILLED
-            ).count(),
-        }
+    # Both LOs and LMs see global counts for all approved/eligible requests
+    counts = {
+        'pending': ReliefRqst.query.filter(
+            ReliefRqst.status_code == rr_service.STATUS_SUBMITTED,
+            ~ReliefRqst.fulfillment_lock.has()
+        ).count(),
+        'in_progress': ReliefRqst.query.filter(
+            ReliefRqst.fulfillment_lock.has()
+        ).count(),
+        'ready': ReliefRqst.query.filter(
+            ReliefRqst.status_code == rr_service.STATUS_PART_FILLED
+        ).count(),
+        'completed': ReliefRqst.query.filter(
+            ReliefRqst.status_code == rr_service.STATUS_FILLED
+        ).count(),
+    }
     
     counts['all'] = sum(counts.values())
     
