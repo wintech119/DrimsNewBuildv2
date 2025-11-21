@@ -834,10 +834,18 @@ def pending_fulfillment():
     
     # Helper functions
     def has_pending_approval(req):
-        """Check if request has a package submitted for LM approval."""
+        """
+        Check if request has a package submitted for LM approval.
+        
+        Distinguishes "submitted for approval" from "draft being prepared":
+        - Submitted: verify_by_id == '__PENDING_LM__' (sentinel marker)
+        - Draft: verify_by_id == NULL
+        - Approved: verify_by_id == LM's username
+        """
         return (req.status_code == rr_service.STATUS_PART_FILLED and
                 any(pkg.status_code == rr_service.PKG_STATUS_PENDING 
                     and pkg.dispatch_dtime is None
+                    and pkg.verify_by_id == '__PENDING_LM__'  # Must be submitted (not draft)
                     for pkg in req.packages))
     
     def has_dispatched_package(req):
@@ -1215,9 +1223,10 @@ def _save_draft(relief_request, relief_request_version, package_version):
     
     Draft packages:
     - Change request status to PART_FILLED (to show in "Being Prepared" tab)
-    - Create ReliefPkg with status='P' but verify_by_id=NULL (not submitted for approval)
+    - Create ReliefPkg with status='P' and received_by_id=NULL (draft marker)
     - Reserve inventory
     - NO notifications sent
+    - Package stays in "Being Prepared" tab and OUT of "Pending Approval" tab
     
     IMPORTANT: Uses atomic transaction to ensure allocations and reservations stay in sync.
     If inventory reservation fails, entire transaction rolls back to prevent phantom allocations.
@@ -1234,6 +1243,16 @@ def _save_draft(relief_request, relief_request_version, package_version):
         
         # Process and validate allocations (creates ReliefPkgItem records in pending transaction)
         new_allocations = _process_allocations(relief_request, validate_complete=False)
+        
+        # Get the package created/updated by _process_allocations
+        relief_pkg = ReliefPkg.query.filter_by(reliefrqst_id=relief_request.reliefrqst_id).first()
+        if relief_pkg:
+            # CRITICAL: Ensure verify_by_id is NULL for drafts (distinguishes draft from submitted)
+            # Only "Submit for Approval" sets verify_by_id to '__PENDING_LM__' sentinel
+            # This keeps drafts OUT of "Pending Approval" tab
+            relief_pkg.verify_by_id = None
+            relief_pkg.verify_dtime = None
+            # NOTE: Do NOT increment version_nbr here - _process_allocations already does it
         
         # Change request status to PART_FILLED to show in "Being Prepared" tab
         relief_request.status_code = rr_service.STATUS_PART_FILLED
@@ -1340,9 +1359,12 @@ def _submit_for_approval(relief_request, relief_request_version, package_version
                 return redirect(url_for('packaging.pending_fulfillment'))
         
         # Mark package as submitted for approval (status stays 'P' but we're now in "awaiting LM approval" state)
-        # Set update_by_id to mark who submitted (LO), but keep verify_by_id NULL until LM actually verifies
-        # The "submitted for LM approval" state is indicated by: status='P' + update_by_id set + dispatch_dtime NULL
+        # CRITICAL: Set verify_by_id to sentinel value '__PENDING_LM__' to mark as submitted
+        # This distinguishes "submitted for approval" from "draft being prepared"
+        # LM approval will overwrite this sentinel with the actual LM's username
         relief_pkg.status_code = rr_service.PKG_STATUS_PENDING
+        relief_pkg.verify_by_id = '__PENDING_LM__'  # Sentinel: submitted for LM approval
+        relief_pkg.verify_dtime = datetime.now()  # Mark submission time
         relief_pkg.update_by_id = current_user.user_name
         relief_pkg.update_dtime = datetime.now()
         relief_pkg.version_nbr += 1
