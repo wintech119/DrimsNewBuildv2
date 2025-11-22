@@ -377,7 +377,7 @@ def approve_package(reliefrqst_id):
             total_allocated = Decimal('0')
             if item.item_id in existing_batch_allocations:
                 for batch_allocation in existing_batch_allocations[item.item_id]:
-                    total_allocated += Decimal(str(batch_allocation['qty']))
+                    total_allocated += safe_decimal(batch_allocation['qty'])
             
             # Check if item has allocation activity (drawer opened/saved)
             # An item has activity if a ReliefPkgItem record exists, even with qty=0
@@ -1871,7 +1871,7 @@ def get_item_batches(item_id):
                 import json
                 current_allocations = json.loads(current_allocations_str)
                 # Convert keys to int and values to Decimal (JSON keys are strings)
-                current_allocations = {int(k): Decimal(str(v)) for k, v in current_allocations.items()}
+                current_allocations = {int(k): safe_decimal(v) for k, v in current_allocations.items()}
             except (ValueError, json.JSONDecodeError):
                 pass  # Ignore invalid JSON
         
@@ -1935,9 +1935,9 @@ def get_item_batches(item_id):
                 'can_expire': item.can_expire_flag,
                 'issuance_order': item.issuance_order,
                 'batches': result,
-                'total_available': float(total_available),
-                'shortfall': float(shortfall),
-                'can_fulfill': shortfall == 0
+                'total_available': float(safe_decimal(total_available)),
+                'shortfall': float(safe_decimal(shortfall)),
+                'can_fulfill': safe_decimal(shortfall) == 0
             })
         else:
             # Legacy mode: return all batches grouped by warehouse (for backward compatibility)
@@ -2008,7 +2008,7 @@ def auto_allocate_item(item_id):
         )
         
         # Calculate totals
-        total_allocated = sum(Decimal(str(a['allocated_qty'])) for a in allocations)
+        total_allocated = sum(safe_decimal(a['allocated_qty']) for a in allocations)
         shortage = requested_qty - total_allocated if total_allocated < requested_qty else Decimal('0')
         
         return jsonify({
