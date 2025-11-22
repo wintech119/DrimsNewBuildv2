@@ -568,15 +568,15 @@ button[name="action"][value="save_draft"] {
             <div class="search-filter-bar">
                 <div class="search-input-wrapper">
                     <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search items by name or SKU..." onkeyup="filterItems()">
+                    <input type="text" id="searchInput" placeholder="Search items by name or SKU...">
                 </div>
-                <select class="form-select filter-dropdown" id="filterDropdown" onchange="filterItems()">
+                <select class="form-select filter-dropdown" id="filterDropdown">
                     <option value="all">All Items</option>
                     <option value="unallocated">Unallocated</option>
                     <option value="partial">Partially Allocated</option>
                     <option value="filled">Fully Allocated</option>
                 </select>
-                <button type="button" class="btn-jump" onclick="jumpToFirstUnallocated()">
+                <button type="button" class="btn-jump" data-action="jump-unallocated">
                     <i class="bi bi-arrow-down-circle"></i>
                     Jump to First Unallocated
                 </button>
@@ -672,7 +672,6 @@ button[name="action"][value="save_draft"] {
                                     data-auto-status="{{ auto }}"
                                     data-allowed-codes="{{ allowed|join(',') }}"
                                     data-has-allocation-activity="{{ 'true' if status_opts.get('has_allocation_activity', False) else 'false' }}"
-                                    onchange="toggleReasonField({{ item.item_id }})"
                                     {% if is_read_only %}disabled{% endif %}>
                                     {% for code in allowed %}
                                     {% set label = status_map.get(code, {}).get('desc', code) %}
@@ -757,7 +756,7 @@ button[name="action"][value="save_draft"] {
                             <i class="bi bi-x-circle"></i>
                             No, Keep Working
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="confirmCancelPackage()">
+                        <button type="button" class="btn btn-danger" data-action="confirm-cancel-package">
                             <i class="bi bi-trash"></i>
                             Yes, Cancel Package
                         </button>
