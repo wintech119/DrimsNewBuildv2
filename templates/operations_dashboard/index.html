@@ -10,7 +10,7 @@
             <p class="text-muted mb-0">System-wide operational performance metrics</p>
         </div>
         <div>
-            <select class="form-select" id="periodSelector" onchange="location.href='?period='+this.value">
+            <select class="form-select" id="periodSelector" data-action="navigate" data-param="period">
                 <option value="7" {% if period_days == 7 %}selected{% endif %}>Last 7 Days</option>
                 <option value="30" {% if period_days == 30 %}selected{% endif %}>Last 30 Days</option>
                 <option value="90" {% if period_days == 90 %}selected{% endif %}>Last 90 Days</option>
@@ -163,7 +163,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Donations Over Time</h6>
-                    <div style="position: relative; height: 300px;">
+                    <div class="chart-container">
                         <canvas id="donationsTimelineChart"></canvas>
                     </div>
                 </div>
@@ -173,7 +173,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Relief Requests & Fulfillment Over Time</h6>
-                    <div style="position: relative; height: 300px;">
+                    <div class="chart-container">
                         <canvas id="requestsTimelineChart"></canvas>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Relief Request Status Breakdown</h6>
-                    <div style="position: relative; height: 300px;">
+                    <div class="chart-container">
                         <canvas id="statusBreakdownChart"></canvas>
                     </div>
                 </div>
@@ -197,7 +197,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Top Requesting Agencies</h6>
-                    <div style="position: relative; height: 300px;">
+                    <div class="chart-container">
                         <canvas id="topAgenciesChart"></canvas>
                     </div>
                 </div>

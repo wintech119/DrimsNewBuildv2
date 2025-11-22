@@ -85,4 +85,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Navigate on select change (for period selectors, filters, etc.)
+    document.addEventListener('change', function(e) {
+        const target = e.target;
+        if (target.dataset.action === 'navigate' && target.dataset.param) {
+            const paramName = target.dataset.param;
+            const paramValue = target.value;
+            window.location.href = '?' + paramName + '=' + paramValue;
+        }
+    });
 });
