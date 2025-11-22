@@ -5,7 +5,7 @@ Allows Logistics Officers/Managers to prepare relief packages from approved requ
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 import uuid
@@ -1871,7 +1871,7 @@ def get_item_batches(item_id):
                 import json
                 current_allocations = json.loads(current_allocations_str)
                 # Convert keys to int and values to Decimal (JSON keys are strings)
-                current_allocations = {int(k): Decimal(str(v)) for k, v in current_allocations.items()}
+                current_allocations = {int(k): safe_decimal(v) for k, v in current_allocations.items()}
             except (ValueError, json.JSONDecodeError):
                 pass  # Ignore invalid JSON
         
@@ -1885,7 +1885,7 @@ def get_item_batches(item_id):
         if remaining_qty is not None:
             limited_batches, total_available, shortfall = BatchAllocationService.get_limited_batches_for_drawer(
                 item_id,
-                Decimal(str(remaining_qty)),
+                safe_decimal(remaining_qty),
                 required_uom,
                 allocated_batch_ids,
                 current_allocations
@@ -1976,7 +1976,17 @@ def get_item_batches(item_id):
                 'batches': result
             })
         
+    except InvalidOperation as e:
+        # Handle decimal conversion errors gracefully
+        import traceback
+        print(f"ERROR in get_item_batches: Decimal conversion error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': 'Invalid numeric value encountered. Please refresh and try again.'}), 500
     except Exception as e:
+        # Log full error for debugging
+        import traceback
+        print(f"ERROR in get_item_batches: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 
