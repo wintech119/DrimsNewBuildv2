@@ -150,6 +150,17 @@ def to_jamaica_filter(dt):
     """Convert datetime to Jamaica timezone"""
     return datetime_to_jamaica(dt)
 
+@app.route('/static/')
+@app.route('/static')
+def block_static_directory():
+    """
+    Prevent directory browsing of /static/ folder
+    Returns 404 to hide directory existence for security
+    Individual static files are still accessible via Flask's built-in static serving
+    """
+    from flask import abort
+    abort(404)
+
 @app.route('/')
 @login_required
 def index():
