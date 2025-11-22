@@ -21,7 +21,7 @@ from app.core.rbac import has_permission, permission_required
 from app.services import relief_request_service as rr_service
 from app.services import item_status_service
 from app.services import inventory_reservation_service as reservation_service
-from app.services.batch_allocation_service import BatchAllocationService
+from app.services.batch_allocation_service import BatchAllocationService, safe_decimal
 from app.core.audit import add_audit_fields
 from app.core.exceptions import OptimisticLockError
 
@@ -1905,7 +1905,7 @@ def get_item_batches(item_id):
             for batch, priority_group in batch_groups:
                 # Calculate available_qty: release current package's allocations from reserved_qty
                 released_qty = current_allocations.get(batch.batch_id, Decimal('0'))
-                available_qty = batch.usable_qty - (batch.reserved_qty - released_qty)
+                available_qty = safe_decimal(batch.usable_qty) - (safe_decimal(batch.reserved_qty) - released_qty)
                 batch_info = {
                     'batch_id': batch.batch_id,
                     'batch_no': batch.batch_no,
@@ -1914,11 +1914,11 @@ def get_item_batches(item_id):
                     'warehouse_id': batch.inventory.inventory_id,
                     'warehouse_name': batch.inventory.warehouse.warehouse_name,
                     'inventory_id': batch.inventory_id,
-                    'usable_qty': float(batch.usable_qty),
-                    'reserved_qty': float(batch.reserved_qty),
+                    'usable_qty': float(safe_decimal(batch.usable_qty)),
+                    'reserved_qty': float(safe_decimal(batch.reserved_qty)),
                     'available_qty': float(available_qty),
-                    'defective_qty': float(batch.defective_qty),
-                    'expired_qty': float(batch.expired_qty),
+                    'defective_qty': float(safe_decimal(batch.defective_qty)),
+                    'expired_qty': float(safe_decimal(batch.expired_qty)),
                     'uom_code': batch.uom_code,
                     'size_spec': batch.size_spec,
                     'is_expired': batch.is_expired,
@@ -1947,7 +1947,7 @@ def get_item_batches(item_id):
             for wh_id, batch_list in warehouse_batches.items():
                 result[wh_id] = []
                 for batch in batch_list:
-                    available_qty = batch.usable_qty - batch.reserved_qty
+                    available_qty = safe_decimal(batch.usable_qty) - safe_decimal(batch.reserved_qty)
                     result[wh_id].append({
                         'batch_id': batch.batch_id,
                         'batch_no': batch.batch_no,
@@ -1956,11 +1956,11 @@ def get_item_batches(item_id):
                         'warehouse_id': batch.inventory.inventory_id,
                         'warehouse_name': batch.inventory.warehouse.warehouse_name,
                         'inventory_id': batch.inventory_id,
-                        'usable_qty': float(batch.usable_qty),
-                        'reserved_qty': float(batch.reserved_qty),
+                        'usable_qty': float(safe_decimal(batch.usable_qty)),
+                        'reserved_qty': float(safe_decimal(batch.reserved_qty)),
                         'available_qty': float(available_qty),
-                        'defective_qty': float(batch.defective_qty),
-                        'expired_qty': float(batch.expired_qty),
+                        'defective_qty': float(safe_decimal(batch.defective_qty)),
+                        'expired_qty': float(safe_decimal(batch.expired_qty)),
                         'uom_code': batch.uom_code,
                         'size_spec': batch.size_spec,
                         'is_expired': batch.is_expired,
