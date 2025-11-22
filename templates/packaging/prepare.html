@@ -625,8 +625,8 @@ button[name="action"][value="save_draft"] {
                                 {% if not is_read_only %}
                                 <button 
                                     type="button" 
-                                    class="btn btn-outline select-batches-btn"
-                                    onclick='openBatchDrawer({{ item.item_id }}, {{ (item.item.item_desc if item.item else "Unknown Item") | tojson }}, {{ item.request_qty }})'
+                                    class="btn btn-outline-secondary select-batches-btn"
+                                    onclick="openBatchDrawer({{ item.item_id }}, {{ (item.item.item_desc if item.item else 'Unknown Item') | tojson }}, {{ item.request_qty }})"
                                     data-item-id="{{ item.item_id }}">
                                     <i class="bi bi-box-seam"></i>
                                     Select Batches
