@@ -1902,16 +1902,26 @@ def get_item_batches(item_id):
             print(f"DEBUG get_item_batches: limited_batches count={len(limited_batches)}")
             print(f"DEBUG get_item_batches: total_available={total_available}, shortfall={shortfall}")
             
-            # Assign priority groups
-            batch_groups = BatchAllocationService.assign_priority_groups(limited_batches, item)
+            # Extract batches from DTOs for priority group assignment
+            # Temporarily attach _released_available for compatibility with assign_priority_groups
+            batches_only = []
+            for dto in limited_batches:
+                batch = dto.batch
+                batch._released_available = dto.released_available
+                batches_only.append(batch)
+            
+            batch_groups = BatchAllocationService.assign_priority_groups(batches_only, item)
+            
+            # Create lookup for DTOs by batch_id to preserve released_available
+            dto_lookup = {dto.batch.batch_id: dto for dto in limited_batches}
             
             # Format batches with priority groups
             result = []
             for batch, priority_group in batch_groups:
-                # CRITICAL: ALWAYS use the pre-calculated released availability
-                # This was already attached by the service layer - DO NOT recalculate or fall back
-                # If this fails, it means the service didn't attach it correctly
-                available_qty = batch._released_available
+                # Get the DTO for this batch to access released_available
+                dto = dto_lookup[batch.batch_id]
+                # Use DTO's released_available (architecturally sound!)
+                available_qty = dto.released_available
                 batch_info = {
                     'batch_id': batch.batch_id,
                     'batch_no': batch.batch_no,

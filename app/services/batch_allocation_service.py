@@ -6,12 +6,22 @@ First In First Out (FIFO) for non-expirable items based on item configuration.
 """
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, NamedTuple
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import joinedload
 
 from app.db import db
 from app.db.models import Item, ItemBatch, Inventory, Warehouse
+
+
+class BatchDTO(NamedTuple):
+    """
+    Data Transfer Object for batch information with released availability.
+    This ensures released availability is carried through all layers without relying on ORM attributes.
+    """
+    batch: ItemBatch
+    released_available: Decimal
+    is_allocated: bool
 
 
 class BatchAllocationService:
@@ -383,7 +393,7 @@ class BatchAllocationService:
         required_uom: str = None,
         allocated_batch_ids: List[int] = None,
         current_allocations: dict = None
-    ) -> Tuple[List[ItemBatch], Decimal, Decimal]:
+    ) -> Tuple[List[BatchDTO], Decimal, Decimal]:
         """
         Get batches for the LM drawer display with enhanced allocation and truncation logic.
         
@@ -466,98 +476,132 @@ class BatchAllocationService:
         
         all_batches = all_batches_query.all()
         
-        # STEP 1B: Calculate released availability for ALL batches and attach to batch objects
-        # This ensures sorting and truncation use the correct post-release values
+        # STEP 1B: Create BatchDTO objects for all batches with released availability
+        # This ensures released availability is carried through all layers
+        batch_dtos = []
         for batch in all_batches:
-            # Calculate availability AFTER releasing current allocations
+            is_allocated = batch.batch_id in allocated_batch_ids_set
             released_available = calc_available_qty(batch)
-            # Attach as temporary attribute for downstream use
-            batch._released_available = released_available
+            
+            dto = BatchDTO(
+                batch=batch,
+                released_available=released_available,
+                is_allocated=is_allocated
+            )
+            batch_dtos.append(dto)
         
-        # STEP 1C: Separate batches into Set A and Set B based on allocation status and released availability
+        # STEP 1C: Separate BatchDTOs into Set A and Set B based on allocation status
         warehouse_groups = {}
         
-        for batch in all_batches:
-            warehouse_id = batch.inventory.inventory_id
+        for dto in batch_dtos:
+            warehouse_id = dto.batch.inventory.inventory_id
             
             if warehouse_id not in warehouse_groups:
                 warehouse_groups[warehouse_id] = {
-                    'allocated_batches': [],  # Set A: Always shown
-                    'available_batches': [],  # Set B: Shown only if released available > 0
+                    'allocated_dtos': [],  # Set A: Always shown
+                    'available_dtos': [],  # Set B: Shown only if released available > 0
                     'allocated_qty_sum': Decimal('0')  # Sum of allocated quantities (not available)
                 }
             
-            is_allocated = batch.batch_id in allocated_batch_ids_set
-            released_available = batch._released_available  # Use attached value
-            
             # Set A: Allocated batches - ALWAYS include, even if released_available <= 0
-            if is_allocated:
-                warehouse_groups[warehouse_id]['allocated_batches'].append(batch)
+            if dto.is_allocated:
+                warehouse_groups[warehouse_id]['allocated_dtos'].append(dto)
                 # Track sum of ALLOCATED quantities (from current_allocations), not available
-                allocated_qty = current_allocations.get(batch.batch_id, Decimal('0'))
+                allocated_qty = current_allocations.get(dto.batch.batch_id, Decimal('0'))
                 warehouse_groups[warehouse_id]['allocated_qty_sum'] += allocated_qty
             # Set B: Available batches - only include if released_available > 0
-            elif released_available > 0:
-                warehouse_groups[warehouse_id]['available_batches'].append(batch)
+            elif dto.released_available > 0:
+                warehouse_groups[warehouse_id]['available_dtos'].append(dto)
             # Do NOT include: batches with released_available <= 0 that are NOT allocated
         
         # ALL warehouses are kept - do not filter out warehouses with only allocated batches!
         
-        # STEP 2: Sort batches WITHIN each warehouse using FEFO/FIFO rules
+        # STEP 2: Sort DTOs WITHIN each warehouse using FEFO/FIFO rules
         for warehouse_id, wh_data in warehouse_groups.items():
-            # Sort allocated batches (Set A) - skip availability filter, must always show
-            wh_data['allocated_batches'] = BatchAllocationService.sort_batches_for_drawer(
-                wh_data['allocated_batches'],
+            # Sort allocated DTOs (Set A) - skip availability filter, must always show
+            wh_data['allocated_dtos'] = BatchAllocationService.sort_dtos_for_drawer(
+                wh_data['allocated_dtos'],
                 item,
                 skip_availability_filter=True  # CRITICAL: Don't filter out zero-available allocated batches
             )
-            # Sort available batches (Set B) - apply availability filter
-            wh_data['available_batches'] = BatchAllocationService.sort_batches_for_drawer(
-                wh_data['available_batches'],
+            # Sort available DTOs (Set B) - apply availability filter
+            wh_data['available_dtos'] = BatchAllocationService.sort_dtos_for_drawer(
+                wh_data['available_dtos'],
                 item,
                 skip_availability_filter=False  # Filter out zero-available batches from Set B
             )
         
         # STEP 3: Per-Warehouse Truncation
-        # Build limited batch list with per-warehouse truncation logic
-        limited_batches = []
+        # Build limited DTO list with per-warehouse truncation logic
+        limited_dtos = []
         
         for warehouse_id, wh_data in warehouse_groups.items():
-            # STEP 3.1: Always include ALL allocated batches from this warehouse (Set A)
+            # STEP 3.1: Always include ALL allocated DTOs from this warehouse (Set A)
             # These are ALWAYS shown, even if available <= 0
-            for batch in wh_data['allocated_batches']:
-                limited_batches.append(batch)
+            for dto in wh_data['allocated_dtos']:
+                limited_dtos.append(dto)
             
             # STEP 3.2: Initialize potentialFromWarehouse with ALLOCATED quantities (not available)
             # This is the sum of allocated quantities from current_allocations for this warehouse
             potential_from_warehouse = wh_data['allocated_qty_sum']
             
-            # STEP 3.3: Add available-only batches (Set B) until potential >= requested_qty
-            for batch in wh_data['available_batches']:
+            # STEP 3.3: Add available-only DTOs (Set B) until potential >= requested_qty
+            for dto in wh_data['available_dtos']:
                 # Stop adding if this warehouse can already fulfill the entire request
                 # using allocated quantities + previously added available batches
                 if potential_from_warehouse >= requested_qty:
                     break
                 
-                # Add this available batch
-                limited_batches.append(batch)
-                # Use the pre-calculated released availability for consistency
-                available_qty = batch._released_available
+                # Add this available DTO
+                limited_dtos.append(dto)
+                # Use the DTO's released availability (guaranteed to exist)
+                available_qty = dto.released_available
                 # Add the available quantity to potential
                 potential_from_warehouse += available_qty
         
         # STEP 4: Calculate total available and shortfall
         cumulative_available = Decimal('0')
-        for batch in limited_batches:
-            # Use the pre-calculated released availability for consistency
-            available_qty = batch._released_available
+        for dto in limited_dtos:
+            # Use the DTO's released availability (guaranteed to exist)
             # Only count positive quantities (allocated batches may have zero or negative available)
-            cumulative_available += max(Decimal('0'), available_qty)
+            cumulative_available += max(Decimal('0'), dto.released_available)
         
         # Shortfall is the difference between requested and what's actually available
         shortfall = max(Decimal('0'), requested_qty - cumulative_available)
         
-        return limited_batches, cumulative_available, shortfall
+        return limited_dtos, cumulative_available, shortfall
+    
+    @staticmethod
+    def sort_dtos_for_drawer(dtos: List[BatchDTO], item: Item, skip_availability_filter: bool = False) -> List[BatchDTO]:
+        """
+        Sort BatchDTOs using FEFO/FIFO rules.
+        
+        Args:
+            dtos: List of BatchDTO objects to sort
+            item: Item object for determining FEFO vs FIFO
+            skip_availability_filter: If True, don't filter out zero-available batches
+            
+        Returns:
+            Sorted list of BatchDTO objects
+        """
+        # Extract batches and temporarily attach _released_available for compatibility
+        # with existing sort_batches_for_drawer and assign_priority_groups functions
+        batches = []
+        for dto in dtos:
+            batch = dto.batch
+            batch._released_available = dto.released_available
+            batches.append(batch)
+        
+        # Use existing sort logic
+        sorted_batches = BatchAllocationService.sort_batches_for_drawer(
+            batches, item, skip_availability_filter
+        )
+        
+        # Rebuild DTOs in sorted order, preserving original DTO data
+        dto_lookup = {dto.batch.batch_id: dto for dto in dtos}
+        sorted_dtos = [dto_lookup[batch.batch_id] for batch in sorted_batches]
+        
+        return sorted_dtos
     
     @staticmethod
     def assign_priority_groups(batches: List[ItemBatch], item: Item) -> List[Tuple[ItemBatch, int]]:
