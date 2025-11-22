@@ -19,6 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Define sensitive parameter names that should NEVER appear in query strings
+# These are truly sensitive parameters that contain passwords, PII, or form submission data
 SENSITIVE_PARAMETERS = {
     # Authentication & Security
     'password',
@@ -51,18 +52,16 @@ SENSITIVE_PARAMETERS = {
     'tax_id',
     'ssn',
     
-    # Financial & Sensitive Business Data
+    # Financial & Payment Data
     'credit_card',
     'card_number',
     'cvv',
     'account_number',
     'bank_account',
-    'amount',
-    'price',
-    'cost',
     'salary',
     
     # Form Submission Data (should be in POST body)
+    # These are long-form text fields that should never be in URLs
     'donation_desc',
     'comments_text',
     'reason_text',
@@ -86,14 +85,19 @@ SENSITIVE_PARAMETERS = {
     'verify_dtime',
     'dispatch_dtime',
     
-    # User Management
+    # User Management (form submission data)
     'is_active',
     'job_title',
     'organization',
     'roles',
-    'role_id',
     'warehouse_assignment',
 }
+
+# Note: These are NOT included as they are legitimate GET filter parameters:
+# - donor_id, event_id, warehouse_id, item_id (reference IDs for filtering)
+# - amount, price, cost, quantity (legitimate filter/search params)
+# - page, limit, offset (pagination params)
+# - status, status_code (filter params)
 
 # Lowercase versions for case-insensitive matching
 SENSITIVE_PARAMETERS_LOWER = {param.lower() for param in SENSITIVE_PARAMETERS}
@@ -168,14 +172,26 @@ def sanitize_query_string(query_args):
 
 def strip_sensitive_query_params():
     """
-    Middleware to strip sensitive parameters from query strings.
+    Middleware to block sensitive parameters from query strings.
     
     This runs before request processing to ensure sensitive data
     never makes it into logs, analytics, or application code.
     
+    IMPORTANT: Blocks sensitive parameters in query strings for ALL HTTP methods
+    (GET, POST, PUT, DELETE, etc.) because sensitive data should NEVER be in URLs
+    regardless of the HTTP method used.
+    
     Should be registered as a before_request handler.
+    
+    Returns:
+        - 400 Bad Request if sensitive parameters are detected in query string
+        - None (continues processing) if no sensitive parameters found
     """
-    if request.method == 'GET' and request.args:
+    from flask import abort, make_response
+    
+    # Check query string for ALL HTTP methods (GET, POST, PUT, DELETE, etc.)
+    # Sensitive parameters should never be in URLs regardless of method
+    if request.args:
         # Check for sensitive parameters in query string
         sensitive_found = []
         
@@ -184,9 +200,9 @@ def strip_sensitive_query_params():
                 sensitive_found.append(param_name)
         
         if sensitive_found:
-            # Log security event
+            # Log security event (don't log the actual values!)
             logger.warning(
-                f"SECURITY: Sensitive parameters detected in query string - "
+                f"SECURITY VIOLATION: Sensitive parameters blocked in query string - "
                 f"Parameters: {', '.join(sensitive_found)} | "
                 f"IP: {request.remote_addr} | "
                 f"Path: {request.path} | "
@@ -195,6 +211,27 @@ def strip_sensitive_query_params():
             
             # Store blocked parameters for potential security auditing
             g.blocked_query_params = sensitive_found
+            
+            # CRITICAL: Block the request - return 400 Bad Request
+            # This prevents sensitive data from:
+            # 1. Appearing in server access logs
+            # 2. Being stored in browser history
+            # 3. Being leaked via referer headers
+            # 4. Being processed by application code
+            # 
+            # Note: This blocks for ALL HTTP methods (GET, POST, PUT, DELETE, etc.)
+            # because sensitive data in URLs is dangerous regardless of method
+            
+            response = make_response(
+                (
+                    '<h1>400 Bad Request</h1>'
+                    '<p>Sensitive data must not be passed via URL parameters.</p>'
+                    '<p>Please submit sensitive information via POST request body only.</p>'
+                ), 
+                400
+            )
+            response.headers['Content-Type'] = 'text/html'
+            return response
 
 
 def require_post_for_sensitive_data(f):
