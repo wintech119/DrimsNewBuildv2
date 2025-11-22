@@ -10,6 +10,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WORKFLOW_MODE = os.environ.get('WORKFLOW_MODE', 'AIDMGMT')
     
+    DEBUG = os.environ.get('FLASK_DEBUG', '1') == '1'
+    TESTING = os.environ.get('TESTING', 'False').lower() == 'true'
+    
     TIMEZONE = 'America/Jamaica'
     TIMEZONE_OFFSET = -5
     
@@ -21,3 +24,5 @@ class Config:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT', 'False').lower() == 'true'

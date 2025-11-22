@@ -13,6 +13,7 @@ from settings import Config
 from app.security.csp import init_csp
 from app.security.cache_control import init_cache_control
 from app.security.header_sanitization import init_header_sanitization
+from app.security.error_handling import init_error_handling
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -21,6 +22,7 @@ init_db(app)
 init_csp(app)
 init_cache_control(app)
 init_header_sanitization(app)
+init_error_handling(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -205,4 +207,4 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG'])
