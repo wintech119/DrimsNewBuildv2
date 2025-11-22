@@ -1136,10 +1136,12 @@
         });
     </script>
     
-    <!-- Global CSP-compliant utilities (authenticated users only) -->
+    <!-- Global scripts that MUST load on every page -->
+    {% block global_scripts %}
     {% if current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/form-utils.js') }}" nonce="{{ csp_nonce() }}" defer></script>
     {% endif %}
+    {% endblock %}
     
     <!-- Page-specific scripts -->
     {% block scripts %}

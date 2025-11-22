@@ -286,14 +286,14 @@
             <a href="{{ url_for('packaging.awaiting_dispatch') }}" class="btn btn-outline-secondary btn-modern">
                 <i class="bi bi-arrow-left"></i> Back to Dispatch Queue
             </a>
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="window.print()" class="btn-modern btn-print">
+            <div class="d-flex gap-3">
+                <button data-action="print" class="btn-modern btn-print">
                     <i class="bi bi-printer"></i> Print Dispatch Slip
                 </button>
                 {% if not relief_pkg.received_dtime %}
                 <form method="POST" action="{{ url_for('packaging.mark_handover', reliefpkg_id=relief_pkg.reliefpkg_id) }}" 
-                      style="display: inline;" 
-                      onsubmit="return confirm('Confirm that this package has been handed over to the agency representative?');">
+                      class="d-inline-block" 
+                      data-confirm="Confirm that this package has been handed over to the agency representative?">
                     <button type="submit" class="btn-modern btn-handover">
                         <i class="bi bi-check-circle"></i> Mark as Handed Over
                     </button>
