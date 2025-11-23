@@ -4,6 +4,32 @@
 DMIS (Disaster Management Information System) is a web-based platform for the Government of Jamaica's ODPEM, designed to manage the entire lifecycle of disaster relief supplies. This includes inventory tracking, donation management, relief request processing, and distribution across multiple warehouses. The system aims to ensure compliance with government processes, support disaster event coordination, supply allocation, and provide robust user administration with Role-Based Access Control (RBAC). Its core purpose is to deliver a modern, efficient, and user-friendly solution for disaster preparedness and response, emphasizing security and comprehensive management capabilities such as inventory transfers, location tracking, analytics, and reporting.
 
 ## Recent Changes (November 23, 2025)
+- **Relief Package Cancellation Workflow** (Architect-Validated):
+  - Implemented safe cancellation workflow for relief packages with full reservation rollback
+  - Created `cancel_relief_package()` service function in `app/services/inventory_reservation_service.py`:
+    * Fully reverses all reservations in `itembatch` and `inventory` tables
+    * Uses SQLAlchemy optimistic locking via `version_nbr` for both ItemBatch and Inventory models
+    * Validates `reserved_qty >= allocated_qty` before decrementing (data integrity check)
+    * Validates `reserved_qty >= 0` after decrementing (sanity check)
+    * Recalculates warehouse-level totals from batch-level SUM to ensure consistency
+    * Fully transactional (all-or-nothing) with automatic rollback on errors
+    * Catches `StaleDataError` for concurrent edit detection with user-friendly messaging
+    * Server-side error logging preserves detailed stack traces for debugging
+    * User-facing error messages are generic and friendly (no technical details exposed)
+  - Added `/packaging/package/<reliefpkg_id>/cancel` POST route in `app/features/packaging.py`:
+    * Restricted to Logistics Manager role only
+    * CSRF protection enforced
+    * Calls service function and commits transaction
+    * Logs exceptions server-side with detailed stack traces
+    * Shows user-friendly flash messages
+  - Updated `templates/packaging/review_approval.html`:
+    * Added "Cancel Package" button with danger styling
+    * JavaScript confirmation prompt before submission
+    * CSRF token automatically included
+    * CSP-compliant implementation
+  - Architect validation: PASS - "Implementation meets all functional and concurrency requirements. No security concerns."
+  - **Note**: Database purged and reset; admin user recreated (admin@odpem.gov.jm / admin123)
+
 - **CSP Hardening for HCL AppScan Compliance** (Scanner-Validated):
   - Removed `https:` wildcard from `img-src` directive (scanner flagged as insecure)
   - Tightened `connect-src` to same-origin only (removed unnecessary CDN)
