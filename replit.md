@@ -4,6 +4,14 @@
 DMIS (Disaster Management Information System) is a web-based platform for the Government of Jamaica's ODPEM, designed to manage the entire lifecycle of disaster relief supplies. This includes inventory tracking, donation management, relief request processing, and distribution across multiple warehouses. The system aims to ensure compliance with government processes, support disaster event coordination, supply allocation, and provide robust user administration with Role-Based Access Control (RBAC). Its core purpose is to deliver a modern, efficient, and user-friendly solution for disaster preparedness and response, emphasizing security and comprehensive management capabilities such as inventory transfers, location tracking, analytics, and reporting.
 
 ## Recent Changes (November 23, 2025)
+- **CSP Hardening for HCL AppScan Compliance** (Scanner-Validated):
+  - Removed `https:` wildcard from `img-src` directive (scanner flagged as insecure)
+  - Tightened `connect-src` to same-origin only (removed unnecessary CDN)
+  - Added comprehensive security scanner compliance documentation in code
+  - Architect-validated: "CSP hardening meets scanner requirements with explicit script-src and no insecure wildcards"
+  - **Current CSP Policy**: Explicit script-src with nonces, no wildcards, no unsafe-inline/unsafe-eval
+  - HCL AppScan finding "Missing or insecure 'Script-Src' policy" now resolved
+
 - **Comprehensive CSRF Protection Implementation Complete** (Production-Ready):
   - Installed and configured Flask-WTF 1.2.1 with global CSRFProtect initialization
   - Automated CSRF token injection across 58+ HTML form templates via base.html context processor
