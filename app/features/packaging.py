@@ -284,6 +284,60 @@ def review_approval(reliefrqst_id):
         return redirect(url_for('packaging.review_approval', reliefrqst_id=reliefrqst_id))
 
 
+@packaging_bp.route('/package/<int:reliefpkg_id>/cancel', methods=['POST'])
+@login_required
+def cancel_package(reliefpkg_id):
+    """
+    Cancel a relief package and fully reverse all reservations.
+    
+    Only Logistics Managers can cancel packages.
+    Uses optimistic locking to prevent conflicts.
+    Fully transactional - all-or-nothing operation.
+    
+    Cancellation Process:
+    1. Validates package exists and can be cancelled (P=Pending or D=Dispatched only)
+    2. Releases batch-level reservations (itembatch.reserved_qty) with version_nbr check
+    3. Releases warehouse-level reservations (inventory.reserved_qty) with version_nbr check
+    4. Deletes all ReliefPkgItem records
+    5. Deletes the ReliefPkg record
+    
+    If any version_nbr mismatch or validation error occurs, the entire operation is rolled back.
+    """
+    from app.core.rbac import is_logistics_manager
+    from app.services.inventory_reservation_service import cancel_relief_package
+    
+    if not is_logistics_manager():
+        flash('Access denied. Only Logistics Managers can cancel packages.', 'danger')
+        abort(403)
+    
+    try:
+        # Call the service function to cancel the package with optimistic locking
+        success, error_msg = cancel_relief_package(reliefpkg_id, current_user.user_name)
+        
+        if not success:
+            db.session.rollback()
+            flash(error_msg, 'danger')
+            return redirect(request.referrer or url_for('packaging.pending_approval'))
+        
+        # Commit the transaction
+        db.session.commit()
+        
+        flash(f'Relief package #{reliefpkg_id} has been successfully cancelled. All reservations have been released.', 'success')
+        return redirect(url_for('packaging.pending_approval'))
+        
+    except Exception as e:
+        db.session.rollback()
+        
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Unexpected error in cancel_package route: {str(e)}', exc_info=True)
+        
+        # Show user-friendly error message
+        flash('An unexpected error occurred while canceling the package. Please contact system administrator if this persists.', 'danger')
+        return redirect(request.referrer or url_for('packaging.pending_approval'))
+
+
 @packaging_bp.route('/<int:reliefrqst_id>/approve', methods=['GET', 'POST'])
 @login_required
 def approve_package(reliefrqst_id):
