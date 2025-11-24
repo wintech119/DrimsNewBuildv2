@@ -4,6 +4,15 @@
 DMIS (Disaster Management Information System) is a web-based platform for the Government of Jamaica's ODPEM, designed to manage the entire lifecycle of disaster relief supplies. This includes inventory tracking, donation management, relief request processing, and distribution across multiple warehouses. The system aims to ensure compliance with government processes, support disaster event coordination, supply allocation, and provide robust user administration with Role-Based Access Control (RBAC). Its core purpose is to deliver a modern, efficient, and user-friendly solution for disaster preparedness and response, emphasizing security and comprehensive management capabilities such as inventory transfers, location tracking, analytics, and reporting.
 
 ## Recent Changes (November 24, 2025)
+- **Donation Intake Table Schema Migration**:
+  - Updated dnintake table to match target schema definition
+  - Made update_dtime and verify_dtime nullable (matches workflow where they're set later)
+  - Renamed constraints to standard naming: c_dnintake_1 (intake_date check), c_dnintake_2 (status_code check), fk_dnintake_donation
+  - Confirmed inventory_id FK points to warehouse(warehouse_id) as per target schema
+  - Updated DonationIntake model to reflect correct FK relationships
+  - Zero functional regression: Existing donation intake code works unchanged
+  - Architect reviewed: No code accesses removed inventory relationship; warehouse FK correct
+
 - **Donation Item Table Schema Migration**:
   - Added new columns to support enhanced donation tracking:
     - `donation_type` (CHAR(5), default 'GOODS'): Tracks whether donation is GOODS or FUNDS

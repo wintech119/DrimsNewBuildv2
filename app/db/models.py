@@ -1056,6 +1056,10 @@ class ItemLocation(db.Model):
 class DonationIntake(db.Model):
     """Donation intake - receiving donations into warehouse inventory (AIDMGMT)
     
+    Note: inventory_id references warehouse.warehouse_id (per schema), not inventory table.
+    Use the warehouse relationship to access warehouse data. For inventory records,
+    query Inventory table filtering by warehouse_id.
+    
     Status Codes:
         I = Incomplete
         C = Completed
