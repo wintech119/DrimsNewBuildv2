@@ -574,6 +574,10 @@ class DonationItem(db.Model):
     Tracks individual items and quantities donated as part of a donation.
     Links donations to specific items with verification status.
     
+    Donation Types:
+        GOODS = Physical goods donation
+        FUNDS = Monetary donation
+    
     Status Codes:
         P = Processed
         V = Verified
@@ -582,20 +586,32 @@ class DonationItem(db.Model):
     
     donation_id = db.Column(db.Integer, db.ForeignKey('donation.donation_id'), primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), primary_key=True)
+    donation_type = db.Column(db.CHAR(5), nullable=False, default='GOODS')
     item_qty = db.Column(db.Numeric(12, 2), nullable=False)
+    item_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    addon_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
     uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=False)
     location_name = db.Column(db.Text, nullable=False)
     status_code = db.Column(db.CHAR(1), nullable=False, default='V')
     comments_text = db.Column(db.Text)
     create_by_id = db.Column(db.String(20), nullable=False)
     create_dtime = db.Column(db.DateTime, nullable=False)
-    verify_by_id = db.Column(db.String(20))
-    verify_dtime = db.Column(db.DateTime)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False)
+    verify_by_id = db.Column(db.String(20), nullable=False)
+    verify_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
     __table_args__ = (
-        db.CheckConstraint("item_qty >= 0.00", name='c_donation_item_1'),
+        db.CheckConstraint("donation_type IN ('GOODS', 'FUNDS')", name='c_donation_item_0'),
+        db.CheckConstraint("item_qty >= 0.00", name='c_donation_item_1a'),
+        db.CheckConstraint("item_cost >= 0.00", name='c_donation_item_1b'),
+        db.CheckConstraint(
+            "(addon_cost = 0.00 AND donation_type = 'FUNDS') OR (addon_cost >= 0.00 AND donation_type = 'GOODS')",
+            name='c_donation_item_1c'
+        ),
         db.CheckConstraint("status_code IN ('P', 'V')", name='c_donation_item_2'),
+        db.CheckConstraint("item_cost + addon_cost > 0.00", name='c_donation_item_10'),
     )
     
     donation = db.relationship('Donation', backref='items')
