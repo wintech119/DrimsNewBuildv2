@@ -38,7 +38,7 @@
                                     <label for="item_id" class="form-label">
                                         Item <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-select" id="item_id" name="item_id" required>
+                                    <select class="form-select {% if duplicate_item_id %}is-invalid{% endif %}" id="item_id" name="item_id" required>
                                         <option value="">-- Select Item --</option>
                                         {% for item in items %}
                                         <option value="{{ item.item_id }}" {% if form_data and form_data.get('item_id')|string == item.item_id|string %}selected{% endif %}>
@@ -46,6 +46,11 @@
                                         </option>
                                         {% endfor %}
                                     </select>
+                                    {% if duplicate_item_id %}
+                                    <div class="invalid-feedback d-block">
+                                        This item is already in the donation. Please select a different item or edit the existing one.
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-3">
                                     <label for="item_qty" class="form-label">

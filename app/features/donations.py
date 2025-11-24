@@ -558,7 +558,32 @@ def add_donation_item(donation_id):
             
         except IntegrityError as e:
             db.session.rollback()
-            flash(f'Database error: {str(e)}', 'danger')
+            error_message = str(e.orig) if hasattr(e, 'orig') else str(e)
+            
+            if ('pk_donation_item' in error_message or 
+                'duplicate key' in error_message.lower() or 
+                'UNIQUE constraint failed' in error_message):
+                flash('This item has already been added to the donation. Please edit the existing item instead.', 'danger')
+                items = Item.query.order_by(Item.item_name).all()
+                uoms = UnitOfMeasure.query.order_by(UnitOfMeasure.uom_code).all()
+                return render_template('donations/add_item.html',
+                                     donation=donation,
+                                     items=items,
+                                     uoms=uoms,
+                                     form_data=request.form,
+                                     duplicate_item_id=item_id)
+            else:
+                flash('Unable to add item due to a database constraint. Please check your input and try again.', 'danger')
+                items = Item.query.order_by(Item.item_name).all()
+                uoms = UnitOfMeasure.query.order_by(UnitOfMeasure.uom_code).all()
+                return render_template('donations/add_item.html',
+                                     donation=donation,
+                                     items=items,
+                                     uoms=uoms,
+                                     form_data=request.form)
+        except Exception as e:
+            db.session.rollback()
+            flash('An unexpected error occurred. Please try again.', 'danger')
             return redirect(url_for('donations.add_donation_item', donation_id=donation_id))
     
     items = Item.query.order_by(Item.item_name).all()

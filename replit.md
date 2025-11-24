@@ -3,6 +3,48 @@
 ## Overview
 DMIS (Disaster Management Information System) is a web-based platform for the Government of Jamaica's ODPEM, designed to manage the entire lifecycle of disaster relief supplies. Its core purpose is to provide a modern, efficient, and user-friendly solution for disaster preparedness and response. Key capabilities include inventory tracking, donation management, relief request processing, and distribution across multiple warehouses, all while ensuring compliance with government processes and supporting disaster event coordination and supply allocation. The system emphasizes security, robust user administration with Role-Based Access Control (RBAC), inventory transfers, location tracking, analytics, and reporting.
 
+## Recent Changes (November 24, 2025)
+
+### Donation Item Duplicate Error Handling
+- Improved error handling when users attempt to add the same item twice to a donation
+- Catches `UniqueViolation` (pk_donation_item) at the application level instead of exposing raw SQL errors
+- Shows friendly message: "This item has already been added to the donation. Please edit the existing item instead."
+- Maintains all form values so users don't lose their input during validation errors
+- Highlights the duplicate item field with Bootstrap validation styling (red border + inline message)
+- No database schema changes - composite primary key (donation_id, item_id) remains unchanged
+- All existing security and workflow features preserved (CSP, CSRF, cookies, etc.)
+
+### Login Authentication Fix
+- Fixed issue where users could not log back in after logout
+- Added proper validation checks in login route to verify user is active and not locked
+- Enhanced `load_user` function to validate user status before session restoration
+- Login now checks: password correctness, `is_active` flag, `status_code == 'A'`, and `is_locked` property
+- Provides specific error messages for inactive accounts vs. locked accounts
+- All existing security features maintained (CSRF, CSP, secure cookies, etc.)
+
+### Donation Table Schema Update
+- Made `origin_country_id` column nullable in the `donation` table
+- Allows donations without a specified origin country
+
+### Fixed Intermittent "Disappearing Records" Issue
+- Fixed bug where master records (User, Warehouse) appeared briefly after creation and then disappeared from list views
+- Root cause: URL filter parameters persisting in browser navigation history
+- Solution: All create/edit operations now redirect to list views with explicit `?filter=all` parameter
+- Updated warehouse create/edit redirects to always show "All" view
+- Updated navigation links to include `?filter=all` parameter
+
+### CSRF Origin Validation Fix
+- Fixed CSRF validation to work correctly in Replit proxy environment
+- Allows both HTTP and HTTPS protocols for same host while maintaining hostname validation security
+- Replit proxy uses HTTPS while Flask dev server uses HTTP
+
+### Database Migration
+- Created currency table with 37 currencies
+- Updated country table (66 countries) with foreign key to currency
+- Verified parish table (14 parishes)
+- Enabled citext extension for PostgreSQL
+- Added default custodian "Office of Disaster Preparedness and Emergency Management" (ID=3)
+
 ## User Preferences
 - **Communication style**: Simple, everyday language.
 - **UI/UX Requirements**:
