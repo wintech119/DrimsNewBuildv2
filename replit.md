@@ -4,6 +4,24 @@
 DMIS (Disaster Management Information System) is a web-based platform for the Government of Jamaica's ODPEM, designed to manage the entire lifecycle of disaster relief supplies. This includes inventory tracking, donation management, relief request processing, and distribution across multiple warehouses. The system aims to ensure compliance with government processes, support disaster event coordination, supply allocation, and provide robust user administration with Role-Based Access Control (RBAC). Its core purpose is to deliver a modern, efficient, and user-friendly solution for disaster preparedness and response, emphasizing security and comprehensive management capabilities such as inventory transfers, location tracking, analytics, and reporting.
 
 ## Recent Changes (November 24, 2025)
+- **Donation Item Table Schema Migration**:
+  - Added new columns to support enhanced donation tracking:
+    - `donation_type` (CHAR(5), default 'GOODS'): Tracks whether donation is GOODS or FUNDS
+    - `item_cost` (DECIMAL(10,2), default 0.00): Purchase cost for goods or donated value for funds
+    - `addon_cost` (DECIMAL(10,2), default 0.00): Total add-on costs (shipping, etc.)
+    - `update_by_id` (VARCHAR(20)): User who last updated the record
+    - `update_dtime` (TIMESTAMP): Last update timestamp
+  - Added validation constraints:
+    - c_donation_item_0: donation_type must be 'GOODS' or 'FUNDS'
+    - c_donation_item_1a: item_qty >= 0.00 (renamed from c_donation_item_1)
+    - c_donation_item_1b: item_cost >= 0.00
+    - c_donation_item_1c: addon_cost >= 0.00 (relaxed constraint for current app compatibility)
+  - Maintained nullable verify_by_id/verify_dtime to preserve existing verification workflow
+  - All defaults ensure backward compatibility with existing donation creation code
+  - Updated DonationItem model in models.py to reflect new schema
+  - Zero functional regression: All existing donation workflows work unchanged
+  - Architect reviewed: Compatible with current application behavior, no security issues
+
 - **Master Records Disappearing Fix**:
   - Fixed intermittent issue where newly created warehouses/users appeared briefly then disappeared from list views
   - **Warehouse Fix**: After creation, now redirects to list with `filter='all'` instead of detail view, ensuring new records are immediately visible regardless of previous filter state
