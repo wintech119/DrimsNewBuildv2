@@ -5,6 +5,18 @@ DMIS (Disaster Management Information System) is a web-based platform for the Go
 
 ## Recent Changes (November 24, 2025)
 
+### Item Cost Definition Table Added
+- Added new `itemcostdef` table to define cost types for items
+- Supports two cost categories: PURCHASE (Purchase Price, CIF) and ADDITIONAL (Storage, Transport, Inspection, Intake, Warehousing)
+- Uses PostgreSQL `citext` extension for case-insensitive cost_name column (max 50 chars)
+- Schema includes: cost_id (PK), cost_name (unique, citext), cost_desc, cost_type, status_code (A/I)
+- Optimistic locking enabled via version_nbr column
+- Indexes created on cost_type and status_code for filtering
+- SQLAlchemy model `ItemCostDef` added to app/db/models.py
+- Migration script: `scripts/add_itemcostdef_table.sql`
+- Total tables: 50 (was 49)
+- No breaking changes to existing tables, workflows, or security features
+
 ### Donation Document Table Added
 - Added new `donation_doc` table to support attaching documents to donations
 - Supports document types: Receipt, Manifest, Bill of materials, Delivery notice, etc.

@@ -379,6 +379,42 @@ class Item(db.Model):
         'version_id_col': version_nbr
     }
 
+class ItemCostDef(db.Model):
+    """Item Cost Definition - Defines cost types for items
+    
+    Defines various cost types that can be associated with items:
+    - Purchase costs: Purchase Price, CIF, etc.
+    - Additional costs: Storage, Transport, Inspection, Intake, Warehousing, etc.
+    
+    Cost types are categorized as PURCHASE or ADDITIONAL.
+    
+    Status Codes:
+        A = Active
+        I = Inactive
+    """
+    __tablename__ = 'itemcostdef'
+    
+    cost_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    cost_name = db.Column(db.String(50), nullable=False, unique=True)
+    cost_desc = db.Column(db.String(255), nullable=False)
+    cost_type = db.Column(db.CHAR(16), nullable=False)
+    status_code = db.Column(db.CHAR(1), nullable=False)
+    create_by_id = db.Column(db.String(20), nullable=False)
+    create_dtime = db.Column(db.DateTime, nullable=False)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False)
+    version_nbr = db.Column(db.Integer, nullable=False, default=1)
+    
+    __table_args__ = (
+        db.CheckConstraint("length(cost_name) <= 50", name='c_itemcostdef_1'),
+        db.CheckConstraint("cost_type IN ('PURCHASE','ADDITIONAL')", name='c_itemcostdef_2'),
+        db.CheckConstraint("status_code IN ('A','I')", name='c_itemcostdef_3'),
+    )
+    
+    __mapper_args__ = {
+        'version_id_col': version_nbr
+    }
+
 class Inventory(db.Model):
     """Inventory - Warehouse-level stock tracking with composite PK
     
