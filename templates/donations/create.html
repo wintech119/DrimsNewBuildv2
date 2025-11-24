@@ -119,9 +119,9 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="origin_country_id" class="form-label">
-                                        Origin Country
+                                        Origin Country *
                                     </label>
-                                    <select class="form-select" id="origin_country_id" name="origin_country_id">
+                                    <select class="form-select" id="origin_country_id" name="origin_country_id" required>
                                         <option value="">-- Select Country --</option>
                                         {% for country in countries %}
                                         <option value="{{ country.country_id }}" 

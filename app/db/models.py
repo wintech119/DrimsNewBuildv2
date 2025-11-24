@@ -598,6 +598,7 @@ class Donation(db.Model):
     """Donation
     
     Tracks donations received from donors for specific events.
+    Includes cost breakdown for items, storage, haulage, and other expenses.
     
     Status Codes:
         E = Entered (initial entry)
@@ -609,26 +610,34 @@ class Donation(db.Model):
     donation_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     donor_id = db.Column(db.Integer, db.ForeignKey('donor.donor_id'), nullable=False)
     donation_desc = db.Column(db.Text, nullable=False)
+    origin_country_id = db.Column(db.SmallInteger, db.ForeignKey('country.country_id'), nullable=False)
+    origin_address1_text = db.Column(db.String(255))
+    origin_address2_text = db.Column(db.String(255))
     event_id = db.Column(db.Integer, db.ForeignKey('event.event_id'), nullable=False)
     custodian_id = db.Column(db.Integer, db.ForeignKey('custodian.custodian_id'), nullable=False)
     received_date = db.Column(db.Date, nullable=False)
-    origin_country_id = db.Column(db.SmallInteger, db.ForeignKey('country.country_id'))
-    origin_address1_text = db.Column(db.String(255))
-    origin_address2_text = db.Column(db.String(255))
-    tot_donated_value = db.Column(db.Numeric(12, 2))
+    tot_item_cost = db.Column(db.Numeric(12, 2), nullable=False, default=0.01)
+    storage_cost = db.Column(db.Numeric(12, 2), nullable=False, default=0.01)
+    haulage_cost = db.Column(db.Numeric(12, 2), nullable=False, default=0.01)
+    other_cost = db.Column(db.Numeric(12, 2), nullable=False, default=0.01)
+    other_cost_desc = db.Column(db.String(255))
     status_code = db.Column(db.CHAR(1), nullable=False)
     comments_text = db.Column(db.Text)
     create_by_id = db.Column(db.String(20), nullable=False)
     create_dtime = db.Column(db.DateTime, nullable=False)
-    update_by_id = db.Column(db.String(20))
-    update_dtime = db.Column(db.DateTime)
-    verify_by_id = db.Column(db.String(20))
-    verify_dtime = db.Column(db.DateTime)
+    update_by_id = db.Column(db.String(20), nullable=False)
+    update_dtime = db.Column(db.DateTime, nullable=False)
+    verify_by_id = db.Column(db.String(20), nullable=False)
+    verify_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
     __table_args__ = (
         db.CheckConstraint("received_date <= CURRENT_DATE", name='c_donation_1'),
-        db.CheckConstraint("status_code IN ('E', 'V', 'P')", name='c_donation_2'),
+        db.CheckConstraint("tot_item_cost > 0.00", name='c_donation_2'),
+        db.CheckConstraint("storage_cost > 0.00", name='c_donation_2a'),
+        db.CheckConstraint("haulage_cost > 0.00", name='c_donation_2b'),
+        db.CheckConstraint("other_cost > 0.00", name='c_donation_2c'),
+        db.CheckConstraint("status_code IN ('E', 'V', 'P')", name='c_donation_3'),
     )
     
     donor = db.relationship('Donor', backref='donations')

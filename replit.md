@@ -5,6 +5,19 @@ DMIS (Disaster Management Information System) is a web-based platform for the Go
 
 ## Recent Changes (November 24, 2025)
 
+### Donation Table Cost Breakdown Migration (Migration 011)
+- **Cost Breakdown Fields Added**: Enhanced donation tracking with detailed cost breakdown
+  - `tot_item_cost` (renamed from `tot_donated_value`): Total value of donated items (DECIMAL(12,2), > 0.00)
+  - `storage_cost`: Warehousing/storage costs (DECIMAL(12,2), > 0.00, default 0.01)
+  - `haulage_cost`: Transportation/shipping costs (DECIMAL(12,2), > 0.00, default 0.01)
+  - `other_cost`: Miscellaneous costs (DECIMAL(12,2), > 0.00, default 0.01)
+  - `other_cost_desc`: Description of other costs (VARCHAR(255), nullable)
+- **Origin Country Required**: `origin_country_id` changed from nullable to NOT NULL
+- **Enhanced Validation**: Added CHECK constraints for all cost fields and date validation
+- **Code Updates**: Updated SQLAlchemy model, backend validation, and frontend to match new schema
+- **Referential Integrity Preserved**: All foreign keys and downstream tables (donation_item, dnintake, donation_doc) remain functional
+- **Migration File**: `migrations/migrate_donation_table_to_target_ddl.sql`
+
 ### Item Category Table Enhanced with GOODS/FUNDS Classification
 - **Schema Migration**: Added `category_type` column to `itemcatg` table
   - New field: `category_type CHAR(5) NOT NULL` with check constraint for 'GOODS' or 'FUNDS'

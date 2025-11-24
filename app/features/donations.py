@@ -173,6 +173,8 @@ def create_donation():
                 errors.append('Donation description is required')
             if not received_date_str:
                 errors.append('Received date is required')
+            if not origin_country_id:
+                errors.append('Origin country is required')
             
             if received_date_str:
                 received_date = datetime.strptime(received_date_str, '%Y-%m-%d').date()
@@ -337,6 +339,16 @@ def create_donation():
                 form_data['form_data'] = request.form
                 return render_template('donations/create.html', **form_data)
             
+            # Validate that total item cost is > 0.00 (database constraint)
+            if total_value <= 0:
+                errors.append('Total item cost must be greater than 0.00. Please ensure at least one item has a cost.')
+                db.session.rollback()
+                for error in errors:
+                    flash(error, 'danger')
+                form_data = _get_donation_form_data()
+                form_data['form_data'] = request.form
+                return render_template('donations/create.html', **form_data)
+            
             # All items validated - now persist them
             for item_info in validated_items:
                 donation_item = DonationItem()
@@ -357,8 +369,14 @@ def create_donation():
                 
                 db.session.add(donation_item)
             
-            # Set total donated value on donation header
-            donation.tot_donated_value = total_value
+            # Set cost breakdown on donation header
+            donation.tot_item_cost = total_value
+            # Set default values for additional costs (minimum valid value to satisfy CHECK constraints)
+            # These can be updated later through the intake/verification process
+            donation.storage_cost = Decimal('0.01')
+            donation.haulage_cost = Decimal('0.01')
+            donation.other_cost = Decimal('0.01')
+            donation.other_cost_desc = None
             
             # Handle document uploads
             document_count = 0
