@@ -5,6 +5,12 @@ DMIS (Disaster Management Information System) is a web-based platform for the Go
 
 ## Recent Changes (November 24, 2025)
 
+### Login Page - Agency Registration Hidden
+- Removed Agency Registration section from login page
+- Login page now only shows standard login form (email + password)
+- All other elements remain intact (logos, styling, footer, security)
+- No backend changes - registration route still exists but is not accessible from login page
+
 ### Donation Item Duplicate Error Handling
 - Improved error handling when users attempt to add the same item twice to a donation
 - Catches `UniqueViolation` (pk_donation_item) at the application level instead of exposing raw SQL errors
