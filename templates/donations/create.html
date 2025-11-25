@@ -435,6 +435,7 @@ restoredItems.push({
     item_cost: parseFloat('{{ form_data.get("item_cost_" ~ num, "0") }}') || 0,
     addon_cost: parseFloat('{{ form_data.get("addon_cost_" ~ num, "0") }}') || 0,
     uom_code: '{{ form_data.get("uom_id_" ~ num, "") }}',
+    currency_code: '{{ form_data.get("currency_code_" ~ num, "") }}',
     location_name: '{{ form_data.get("location_name_" ~ num, "DONATION RECEIVED") }}',
     comments: '{{ form_data.get("item_comments_" ~ num, "") }}'
 });
@@ -446,18 +447,22 @@ document.addEventListener('DOMContentLoaded', function() {
     restoredItems.forEach(function(item) {
         const option = itemsDropdown.querySelector(`option[value="${item.item_id}"]`);
         const itemName = option ? option.getAttribute('data-name') : 'Unknown Item';
-        
+        const restoredType = (item.donation_type || 'GOODS').toUpperCase();
+
         itemCounter++;
         donationItems.push({
             id: itemCounter,
             item_id: item.item_id,
             item_name: itemName,
-            donation_type: item.donation_type,
+            donation_type: restoredType,
             quantity: item.quantity,
             item_cost: item.item_cost,
             addon_cost: item.addon_cost,
-            uom_code: item.uom_code,
-            uom_desc: item.uom_code,
+            uom_code: restoredType === 'GOODS' ? item.uom_code : null,
+            currency_code: restoredType === 'FUNDS' ? item.currency_code : null,
+            uom_desc: restoredType === 'FUNDS'
+                ? (item.currency_code || '')
+                : (item.uom_code || ''),
             location_name: item.location_name,
             comments: item.comments
         });
