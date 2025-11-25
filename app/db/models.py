@@ -671,9 +671,9 @@ class DonationItem(db.Model):
     donation_id = db.Column(db.Integer, db.ForeignKey('donation.donation_id'), primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey('item.item_id'), primary_key=True)
     donation_type = db.Column(db.CHAR(5), nullable=False, default='GOODS')
-    item_qty = db.Column(db.Numeric(12, 2), nullable=False)
-    item_cost = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
-    addon_cost = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
+    item_qty = db.Column(db.Numeric(9, 2), nullable=False, default=1.00)
+    item_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
+    addon_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
     uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=False)
     location_name = db.Column(db.Text, nullable=False)
     status_code = db.Column(db.CHAR(1), nullable=False, default='V')
@@ -681,9 +681,9 @@ class DonationItem(db.Model):
     create_by_id = db.Column(db.String(20), nullable=False)
     create_dtime = db.Column(db.DateTime, nullable=False)
     update_by_id = db.Column(db.String(20), nullable=False, default='SYSTEM')
-    update_dtime = db.Column(db.DateTime)
-    verify_by_id = db.Column(db.String(20))
-    verify_dtime = db.Column(db.DateTime)
+    update_dtime = db.Column(db.DateTime, nullable=False, server_default=db.text('CURRENT_TIMESTAMP'))
+    verify_by_id = db.Column(db.String(20), nullable=False)
+    verify_dtime = db.Column(db.DateTime, nullable=False)
     version_nbr = db.Column(db.Integer, nullable=False, default=1)
     
     __table_args__ = (
@@ -692,6 +692,7 @@ class DonationItem(db.Model):
         db.CheckConstraint("item_cost >= 0.00", name='c_donation_item_1b'),
         db.CheckConstraint("addon_cost >= 0.00", name='c_donation_item_1c'),
         db.CheckConstraint("status_code IN ('P', 'V')", name='c_donation_item_2'),
+        db.CheckConstraint("item_cost + addon_cost > 0.00", name='c_donation_item_10'),
     )
     
     donation = db.relationship('Donation', backref='items')

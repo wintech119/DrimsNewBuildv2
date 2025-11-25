@@ -5,6 +5,16 @@ DMIS (Disaster Management Information System) is a web-based platform for the Go
 
 ## Recent Changes (November 24, 2025)
 
+### Donation Item Table Migration (Migration 012)
+- **Quantity Precision**: Changed `item_qty` from DECIMAL(12,2) to DECIMAL(9,2) with default 1.00
+- **Audit Trail Enforcement**: Made `verify_by_id` and `verify_dtime` NOT NULL (previously nullable)
+- **Auto-Timestamps**: Made `update_dtime` NOT NULL with default CURRENT_TIMESTAMP
+- **Cost Validation**: Added constraint `c_donation_item_10` ensuring `item_cost + addon_cost > 0.00`
+- **Code Updates**: Updated SQLAlchemy DonationItem model to match new schema
+- **Zero Breaking Changes**: All application code continues working without modifications
+- **Referential Integrity Preserved**: All foreign keys intact (donation, item, unitofmeasure); downstream table dnintake_item functional
+- **Migration File**: `migrations/migrate_donation_item_table_to_target_ddl.sql`
+
 ### Donation Table Cost Breakdown Migration (Migration 011)
 - **Cost Breakdown Fields Added**: Enhanced donation tracking with detailed cost breakdown
   - `tot_item_cost` (renamed from `tot_donated_value`): Total value of donated items (DECIMAL(12,2), > 0.00)
