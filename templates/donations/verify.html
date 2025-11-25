@@ -439,6 +439,104 @@ let itemCounter = 0;
 const donationItems = [];
 let currentCategoryType = null;
 
+function updateTotalItemCost() {
+    let total = 0;
+    donationItems.forEach(item => {
+        total += (item.item_cost + item.addon_cost) * item.quantity;
+    });
+    document.getElementById('tot_item_cost').value = total.toFixed(2);
+}
+
+function updateItemsTable() {
+    const tableContainer = document.getElementById('itemsTableContainer');
+    const hiddenContainer = document.getElementById('itemsContainer');
+    const noItemsMsg = document.getElementById('noItemsMessage');
+    const itemCountSpan = document.getElementById('itemCount');
+    
+    itemCountSpan.textContent = donationItems.length;
+    
+    if (donationItems.length === 0) {
+        tableContainer.innerHTML = '';
+        hiddenContainer.innerHTML = '';
+        noItemsMsg.classList.remove('d-none');
+        noItemsMsg.classList.add('d-block');
+    } else {
+        noItemsMsg.classList.remove('d-block');
+        noItemsMsg.classList.add('d-none');
+        
+        let tableHtml = `
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Item</th>
+                            <th scope="col">Type</th>
+                            <th scope="col" class="text-end">Quantity</th>
+                            <th scope="col" class="text-end">Item Cost</th>
+                            <th scope="col" class="text-end">Addon Cost</th>
+                            <th scope="col">Comments</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        donationItems.forEach(item => {
+            const typeBadge = item.donation_type === 'GOODS' 
+                ? '<span class="badge bg-primary">GOODS</span>' 
+                : '<span class="badge bg-success">FUNDS</span>';
+            
+            tableHtml += `
+                <tr>
+                    <td>
+                        <strong>${item.item_name}</strong><br>
+                        <small class="text-muted">${item.location_name}</small>
+                    </td>
+                    <td>${typeBadge}</td>
+                    <td class="text-end">
+                        <strong>${item.quantity.toFixed(2)}</strong> ${item.uom_desc}
+                    </td>
+                    <td class="text-end">$${item.item_cost.toFixed(2)}</td>
+                    <td class="text-end">$${item.addon_cost.toFixed(2)}</td>
+                    <td>${item.comments ? item.comments : '<span class="text-muted">-</span>'}</td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-danger" data-action="remove-donation-item" data-item-id="${item.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tableHtml += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        tableContainer.innerHTML = tableHtml;
+        
+        let hiddenHtml = '';
+        donationItems.forEach((item, index) => {
+            const num = index + 1;
+            hiddenHtml += `
+                <input type="hidden" name="item_id_${num}" value="${Number(item.item_id)}">
+                <input type="hidden" name="donation_type_${num}" value="${String(item.donation_type)}">
+                <input type="hidden" name="quantity_${num}" value="${Number(item.quantity).toFixed(2)}">
+                <input type="hidden" name="item_cost_${num}" value="${Number(item.item_cost).toFixed(2)}">
+                <input type="hidden" name="addon_cost_${num}" value="${Number(item.addon_cost).toFixed(2)}">
+                <input type="hidden" name="uom_id_${num}" value="${String(item.uom_code)}">
+                <input type="hidden" name="location_name_${num}" value="${String(item.location_name)}">
+                <input type="hidden" name="item_comments_${num}" value="${String(item.comments)}">
+            `;
+        });
+        
+        hiddenContainer.innerHTML = hiddenHtml;
+    }
+    
+    updateTotalItemCost();
+}
+
 const existingItems = [
 {% for item_data in items_with_categories %}
     {
@@ -683,104 +781,6 @@ document.addEventListener('click', function(e) {
         }
     }
 });
-
-function updateItemsTable() {
-    const tableContainer = document.getElementById('itemsTableContainer');
-    const hiddenContainer = document.getElementById('itemsContainer');
-    const noItemsMsg = document.getElementById('noItemsMessage');
-    const itemCountSpan = document.getElementById('itemCount');
-    
-    itemCountSpan.textContent = donationItems.length;
-    
-    if (donationItems.length === 0) {
-        tableContainer.innerHTML = '';
-        hiddenContainer.innerHTML = '';
-        noItemsMsg.classList.remove('d-none');
-        noItemsMsg.classList.add('d-block');
-    } else {
-        noItemsMsg.classList.remove('d-block');
-        noItemsMsg.classList.add('d-none');
-        
-        let tableHtml = `
-            <div class="table-responsive">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Item</th>
-                            <th scope="col">Type</th>
-                            <th scope="col" class="text-end">Quantity</th>
-                            <th scope="col" class="text-end">Item Cost</th>
-                            <th scope="col" class="text-end">Addon Cost</th>
-                            <th scope="col">Comments</th>
-                            <th scope="col" class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        donationItems.forEach(item => {
-            const typeBadge = item.donation_type === 'GOODS' 
-                ? '<span class="badge bg-primary">GOODS</span>' 
-                : '<span class="badge bg-success">FUNDS</span>';
-            
-            tableHtml += `
-                <tr>
-                    <td>
-                        <strong>${item.item_name}</strong><br>
-                        <small class="text-muted">${item.location_name}</small>
-                    </td>
-                    <td>${typeBadge}</td>
-                    <td class="text-end">
-                        <strong>${item.quantity.toFixed(2)}</strong> ${item.uom_desc}
-                    </td>
-                    <td class="text-end">$${item.item_cost.toFixed(2)}</td>
-                    <td class="text-end">$${item.addon_cost.toFixed(2)}</td>
-                    <td>${item.comments ? item.comments : '<span class="text-muted">-</span>'}</td>
-                    <td class="text-end">
-                        <button type="button" class="btn btn-sm btn-danger" data-action="remove-donation-item" data-item-id="${item.id}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        tableHtml += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-        
-        tableContainer.innerHTML = tableHtml;
-        
-        let hiddenHtml = '';
-        donationItems.forEach((item, index) => {
-            const num = index + 1;
-            hiddenHtml += `
-                <input type="hidden" name="item_id_${num}" value="${Number(item.item_id)}">
-                <input type="hidden" name="donation_type_${num}" value="${String(item.donation_type)}">
-                <input type="hidden" name="quantity_${num}" value="${Number(item.quantity).toFixed(2)}">
-                <input type="hidden" name="item_cost_${num}" value="${Number(item.item_cost).toFixed(2)}">
-                <input type="hidden" name="addon_cost_${num}" value="${Number(item.addon_cost).toFixed(2)}">
-                <input type="hidden" name="uom_id_${num}" value="${String(item.uom_code)}">
-                <input type="hidden" name="location_name_${num}" value="${String(item.location_name)}">
-                <input type="hidden" name="item_comments_${num}" value="${String(item.comments)}">
-            `;
-        });
-        
-        hiddenContainer.innerHTML = hiddenHtml;
-    }
-    
-    updateTotalItemCost();
-}
-
-function updateTotalItemCost() {
-    let total = 0;
-    donationItems.forEach(item => {
-        total += (item.item_cost + item.addon_cost) * item.quantity;
-    });
-    document.getElementById('tot_item_cost').value = total.toFixed(2);
-}
 
 document.getElementById('other_cost').addEventListener('input', function() {
     const otherCost = parseFloat(this.value) || 0;
