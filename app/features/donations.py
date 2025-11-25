@@ -491,6 +491,7 @@ def create_donation():
         except IntegrityError as e:
             db.session.rollback()
             error_message = str(e.orig) if hasattr(e, 'orig') else str(e)
+            current_app.logger.error(f"Donation create IntegrityError: {error_message}")
             
             # Check if it's a duplicate donation item error
             if ('pk_donation_item' in error_message or 
@@ -498,7 +499,8 @@ def create_donation():
                 'UNIQUE constraint failed' in error_message):
                 flash('Duplicate item detected. Each item can only be added once per donation. Please check your items and try again.', 'danger')
             else:
-                flash('Unable to create donation due to a database constraint. Please check your input and try again.', 'danger')
+                flash(f'Unable to create donation due to a database constraint. Please check your input and try again.', 'danger')
+                current_app.logger.error(f"Full IntegrityError details: {str(e)}")
             
             form_data = _get_donation_form_data()
             form_data['form_data'] = request.form
