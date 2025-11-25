@@ -7,15 +7,16 @@ UI/UX standards with summary cards, filter tabs, and modern styling.
 
 from flask import Blueprint, render_template, request, flash, abort
 from flask_login import login_required, current_user
-from sqlalchemy import func, desc, or_, and_
+from sqlalchemy import func, desc, or_, and_, extract
 from app.db.models import (
     db, Inventory, Item, Warehouse, 
-    Event, Donor, Agency, User, ReliefRqst, ReliefRequestFulfillmentLock, ReliefPkg, ReliefPkgItem
+    Event, Donor, Agency, User, ReliefRqst, ReliefRequestFulfillmentLock, ReliefPkg, ReliefPkgItem,
+    Donation, DonationItem, Country
 )
 from app.services import relief_request_service as rr_service
 from app.services.dashboard_service import DashboardService
 from app.core.feature_registry import FeatureRegistry
-from app.core.rbac import has_role
+from app.core.rbac import has_role, role_required
 from datetime import datetime, timedelta
 from collections import defaultdict
 from app.utils.timezone import now as jamaica_now
@@ -564,3 +565,188 @@ def lo_dashboard():
     }
     
     return render_template('dashboard/lo.html', **context)
+
+
+@dashboard_bp.route('/donations-analytics')
+@login_required
+@role_required('ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'LOGISTICS_MANAGER')
+def donations_analytics():
+    """
+    Donations Analytics Dashboard - Executive view of donation metrics and trends.
+    
+    Access: DG, Deputy DG, Director PEOD, Logistics Manager
+    
+    Displays:
+    - KPIs: Total donations, total value, unique donors, countries
+    - Charts: Donations by donor, by country, over time, distribution
+    """
+    now = jamaica_now()
+    
+    # ========== KPI METRICS ==========
+    
+    # Total donations count
+    total_donations = Donation.query.count()
+    
+    # Total donation value (sum of tot_item_cost)
+    total_value = db.session.query(
+        func.coalesce(func.sum(Donation.tot_item_cost), 0)
+    ).scalar() or 0
+    
+    # Unique donors count
+    unique_donors = db.session.query(
+        func.count(func.distinct(Donation.donor_id))
+    ).scalar() or 0
+    
+    # Number of countries donations came from
+    countries_count = db.session.query(
+        func.count(func.distinct(Donation.origin_country_id))
+    ).scalar() or 0
+    
+    # ========== DONATIONS BY DONOR (Top 10) ==========
+    
+    donations_by_donor = db.session.query(
+        Donor.donor_name,
+        func.sum(Donation.tot_item_cost).label('total_amount'),
+        func.count(Donation.donation_id).label('donation_count')
+    ).join(
+        Donation, Donor.donor_id == Donation.donor_id
+    ).group_by(
+        Donor.donor_id, Donor.donor_name
+    ).order_by(
+        desc('total_amount')
+    ).limit(10).all()
+    
+    donor_chart_data = {
+        'labels': [d.donor_name[:30] + '...' if len(d.donor_name) > 30 else d.donor_name for d in donations_by_donor],
+        'amounts': [float(d.total_amount) for d in donations_by_donor],
+        'counts': [d.donation_count for d in donations_by_donor]
+    }
+    
+    # ========== DONATIONS BY COUNTRY ==========
+    
+    donations_by_country = db.session.query(
+        Country.country_name,
+        func.sum(Donation.tot_item_cost).label('total_amount'),
+        func.count(Donation.donation_id).label('donation_count')
+    ).join(
+        Donation, Country.country_id == Donation.origin_country_id
+    ).group_by(
+        Country.country_id, Country.country_name
+    ).order_by(
+        desc('total_amount')
+    ).limit(10).all()
+    
+    country_chart_data = {
+        'labels': [c.country_name for c in donations_by_country],
+        'amounts': [float(c.total_amount) for c in donations_by_country],
+        'counts': [c.donation_count for c in donations_by_country]
+    }
+    
+    # ========== DONATIONS OVER TIME (Last 12 months) ==========
+    
+    twelve_months_ago = now - timedelta(days=365)
+    
+    donations_over_time = db.session.query(
+        extract('year', Donation.received_date).label('year'),
+        extract('month', Donation.received_date).label('month'),
+        func.sum(Donation.tot_item_cost).label('total_amount'),
+        func.count(Donation.donation_id).label('donation_count')
+    ).filter(
+        Donation.received_date >= twelve_months_ago.date()
+    ).group_by(
+        extract('year', Donation.received_date),
+        extract('month', Donation.received_date)
+    ).order_by(
+        'year', 'month'
+    ).all()
+    
+    # Format month labels and data
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    timeline_data = {
+        'labels': [],
+        'amounts': [],
+        'counts': []
+    }
+    
+    for row in donations_over_time:
+        month_label = f"{month_names[int(row.month) - 1]} {int(row.year)}"
+        timeline_data['labels'].append(month_label)
+        timeline_data['amounts'].append(float(row.total_amount))
+        timeline_data['counts'].append(row.donation_count)
+    
+    # ========== DONATIONS BY STATUS ==========
+    
+    donations_by_status = db.session.query(
+        Donation.status_code,
+        func.count(Donation.donation_id).label('count'),
+        func.sum(Donation.tot_item_cost).label('total_amount')
+    ).group_by(
+        Donation.status_code
+    ).all()
+    
+    status_labels_map = {
+        'E': 'Entered',
+        'V': 'Verified',
+        'P': 'Processed'
+    }
+    
+    status_chart_data = {
+        'labels': [status_labels_map.get(s.status_code, s.status_code) for s in donations_by_status],
+        'counts': [s.count for s in donations_by_status],
+        'amounts': [float(s.total_amount) if s.total_amount else 0 for s in donations_by_status]
+    }
+    
+    # ========== DONATIONS BY EVENT (Distribution) ==========
+    
+    donations_by_event = db.session.query(
+        Event.event_name,
+        func.sum(Donation.tot_item_cost).label('total_amount'),
+        func.count(Donation.donation_id).label('donation_count')
+    ).join(
+        Donation, Event.event_id == Donation.event_id
+    ).group_by(
+        Event.event_id, Event.event_name
+    ).order_by(
+        desc('total_amount')
+    ).limit(10).all()
+    
+    event_chart_data = {
+        'labels': [e.event_name[:25] + '...' if len(e.event_name) > 25 else e.event_name for e in donations_by_event],
+        'amounts': [float(e.total_amount) for e in donations_by_event],
+        'counts': [e.donation_count for e in donations_by_event]
+    }
+    
+    # ========== RECENT DONATIONS ==========
+    
+    recent_donations = Donation.query.options(
+        db.joinedload(Donation.donor),
+        db.joinedload(Donation.origin_country),
+        db.joinedload(Donation.event)
+    ).order_by(
+        desc(Donation.received_date)
+    ).limit(5).all()
+    
+    context = {
+        # KPIs
+        'total_donations': total_donations,
+        'total_value': float(total_value),
+        'unique_donors': unique_donors,
+        'countries_count': countries_count,
+        
+        # Chart data
+        'donor_chart_data': donor_chart_data,
+        'country_chart_data': country_chart_data,
+        'timeline_data': timeline_data,
+        'status_chart_data': status_chart_data,
+        'event_chart_data': event_chart_data,
+        
+        # Recent donations
+        'recent_donations': recent_donations,
+        
+        # Status labels
+        'status_labels_map': status_labels_map
+    }
+    
+    return render_template('dashboard/donations_analytics.html', **context)

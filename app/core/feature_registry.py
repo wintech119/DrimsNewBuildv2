@@ -86,6 +86,7 @@ class FeatureRegistry:
         'reports_main': 'reports.index',
         'reports_inventory': 'reports.inventory_summary',
         'reports_donations': 'reports.donations_summary',
+        'donations_analytics': 'dashboard.donations_analytics',
         
         # Admin
         'users_list': 'user_admin.index',
@@ -398,6 +399,17 @@ class FeatureRegistry:
             'category': 'reports',
             'dashboard_widget': 'donation_report_link',
             'priority': 2
+        },
+        'donations_analytics': {
+            'name': 'Donation Analytics',
+            'description': 'Interactive analytics dashboard for donation metrics and trends',
+            'roles': ['ODPEM_DG', 'ODPEM_DDG', 'ODPEM_DIR_PEOD', 'LOGISTICS_MANAGER'],
+            'route': 'dashboard.donations_analytics',
+            'url': '/dashboard/donations-analytics',
+            'icon': 'bi-graph-up-arrow',
+            'category': 'reports',
+            'navigation_group': 'reports',
+            'priority': 3
         },
         
         # =================================================================
