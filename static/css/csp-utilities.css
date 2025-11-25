@@ -182,3 +182,20 @@
 
 /* === Offcanvas Width === */
 .offcanvas-width-400 { width: 400px !important; }
+
+/* === Form Field State Utilities === */
+.field-disabled-visual {
+    background-color: #e9ecef !important;
+    cursor: not-allowed !important;
+}
+
+/* === Empty State Icon === */
+.empty-state-icon {
+    font-size: 3rem !important;
+    color: #dee2e6 !important;
+}
+
+/* === Alert Text Size === */
+.alert-text-sm {
+    font-size: 0.9rem !important;
+}

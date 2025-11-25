@@ -267,7 +267,7 @@
                                     <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Add Donation Item</h5>
                                     
                                     <!-- Cost Definition Help -->
-                                    <div class="alert alert-info mb-3" style="font-size: 0.9rem;">
+                                    <div class="alert alert-info mb-3 alert-text-sm">
                                         <strong><i class="bi bi-info-circle"></i> Cost Definitions:</strong>
                                         <div class="row mt-2">
                                             <div class="col-md-6">
@@ -297,7 +297,7 @@
                                                 Type * 
                                                 <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="Auto-set based on item category"></i>
                                             </label>
-                                            <input type="text" class="form-control" id="new_donation_type" value="" readonly style="background-color: #e9ecef; cursor: not-allowed;" placeholder="Select item first">
+                                            <input type="text" class="form-control field-disabled-visual" id="new_donation_type" value="" readonly placeholder="Select item first">
                                             <small class="text-muted" id="category_hint">Auto-set</small>
                                         </div>
                                         <div class="col-md-3 mb-3">
@@ -325,7 +325,7 @@
                                         </div>
                                         <div class="col-md-3 mb-3">
                                             <label for="new_uom_code" class="form-label">UOM *</label>
-                                            <select class="form-select" id="new_uom_code" disabled style="background-color: #e9ecef;">
+                                            <select class="form-select field-disabled-visual" id="new_uom_code" disabled>
                                                 <option value="">Select item first</option>
                                                 {% for uom in uoms %}
                                                 <option value="{{ uom.uom_code }}" data-desc="{{ uom.uom_desc }}">
@@ -363,11 +363,11 @@
                                 <div id="itemsTableContainer"></div>
                                 
                                 <div id="noItemsMessage" class="text-center py-4">
-                                    <i class="bi bi-inbox" style="font-size: 3rem; color: #dee2e6;"></i>
+                                    <i class="bi bi-inbox empty-state-icon"></i>
                                     <p class="text-muted mt-2 mb-0">No items added yet. Use the form above to add items to this donation.</p>
                                 </div>
 
-                                    <div id="itemsContainer" style="display: none;">
+                                    <div id="itemsContainer" class="d-none">
                                         <!-- Hidden inputs for form submission -->
                                     </div>
                                 </div>
@@ -465,8 +465,7 @@ function enableFieldsForGoods() {
     const quantityHint = document.getElementById('quantity_hint');
     
     addonCostInput.disabled = false;
-    addonCostInput.style.backgroundColor = '';
-    addonCostInput.style.cursor = '';
+    addonCostInput.classList.remove('field-disabled-visual');
     addonCostInput.value = '0.00';
     
     itemCostHint.textContent = 'Purchase price per unit';
@@ -482,8 +481,7 @@ function enableFieldsForFunds() {
     
     addonCostInput.value = '0.00';
     addonCostInput.disabled = true;
-    addonCostInput.style.backgroundColor = '#e9ecef';
-    addonCostInput.style.cursor = 'not-allowed';
+    addonCostInput.classList.add('field-disabled-visual');
     
     itemCostHint.textContent = 'Donated value per instance';
     addonCostHint.textContent = 'Always 0.00 for FUNDS';
@@ -503,8 +501,7 @@ function resetFormFields() {
     categoryHint.textContent = 'Auto-set';
     
     addonCostInput.disabled = false;
-    addonCostInput.style.backgroundColor = '';
-    addonCostInput.style.cursor = '';
+    addonCostInput.classList.remove('field-disabled-visual');
     addonCostInput.value = '0.00';
     
     uomSelect.value = '';
@@ -735,13 +732,11 @@ document.getElementById('other_cost').addEventListener('input', function() {
     
     if (otherCost > 0) {
         otherCostDescInput.disabled = false;
-        otherCostDescInput.style.backgroundColor = '';
-        otherCostDescInput.style.cursor = '';
+        otherCostDescInput.classList.remove('field-disabled-visual');
         otherCostDescInput.required = true;
     } else {
         otherCostDescInput.disabled = true;
-        otherCostDescInput.style.backgroundColor = '#e9ecef';
-        otherCostDescInput.style.cursor = 'not-allowed';
+        otherCostDescInput.classList.add('field-disabled-visual');
         otherCostDescInput.value = '';
         otherCostDescInput.required = false;
     }
