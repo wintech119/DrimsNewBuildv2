@@ -267,12 +267,7 @@ def create_donation():
                         except:
                             errors.append(f'Invalid item cost for item #{item_num}')
 
-                        # For FUNDS donations, use default UOM since the form sends currency code
-                        # The currency is determined by the donation's origin country
-                        actual_uom_code = uom_id
-                        if donation_type == 'FUNDS':
-                            actual_uom_code = 'UNIT'
-                        elif not uom_id:
+                        if not uom_id:
                             errors.append(f'UOM is required for item #{item_num}')
 
                         try:
@@ -281,7 +276,7 @@ def create_donation():
                                 'donation_type': donation_type,
                                 'quantity': quantity_value,
                                 'item_cost': item_cost_value,
-                                'uom_code': actual_uom_code,
+                                'uom_code': uom_id,
                                 'location_name': location_name,
                                 'item_comments': item_comments
                             })
@@ -713,11 +708,7 @@ def edit_donation(donation_id):
                         except:
                             errors.append(f'Invalid item cost for item #{item_num}')
                         
-                        # For FUNDS donations, use default UOM since the form sends currency code
-                        actual_uom_code = uom_id
-                        if donation_type == 'FUNDS':
-                            actual_uom_code = 'UNIT'
-                        elif not uom_id:
+                        if not uom_id:
                             errors.append(f'UOM is required for item #{item_num}')
                         
                         is_existing_item = request.form.get(f'is_existing_{item_num}', 'false') == 'true'
@@ -728,7 +719,7 @@ def edit_donation(donation_id):
                                 'donation_type': donation_type,
                                 'quantity': quantity_value,
                                 'item_cost': item_cost_value,
-                                'uom_code': actual_uom_code,
+                                'uom_code': uom_id,
                                 'location_name': location_name,
                                 'item_comments': item_comments,
                                 'is_existing': is_existing_item
@@ -1360,11 +1351,7 @@ def verify_donation_detail(donation_id):
                         except:
                             errors.append(f'Invalid item cost for item #{item_num}')
 
-                        # For FUNDS donations, use default UOM since the form sends currency code
-                        actual_uom_code = uom_code
-                        if donation_type == 'FUNDS':
-                            actual_uom_code = 'UNIT'
-                        elif not uom_code:
+                        if not uom_code:
                             errors.append(f'UOM is required for item #{item_num}')
                         
                         item_obj = Item.query.get(int(item_id))
@@ -1379,7 +1366,7 @@ def verify_donation_detail(donation_id):
                                 'donation_type': donation_type,
                                 'quantity': quantity_value,
                                 'item_cost': item_cost_value,
-                                'uom_code': actual_uom_code,
+                                'uom_code': uom_code,
                                 'location_name': location_name,
                                 'item_comments': item_comments
                             })
