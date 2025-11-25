@@ -465,7 +465,6 @@ function updateItemsTable() {
                             <th scope="col">Type</th>
                             <th scope="col" class="text-end">Quantity</th>
                             <th scope="col" class="text-end">Item Cost</th>
-                            <th scope="col" class="text-end">Addon Cost</th>
                             <th scope="col">Comments</th>
                             <th scope="col" class="text-end">Actions</th>
                         </tr>
@@ -489,7 +488,6 @@ function updateItemsTable() {
                         <strong>${item.quantity.toFixed(2)}</strong> ${item.uom_desc}
                     </td>
                     <td class="text-end">$${item.item_cost.toFixed(2)}</td>
-                    <td class="text-end">$${item.addon_cost.toFixed(2)}</td>
                     <td>${item.comments ? item.comments : '<span class="text-muted">-</span>'}</td>
                     <td class="text-end">
                         <button type="button" class="btn btn-sm btn-danger" data-action="remove-donation-item" data-item-id="${item.id}">
