@@ -482,6 +482,7 @@ def _process_entry_submission(donation, warehouse, existing_intake, action):
             intake.intake_date = intake_date
             intake.comments_text = comments_text.upper() if comments_text else None
             intake.status_code = new_status
+            # Keep original creator metadata intact when updating a draft or resubmitting
             add_audit_fields(intake, current_user, is_new=False)
             
             DonationIntakeItem.query.filter_by(
