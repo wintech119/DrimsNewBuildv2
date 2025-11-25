@@ -232,6 +232,7 @@ def create_donation():
                     quantity_str = request.form.get(f'quantity_{item_num}')
                     item_cost_str = request.form.get(f'item_cost_{item_num}', '0.00')
                     uom_id = request.form.get(f'uom_id_{item_num}')
+                    currency_code = request.form.get(f'currency_code_{item_num}')
                     location_name = request.form.get(f'location_name_{item_num}', 'DONATION RECEIVED').strip()
                     item_comments = request.form.get(f'item_comments_{item_num}', '').strip()
                     
@@ -267,8 +268,13 @@ def create_donation():
                         except:
                             errors.append(f'Invalid item cost for item #{item_num}')
 
-                        if not uom_id:
-                            errors.append(f'UOM is required for item #{item_num}')
+                        # Validate based on donation type: GOODS needs uom_code, FUNDS needs currency_code
+                        if donation_type == 'GOODS':
+                            if not uom_id:
+                                errors.append(f'UOM is required for GOODS item #{item_num}')
+                        elif donation_type == 'FUNDS':
+                            if not currency_code:
+                                errors.append(f'Currency is required for FUNDS item #{item_num}')
 
                         try:
                             item_data.append({
@@ -276,7 +282,8 @@ def create_donation():
                                 'donation_type': donation_type,
                                 'quantity': quantity_value,
                                 'item_cost': item_cost_value,
-                                'uom_code': uom_id,
+                                'uom_code': uom_id if donation_type == 'GOODS' else None,
+                                'currency_code': currency_code if donation_type == 'FUNDS' else None,
                                 'location_name': location_name,
                                 'item_comments': item_comments
                             })
@@ -370,6 +377,7 @@ def create_donation():
                 donation_item.item_qty = item_info['quantity']
                 donation_item.item_cost = item_info['item_cost']
                 donation_item.uom_code = item_info['uom_code']
+                donation_item.currency_code = item_info['currency_code']
                 donation_item.location_name = item_info['location_name'].upper()
                 donation_item.status_code = 'P'
                 donation_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
@@ -676,6 +684,7 @@ def edit_donation(donation_id):
                     quantity_str = request.form.get(f'quantity_{item_num}')
                     item_cost_str = request.form.get(f'item_cost_{item_num}', '0.00')
                     uom_id = request.form.get(f'uom_id_{item_num}')
+                    currency_code = request.form.get(f'currency_code_{item_num}')
                     location_name = request.form.get(f'location_name_{item_num}', 'DONATION RECEIVED').strip()
                     item_comments = request.form.get(f'item_comments_{item_num}', '').strip()
                     existing_donation_item_id = request.form.get(f'donation_item_id_{item_num}')
@@ -708,8 +717,13 @@ def edit_donation(donation_id):
                         except:
                             errors.append(f'Invalid item cost for item #{item_num}')
                         
-                        if not uom_id:
-                            errors.append(f'UOM is required for item #{item_num}')
+                        # Validate based on donation type: GOODS needs uom_code, FUNDS needs currency_code
+                        if donation_type == 'GOODS':
+                            if not uom_id:
+                                errors.append(f'UOM is required for GOODS item #{item_num}')
+                        elif donation_type == 'FUNDS':
+                            if not currency_code:
+                                errors.append(f'Currency is required for FUNDS item #{item_num}')
                         
                         is_existing_item = request.form.get(f'is_existing_{item_num}', 'false') == 'true'
                         
@@ -719,7 +733,8 @@ def edit_donation(donation_id):
                                 'donation_type': donation_type,
                                 'quantity': quantity_value,
                                 'item_cost': item_cost_value,
-                                'uom_code': uom_id,
+                                'uom_code': uom_id if donation_type == 'GOODS' else None,
+                                'currency_code': currency_code if donation_type == 'FUNDS' else None,
                                 'location_name': location_name,
                                 'item_comments': item_comments,
                                 'is_existing': is_existing_item
@@ -751,6 +766,7 @@ def edit_donation(donation_id):
                         'quantity': float(di.item_qty) if di.item_qty else 0,
                         'item_cost': float(di.item_cost) if di.item_cost else 0,
                         'uom_code': di.uom_code,
+                        'currency_code': di.currency_code,
                         'location_name': di.location_name or 'DONATION RECEIVED',
                         'comments': di.comments_text or ''
                     })
@@ -802,6 +818,7 @@ def edit_donation(donation_id):
                         existing_item.item_qty = quantity
                         existing_item.item_cost = item_cost
                         existing_item.uom_code = item_info['uom_code']
+                        existing_item.currency_code = item_info['currency_code']
                         existing_item.location_name = item_info['location_name'].upper() if item_info['location_name'] else 'DONATION RECEIVED'
                         existing_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
                         add_audit_fields(existing_item, current_user, is_new=False)
@@ -814,6 +831,7 @@ def edit_donation(donation_id):
                     new_item.item_qty = quantity
                     new_item.item_cost = item_cost
                     new_item.uom_code = item_info['uom_code']
+                    new_item.currency_code = item_info['currency_code']
                     new_item.location_name = item_info['location_name'].upper() if item_info['location_name'] else 'DONATION RECEIVED'
                     new_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
                     new_item.status_code = 'A'
@@ -860,6 +878,7 @@ def edit_donation(donation_id):
             'quantity': float(di.item_qty) if di.item_qty else 0,
             'item_cost': float(di.item_cost) if di.item_cost else 0,
             'uom_code': di.uom_code,
+            'currency_code': di.currency_code,
             'location_name': di.location_name or 'DONATION RECEIVED',
             'comments': di.comments_text or ''
         })
@@ -1316,6 +1335,7 @@ def verify_donation_detail(donation_id):
                     quantity_str = request.form.get(f'quantity_{item_num}')
                     item_cost_str = request.form.get(f'item_cost_{item_num}', '0.00')
                     uom_code = request.form.get(f'uom_id_{item_num}')
+                    currency_code = request.form.get(f'currency_code_{item_num}')
                     location_name = request.form.get(f'location_name_{item_num}', 'DONATION RECEIVED').strip()
                     item_comments = request.form.get(f'item_comments_{item_num}', '').strip()
                     
@@ -1351,8 +1371,13 @@ def verify_donation_detail(donation_id):
                         except:
                             errors.append(f'Invalid item cost for item #{item_num}')
 
-                        if not uom_code:
-                            errors.append(f'UOM is required for item #{item_num}')
+                        # Validate based on donation type: GOODS needs uom_code, FUNDS needs currency_code
+                        if donation_type == 'GOODS':
+                            if not uom_code:
+                                errors.append(f'UOM is required for GOODS item #{item_num}')
+                        elif donation_type == 'FUNDS':
+                            if not currency_code:
+                                errors.append(f'Currency is required for FUNDS item #{item_num}')
                         
                         item_obj = Item.query.get(int(item_id))
                         if item_obj:
@@ -1366,7 +1391,8 @@ def verify_donation_detail(donation_id):
                                 'donation_type': donation_type,
                                 'quantity': quantity_value,
                                 'item_cost': item_cost_value,
-                                'uom_code': uom_code,
+                                'uom_code': uom_code if donation_type == 'GOODS' else None,
+                                'currency_code': currency_code if donation_type == 'FUNDS' else None,
                                 'location_name': location_name,
                                 'item_comments': item_comments
                             })
@@ -1430,6 +1456,7 @@ def verify_donation_detail(donation_id):
                     existing_item.item_qty = item_info['quantity']
                     existing_item.item_cost = item_info['item_cost']
                     existing_item.uom_code = item_info['uom_code']
+                    existing_item.currency_code = item_info['currency_code']
                     existing_item.location_name = item_info['location_name'].upper()
                     existing_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
                     existing_item.status_code = 'V'
@@ -1444,6 +1471,7 @@ def verify_donation_detail(donation_id):
                     donation_item.item_qty = item_info['quantity']
                     donation_item.item_cost = item_info['item_cost']
                     donation_item.uom_code = item_info['uom_code']
+                    donation_item.currency_code = item_info['currency_code']
                     donation_item.location_name = item_info['location_name'].upper()
                     donation_item.status_code = 'V'
                     donation_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None

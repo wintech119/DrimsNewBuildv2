@@ -491,7 +491,13 @@ function updateItemsTable() {
                 <input type="hidden" name="donation_type_${num}" value="${String(item.donation_type)}">
                 <input type="hidden" name="quantity_${num}" value="${Number(item.quantity).toFixed(2)}">
                 <input type="hidden" name="item_cost_${num}" value="${Number(item.item_cost).toFixed(2)}">
-                <input type="hidden" name="uom_id_${num}" value="${String(item.uom_code)}">
+            `;
+            if (item.donation_type === 'GOODS') {
+                hiddenHtml += `<input type="hidden" name="uom_id_${num}" value="${String(item.uom_code || '')}">`;
+            } else {
+                hiddenHtml += `<input type="hidden" name="currency_code_${num}" value="${String(item.currency_code || item.uom_code || '')}">`;
+            }
+            hiddenHtml += `
                 <input type="hidden" name="location_name_${num}" value="${String(item.location_name)}">
                 <input type="hidden" name="item_comments_${num}" value="${String(item.comments)}">
             `;
@@ -510,8 +516,9 @@ const existingItems = [
         donation_type: '{{ item_data.category_type }}',
         quantity: {{ item_data.item.item_qty }},
         item_cost: {{ item_data.item.item_cost }},
-        uom_code: '{{ item_data.item.uom_code }}',
-        uom_desc: '{{ item_data.item.uom_code }}',
+        uom_code: '{{ item_data.item.uom_code or "" }}',
+        currency_code: '{{ item_data.item.currency_code or "" }}',
+        uom_desc: '{{ item_data.item.uom_code or item_data.item.currency_code or "" }}',
         location_name: '{{ item_data.item.location_name or "DONATION RECEIVED" }}',
         comments: '{{ item_data.item.comments_text or "" }}'
     }{% if not loop.last %},{% endif %}

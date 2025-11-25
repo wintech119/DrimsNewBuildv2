@@ -761,7 +761,13 @@ function updateItemsTable() {
                 <input type="hidden" name="donation_type_${num}" value="${String(item.donation_type)}">
                 <input type="hidden" name="quantity_${num}" value="${Number(item.quantity).toFixed(2)}">
                 <input type="hidden" name="item_cost_${num}" value="${Number(item.item_cost).toFixed(2)}">
-                <input type="hidden" name="uom_id_${num}" value="${String(item.uom_code)}">
+            `;
+            if (item.donation_type === 'GOODS') {
+                hiddenHtml += `<input type="hidden" name="uom_id_${num}" value="${String(item.uom_code)}">`;
+            } else {
+                hiddenHtml += `<input type="hidden" name="currency_code_${num}" value="${String(item.uom_code)}">`;
+            }
+            hiddenHtml += `
                 <input type="hidden" name="location_name_${num}" value="${String(item.location_name)}">
                 <input type="hidden" name="item_comments_${num}" value="${String(item.comments)}">
             `;

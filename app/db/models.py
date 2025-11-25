@@ -659,8 +659,8 @@ class DonationItem(db.Model):
     Links donations to specific items with verification status.
     
     Donation Types:
-        GOODS = Physical goods (default)
-        FUNDS = Monetary donation
+        GOODS = Physical goods (requires uom_code, no currency_code)
+        FUNDS = Monetary donation (requires currency_code, no uom_code)
     
     Status Codes:
         P = Processed
@@ -673,7 +673,8 @@ class DonationItem(db.Model):
     donation_type = db.Column(db.CHAR(5), nullable=False, default='GOODS')
     item_qty = db.Column(db.Numeric(9, 2), nullable=False, default=1.00)
     item_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
-    uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=False)
+    uom_code = db.Column(db.String(25), db.ForeignKey('unitofmeasure.uom_code'), nullable=True)
+    currency_code = db.Column(db.String(10), db.ForeignKey('currency.currency_code'), nullable=True)
     location_name = db.Column(db.Text, nullable=False)
     status_code = db.Column(db.CHAR(1), nullable=False, default='V')
     comments_text = db.Column(db.Text)
@@ -690,11 +691,17 @@ class DonationItem(db.Model):
         db.CheckConstraint("item_qty >= 0.00", name='c_donation_item_1a'),
         db.CheckConstraint("item_cost >= 0.00", name='c_donation_item_1b'),
         db.CheckConstraint("status_code IN ('P', 'V')", name='c_donation_item_2'),
+        db.CheckConstraint(
+            "(donation_type = 'GOODS' AND uom_code IS NOT NULL AND currency_code IS NULL) OR "
+            "(donation_type = 'FUNDS' AND currency_code IS NOT NULL AND uom_code IS NULL)",
+            name='c_donation_item_type_fields'
+        ),
     )
     
     donation = db.relationship('Donation', backref='items')
     item = db.relationship('Item', backref='donation_items')
     uom = db.relationship('UnitOfMeasure', backref='donation_items')
+    currency = db.relationship('Currency', backref='donation_items')
     
     __mapper_args__ = {
         'version_id_col': version_nbr

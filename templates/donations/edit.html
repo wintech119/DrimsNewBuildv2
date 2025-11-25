@@ -670,7 +670,13 @@ function updateItemsTable() {
                 <input type="hidden" name="donation_type_${index + 1}" value="${item.donation_type}">
                 <input type="hidden" name="quantity_${index + 1}" value="${item.quantity}">
                 <input type="hidden" name="item_cost_${index + 1}" value="${item.item_cost}">
-                <input type="hidden" name="uom_id_${index + 1}" value="${item.uom_code}">
+            `;
+            if (item.donation_type === 'GOODS') {
+                hiddenHtml += `<input type="hidden" name="uom_id_${index + 1}" value="${item.uom_code || ''}">`;
+            } else {
+                hiddenHtml += `<input type="hidden" name="currency_code_${index + 1}" value="${item.currency_code || item.uom_code || ''}">`;
+            }
+            hiddenHtml += `
                 <input type="hidden" name="location_name_${index + 1}" value="${item.location_name}">
                 <input type="hidden" name="item_comments_${index + 1}" value="${item.comments || ''}">
                 <input type="hidden" name="is_existing_${index + 1}" value="${item.is_existing ? 'true' : 'false'}">
