@@ -32,6 +32,7 @@ The application employs a modular blueprint architecture with a database-first a
 - **Timezone Standardization**: All datetime operations, database timestamps, audit trails, and user-facing displays use Jamaica Standard Time (UTC-05:00).
 - **Key Features**: Universal visibility for approved relief requests, accurate inventory validation, batch-level reservation synchronization for draft packages, and automatic inventory table updates on dispatch. Relief package cancellation includes full reservation rollback using optimistic locking and transactional integrity. Implements robust relief request status management.
 - **Dynamic GOODS/FUNDS Donation Workflow**: Donation form dynamically adapts based on item category type (GOODS/FUNDS) via an API endpoint, automatically setting donation type and controlling field editability.
+- **Currency Conversion for Donations**: Implements config-driven currency conversion for FUNDS donations. Header cost fields (Total Item Cost, Storage, Haulage, Other) are all normalized to JMD. Exchange rates are configurable via `EXCHANGE_RATES_JSON` environment variable or `config/exchange_rates.json` file. Original item costs are preserved in their native currency for audit trail. 28+ default currencies are supported.
 
 ## External Dependencies
 
