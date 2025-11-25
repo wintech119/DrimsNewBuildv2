@@ -942,15 +942,410 @@ def delete_donation_item(donation_id, item_id):
         return redirect(url_for('donations.view_donation', donation_id=donation_id))
 
 
-# DISABLED: Separate verification workflow removed for MVP
-# Donations are now auto-verified during acceptance (create_donation)
-# @donations_bp.route('/<int:donation_id>/verify', methods=['POST'])
-# @login_required
-# @feature_required('donation_management')
-# def verify_donation(donation_id):
-#     """
-#     DEPRECATED: Verification now happens automatically during donation acceptance.
-#     This endpoint is disabled for MVP. All donations are verified on creation.
-#     """
-#     flash('Donations are automatically verified when accepted. No separate verification needed.', 'info')
-#     return redirect(url_for('donations.view_donation', donation_id=donation_id))
+# =============================================================================
+# WORKFLOW B - DONATION VERIFICATION
+# =============================================================================
+
+@donations_bp.route('/verify')
+@login_required
+@feature_required('donation_verification')
+def verify_list():
+    """
+    List donations pending verification (status_code = 'E').
+    Only accessible to LOGISTICS_MANAGER role.
+    """
+    search_query = request.args.get('search', '').strip()
+    donor_filter = request.args.get('donor_id', type=int)
+    event_filter = request.args.get('event_id', type=int)
+    
+    query = Donation.query.filter_by(status_code='E')
+    
+    if donor_filter:
+        query = query.filter_by(donor_id=donor_filter)
+    
+    if event_filter:
+        query = query.filter_by(event_id=event_filter)
+    
+    if search_query:
+        query = query.filter(
+            db.or_(
+                Donation.donation_desc.ilike(f'%{search_query}%'),
+                Donation.comments_text.ilike(f'%{search_query}%')
+            )
+        )
+    
+    donations = query.order_by(Donation.received_date.desc()).all()
+    
+    pending_count = Donation.query.filter_by(status_code='E').count()
+    
+    donors = Donor.query.order_by(Donor.donor_name).all()
+    events = Event.query.filter_by(status_code='A').order_by(Event.event_name).all()
+    
+    return render_template('donations/verify_list.html',
+                         donations=donations,
+                         pending_count=pending_count,
+                         search_query=search_query,
+                         donor_filter=donor_filter,
+                         event_filter=event_filter,
+                         donors=donors,
+                         events=events)
+
+
+@donations_bp.route('/verify/<int:donation_id>', methods=['GET', 'POST'])
+@login_required
+@feature_required('donation_verification')
+def verify_donation_detail(donation_id):
+    """
+    Verification detail page for a donation.
+    GET: Load donation for verification with editable fields.
+    POST: Validate and verify the donation in a single transaction.
+    """
+    from app.db.models import ItemCategory
+    
+    donation = Donation.query.get_or_404(donation_id)
+    
+    if donation.status_code != 'E':
+        if donation.status_code == 'V':
+            flash('This donation has already been verified.', 'info')
+        elif donation.status_code == 'P':
+            flash('This donation has already been processed into warehouse inventory.', 'info')
+        return redirect(url_for('donations.view_donation', donation_id=donation_id))
+    
+    if request.method == 'POST':
+        try:
+            version_nbr = request.form.get('version_nbr', type=int)
+            if version_nbr is None:
+                flash('Missing version information. Please reload and try again.', 'danger')
+                return redirect(url_for('donations.verify_donation_detail', donation_id=donation_id))
+            
+            if donation.version_nbr != version_nbr:
+                flash('This donation was changed by another user. Please reload and try again.', 'danger')
+                return redirect(url_for('donations.verify_donation_detail', donation_id=donation_id))
+            
+            donor_id = request.form.get('donor_id')
+            event_id = request.form.get('event_id')
+            custodian_id = request.form.get('custodian_id')
+            donation_desc = request.form.get('donation_desc', '').strip()
+            received_date_str = request.form.get('received_date')
+            origin_country_id = request.form.get('origin_country_id')
+            origin_address1 = request.form.get('origin_address1_text', '').strip()
+            origin_address2 = request.form.get('origin_address2_text', '').strip()
+            comments_text = request.form.get('comments_text', '').strip()
+            
+            storage_cost_str = request.form.get('storage_cost', '0.00').strip()
+            haulage_cost_str = request.form.get('haulage_cost', '0.00').strip()
+            other_cost_str = request.form.get('other_cost', '0.00').strip()
+            other_cost_desc = request.form.get('other_cost_desc', '').strip()
+            
+            errors = []
+            
+            if not donor_id:
+                errors.append('Donor is required')
+            if not event_id:
+                errors.append('Event is required')
+            if not custodian_id:
+                errors.append('Custodian is required')
+            if not donation_desc:
+                errors.append('Donation description is required')
+            if not received_date_str:
+                errors.append('Received date is required')
+            if not origin_country_id:
+                errors.append('Origin country is required')
+            
+            received_date = None
+            if received_date_str:
+                received_date = datetime.strptime(received_date_str, '%Y-%m-%d').date()
+                if received_date > date.today():
+                    errors.append('Received date cannot be in the future')
+            
+            storage_cost_value = Decimal('0.00')
+            try:
+                storage_cost_value = Decimal(storage_cost_str) if storage_cost_str else Decimal('0.00')
+                if storage_cost_value < 0:
+                    errors.append('Storage cost must be >= 0')
+            except:
+                errors.append('Invalid storage cost value')
+            
+            haulage_cost_value = Decimal('0.00')
+            try:
+                haulage_cost_value = Decimal(haulage_cost_str) if haulage_cost_str else Decimal('0.00')
+                if haulage_cost_value < 0:
+                    errors.append('Haulage cost must be >= 0')
+            except:
+                errors.append('Invalid haulage cost value')
+            
+            other_cost_value = Decimal('0.00')
+            try:
+                other_cost_value = Decimal(other_cost_str) if other_cost_str else Decimal('0.00')
+                if other_cost_value < 0:
+                    errors.append('Other cost must be >= 0')
+            except:
+                errors.append('Invalid other cost value')
+            
+            if other_cost_value > 0 and not other_cost_desc:
+                errors.append('Other cost description is required when other cost is greater than 0')
+            
+            item_data = []
+            item_ids_in_form = set()
+            for key in request.form.keys():
+                if key.startswith('item_id_'):
+                    item_num = key.split('_')[-1]
+                    item_id = request.form.get(f'item_id_{item_num}')
+                    donation_type = request.form.get(f'donation_type_{item_num}', 'GOODS').upper()
+                    quantity_str = request.form.get(f'quantity_{item_num}')
+                    item_cost_str = request.form.get(f'item_cost_{item_num}', '0.00')
+                    addon_cost_str = request.form.get(f'addon_cost_{item_num}', '0.00')
+                    uom_code = request.form.get(f'uom_id_{item_num}')
+                    location_name = request.form.get(f'location_name_{item_num}', 'DONATION RECEIVED').strip()
+                    item_comments = request.form.get(f'item_comments_{item_num}', '').strip()
+                    
+                    if item_id:
+                        if item_id in item_ids_in_form:
+                            errors.append(f'Duplicate item detected in row #{item_num}. Each item can only be added once per donation.')
+                            continue
+                        item_ids_in_form.add(item_id)
+                        
+                        if donation_type not in ('GOODS', 'FUNDS'):
+                            errors.append(f'Invalid donation type for item #{item_num}. Must be GOODS or FUNDS.')
+                        
+                        quantity_value = None
+                        if not quantity_str:
+                            errors.append(f'Quantity is required for item #{item_num}')
+                        else:
+                            try:
+                                quantity_value = Decimal(quantity_str)
+                                if quantity_value < 0:
+                                    errors.append(f'Quantity must be >= 0 for item #{item_num}')
+                                if donation_type == 'FUNDS' and quantity_value != Decimal('1.00'):
+                                    errors.append(f'Quantity must be 1.00 for FUNDS items (item #{item_num})')
+                            except:
+                                errors.append(f'Invalid quantity for item #{item_num}')
+                        
+                        item_cost_value = Decimal('0.00')
+                        try:
+                            item_cost_value = Decimal(item_cost_str)
+                            if item_cost_value < 0:
+                                errors.append(f'Item cost must be >= 0 for item #{item_num}')
+                            if donation_type == 'FUNDS' and item_cost_value <= 0:
+                                errors.append(f'Item cost must be > 0 for FUNDS items (item #{item_num})')
+                        except:
+                            errors.append(f'Invalid item cost for item #{item_num}')
+                        
+                        addon_cost_value = Decimal('0.00')
+                        try:
+                            addon_cost_value = Decimal(addon_cost_str)
+                            if addon_cost_value < 0:
+                                errors.append(f'Addon cost must be >= 0 for item #{item_num}')
+                            if donation_type == 'FUNDS' and addon_cost_value != Decimal('0.00'):
+                                errors.append(f'Addon cost must be 0.00 for FUNDS items (item #{item_num})')
+                        except:
+                            errors.append(f'Invalid addon cost for item #{item_num}')
+                        
+                        if not uom_code:
+                            errors.append(f'UOM is required for item #{item_num}')
+                        
+                        item_obj = Item.query.get(int(item_id))
+                        if item_obj:
+                            category = ItemCategory.query.get(item_obj.category_id)
+                            if category and category.category_type != donation_type:
+                                errors.append(f'Donation type mismatch for item #{item_num}: item category is {category.category_type} but form says {donation_type}')
+                        
+                        try:
+                            item_data.append({
+                                'item_id': int(item_id),
+                                'donation_type': donation_type,
+                                'quantity': quantity_value,
+                                'item_cost': item_cost_value,
+                                'addon_cost': addon_cost_value,
+                                'uom_code': uom_code,
+                                'location_name': location_name,
+                                'item_comments': item_comments
+                            })
+                        except ValueError as ve:
+                            errors.append(f'Invalid data for item #{item_num}: {str(ve)}')
+            
+            if not item_data:
+                errors.append('At least one donation item is required')
+            
+            if errors:
+                for error in errors:
+                    flash(error, 'danger')
+                form_data = _get_donation_form_data()
+                form_data['donation'] = donation
+                form_data['form_data'] = request.form
+                return render_template('donations/verify.html', **form_data)
+            
+            current_timestamp = jamaica_now()
+            
+            donation.donor_id = int(donor_id)
+            donation.event_id = int(event_id)
+            donation.custodian_id = int(custodian_id)
+            donation.donation_desc = donation_desc.upper()
+            donation.received_date = received_date
+            donation.origin_country_id = int(origin_country_id) if origin_country_id else None
+            donation.origin_address1_text = origin_address1.upper() if origin_address1 else None
+            donation.origin_address2_text = origin_address2.upper() if origin_address2 else None
+            donation.comments_text = comments_text.upper() if comments_text else None
+            donation.storage_cost = storage_cost_value
+            donation.haulage_cost = haulage_cost_value
+            donation.other_cost = other_cost_value
+            donation.other_cost_desc = other_cost_desc.upper() if other_cost_desc else None
+            donation.status_code = 'V'
+            
+            add_audit_fields(donation, current_user, is_new=False)
+            donation.verify_by_id = current_user.user_name
+            donation.verify_dtime = current_timestamp
+            
+            total_value = Decimal('0.00')
+            
+            existing_item_ids = {item.item_id for item in donation.items}
+            new_item_ids = {item_info['item_id'] for item_info in item_data}
+            
+            items_to_delete = existing_item_ids - new_item_ids
+            for item_id_to_delete in items_to_delete:
+                item_to_delete = DonationItem.query.get((donation_id, item_id_to_delete))
+                if item_to_delete:
+                    db.session.delete(item_to_delete)
+            
+            for item_info in item_data:
+                item_cost = item_info['item_cost']
+                addon_cost = item_info['addon_cost']
+                quantity = item_info['quantity']
+                
+                total_value += (Decimal(str(item_cost)) + Decimal(str(addon_cost))) * Decimal(str(quantity))
+                
+                existing_item = DonationItem.query.get((donation_id, item_info['item_id']))
+                
+                if existing_item:
+                    existing_item.donation_type = item_info['donation_type']
+                    existing_item.item_qty = item_info['quantity']
+                    existing_item.item_cost = item_info['item_cost']
+                    existing_item.addon_cost = item_info['addon_cost']
+                    existing_item.uom_code = item_info['uom_code']
+                    existing_item.location_name = item_info['location_name'].upper()
+                    existing_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
+                    existing_item.status_code = 'V'
+                    add_audit_fields(existing_item, current_user, is_new=False)
+                    existing_item.verify_by_id = current_user.user_name
+                    existing_item.verify_dtime = current_timestamp
+                else:
+                    donation_item = DonationItem()
+                    donation_item.donation_id = donation_id
+                    donation_item.item_id = item_info['item_id']
+                    donation_item.donation_type = item_info['donation_type']
+                    donation_item.item_qty = item_info['quantity']
+                    donation_item.item_cost = item_info['item_cost']
+                    donation_item.addon_cost = item_info['addon_cost']
+                    donation_item.uom_code = item_info['uom_code']
+                    donation_item.location_name = item_info['location_name'].upper()
+                    donation_item.status_code = 'V'
+                    donation_item.comments_text = item_info['item_comments'].upper() if item_info['item_comments'] else None
+                    add_audit_fields(donation_item, current_user, is_new=True)
+                    donation_item.verify_by_id = current_user.user_name
+                    donation_item.verify_dtime = current_timestamp
+                    db.session.add(donation_item)
+            
+            if total_value <= 0:
+                db.session.rollback()
+                flash('Total item cost must be greater than 0.00. Please ensure at least one item has a cost.', 'danger')
+                form_data = _get_donation_form_data()
+                form_data['donation'] = donation
+                form_data['form_data'] = request.form
+                return render_template('donations/verify.html', **form_data)
+            
+            donation.tot_item_cost = total_value
+            
+            document_count = 0
+            uploaded_files = request.files.getlist('document_files')
+            document_types = request.form.getlist('document_type')
+            document_descs = request.form.getlist('document_desc')
+            
+            for idx, uploaded_file in enumerate(uploaded_files):
+                if uploaded_file and uploaded_file.filename and uploaded_file.filename.strip():
+                    original_filename = uploaded_file.filename.strip()
+                    
+                    mime_type = mimetypes.guess_type(original_filename)[0]
+                    if mime_type not in ['application/pdf', 'image/jpeg']:
+                        flash(f'Invalid file type for document {idx + 1}. Only PDF and JPEG files are allowed.', 'warning')
+                        continue
+                    
+                    doc_type = document_types[idx] if idx < len(document_types) else 'Other'
+                    doc_desc = document_descs[idx] if idx < len(document_descs) else ''
+                    
+                    if not doc_desc.strip():
+                        flash(f'Document description is required for document {idx + 1}.', 'warning')
+                        continue
+                    
+                    import uuid
+                    safe_base_name = secure_filename(original_filename)
+                    unique_filename = f"{uuid.uuid4().hex[:8]}_{safe_base_name}"
+                    
+                    donation_doc = DonationDoc()
+                    donation_doc.donation_id = donation_id
+                    donation_doc.document_type = doc_type.upper()
+                    donation_doc.document_desc = doc_desc.strip().upper()
+                    donation_doc.file_name = unique_filename
+                    donation_doc.file_type = mime_type
+                    
+                    uploaded_file.seek(0, os.SEEK_END)
+                    file_size_bytes = uploaded_file.tell()
+                    uploaded_file.seek(0)
+                    
+                    if file_size_bytes < 1024:
+                        donation_doc.file_size = f'{file_size_bytes}B'
+                    elif file_size_bytes < 1024 * 1024:
+                        donation_doc.file_size = f'{file_size_bytes / 1024:.1f}KB'
+                    else:
+                        donation_doc.file_size = f'{file_size_bytes / (1024 * 1024):.1f}MB'
+                    
+                    add_audit_fields(donation_doc, current_user, is_new=True)
+                    
+                    db.session.add(donation_doc)
+                    document_count += 1
+            
+            db.session.commit()
+            
+            flash(f'Donation #{donation_id} verified successfully.', 'success')
+            return redirect(url_for('donations.view_donation', donation_id=donation_id))
+            
+        except StaleDataError:
+            db.session.rollback()
+            flash('This donation was changed by another user. Please reload and try again.', 'danger')
+            return redirect(url_for('donations.verify_donation_detail', donation_id=donation_id))
+        except IntegrityError as e:
+            db.session.rollback()
+            error_message = str(e.orig) if hasattr(e, 'orig') else str(e)
+            if 'duplicate key' in error_message.lower():
+                flash('Duplicate item detected. Each item can only be added once per donation.', 'danger')
+            else:
+                flash('Unable to verify donation due to a database constraint. Please check your input and try again.', 'danger')
+            form_data = _get_donation_form_data()
+            form_data['donation'] = donation
+            form_data['form_data'] = request.form
+            return render_template('donations/verify.html', **form_data)
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An unexpected error occurred: {str(e)}', 'danger')
+            form_data = _get_donation_form_data()
+            form_data['donation'] = donation
+            form_data['form_data'] = request.form
+            return render_template('donations/verify.html', **form_data)
+    
+    form_data = _get_donation_form_data()
+    form_data['donation'] = donation
+    form_data['today'] = date.today().isoformat()
+    
+    items_with_categories = []
+    for item in donation.items:
+        item_obj = Item.query.get(item.item_id)
+        category = None
+        if item_obj:
+            from app.db.models import ItemCategory
+            category = ItemCategory.query.get(item_obj.category_id)
+        items_with_categories.append({
+            'item': item,
+            'category_type': category.category_type if category else 'GOODS'
+        })
+    form_data['items_with_categories'] = items_with_categories
+    
+    return render_template('donations/verify.html', **form_data)
