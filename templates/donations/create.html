@@ -403,6 +403,54 @@ let itemCounter = 0;
 const donationItems = [];
 let currentCategoryType = null;
 
+// Restore items from form_data if page was re-rendered after validation error
+{% if form_data %}
+const restoredItems = [];
+{% for key, value in form_data.items() %}
+{% if key.startswith('item_id_') %}
+{% set num = key.split('_')[-1] %}
+restoredItems.push({
+    num: '{{ num }}',
+    item_id: '{{ form_data.get("item_id_" ~ num, "") }}',
+    donation_type: '{{ form_data.get("donation_type_" ~ num, "GOODS") }}',
+    quantity: parseFloat('{{ form_data.get("quantity_" ~ num, "0") }}') || 0,
+    item_cost: parseFloat('{{ form_data.get("item_cost_" ~ num, "0") }}') || 0,
+    addon_cost: parseFloat('{{ form_data.get("addon_cost_" ~ num, "0") }}') || 0,
+    uom_code: '{{ form_data.get("uom_id_" ~ num, "") }}',
+    location_name: '{{ form_data.get("location_name_" ~ num, "DONATION RECEIVED") }}',
+    comments: '{{ form_data.get("item_comments_" ~ num, "") }}'
+});
+{% endif %}
+{% endfor %}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const itemsDropdown = document.getElementById('new_item_id');
+    restoredItems.forEach(function(item) {
+        const option = itemsDropdown.querySelector(`option[value="${item.item_id}"]`);
+        const itemName = option ? option.getAttribute('data-name') : 'Unknown Item';
+        
+        itemCounter++;
+        donationItems.push({
+            id: itemCounter,
+            item_id: item.item_id,
+            item_name: itemName,
+            donation_type: item.donation_type,
+            quantity: item.quantity,
+            item_cost: item.item_cost,
+            addon_cost: item.addon_cost,
+            uom_code: item.uom_code,
+            uom_desc: item.uom_code,
+            location_name: item.location_name,
+            comments: item.comments
+        });
+    });
+    
+    if (donationItems.length > 0) {
+        updateItemsTable();
+    }
+});
+{% endif %}
+
 // Fetch item category and adjust form fields dynamically
 document.getElementById('new_item_id').addEventListener('change', async function() {
     const itemId = this.value;
