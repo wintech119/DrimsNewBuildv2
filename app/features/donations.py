@@ -328,7 +328,6 @@ def create_donation():
             db.session.flush()
             
             # Calculate total donation value and validate items before persisting
-            from decimal import Decimal
             total_value = Decimal('0.00')
             validated_items = []
             
