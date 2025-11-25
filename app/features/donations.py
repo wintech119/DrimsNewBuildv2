@@ -663,6 +663,8 @@ def edit_donation(donation_id):
                         if not uom_id:
                             errors.append(f'UOM is required for item #{item_num}')
                         
+                        is_existing_item = request.form.get(f'is_existing_{item_num}', 'false') == 'true'
+                        
                         try:
                             item_data.append({
                                 'item_id': int(item_id),
@@ -672,10 +674,10 @@ def edit_donation(donation_id):
                                 'uom_code': uom_id,
                                 'location_name': location_name,
                                 'item_comments': item_comments,
-                                'existing_donation_item_id': int(existing_donation_item_id) if existing_donation_item_id else None
+                                'is_existing': is_existing_item
                             })
-                            if existing_donation_item_id:
-                                existing_item_ids.append(int(existing_donation_item_id))
+                            if is_existing_item:
+                                existing_item_ids.append(int(item_id))
                         except ValueError as ve:
                             errors.append(f'Invalid data for item #{item_num}: {str(ve)}')
             
@@ -694,7 +696,7 @@ def edit_donation(donation_id):
                 existing_items = []
                 for di in donation.items:
                     existing_items.append({
-                        'donation_item_id': di.donation_item_id,
+                        'is_existing': True,
                         'item_id': di.item_id,
                         'item_name': di.item.item_name if di.item else 'Unknown',
                         'donation_type': di.donation_type,
@@ -724,10 +726,14 @@ def edit_donation(donation_id):
             donation.other_cost_desc = other_cost_desc.upper() if other_cost_desc else None
             
             # Delete items that are no longer in the form
-            current_item_ids = [di.donation_item_id for di in donation.items]
-            items_to_delete = [item_id for item_id in current_item_ids if item_id not in existing_item_ids]
-            for item_id in items_to_delete:
-                item_to_delete = DonationItem.query.get(item_id)
+            # Get current item_ids from the donation
+            current_item_ids = [di.item_id for di in donation.items]
+            # Form submitted item_ids
+            submitted_item_ids = [item['item_id'] for item in item_data]
+            # Items to delete are those in database but not in form
+            items_to_delete = [iid for iid in current_item_ids if iid not in submitted_item_ids]
+            for iid in items_to_delete:
+                item_to_delete = DonationItem.query.get((donation.donation_id, iid))
                 if item_to_delete:
                     db.session.delete(item_to_delete)
             
@@ -740,11 +746,10 @@ def edit_donation(donation_id):
                 line_total = item_cost * quantity
                 total_item_cost += line_total
                 
-                if item_info['existing_donation_item_id']:
-                    # Update existing item
-                    existing_item = DonationItem.query.get(item_info['existing_donation_item_id'])
+                if item_info['is_existing']:
+                    # Update existing item using composite key (donation_id, item_id)
+                    existing_item = DonationItem.query.get((donation.donation_id, item_info['item_id']))
                     if existing_item:
-                        existing_item.item_id = item_info['item_id']
                         existing_item.donation_type = item_info['donation_type']
                         existing_item.item_qty = quantity
                         existing_item.item_cost = item_cost
@@ -796,10 +801,11 @@ def edit_donation(donation_id):
     form_data['today'] = date.today().isoformat()
     
     # Get existing items with full details
+    # Use item_id as identifier since DonationItem uses composite key (donation_id, item_id)
     existing_items = []
     for di in donation.items:
         existing_items.append({
-            'donation_item_id': di.donation_item_id,
+            'is_existing': True,
             'item_id': di.item_id,
             'item_name': di.item.item_name if di.item else 'Unknown',
             'donation_type': di.donation_type,

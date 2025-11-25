@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         itemCounter++;
         donationItems.push({
             id: itemCounter,
-            donation_item_id: item.donation_item_id,
+            is_existing: true,
             item_id: item.item_id,
             item_name: itemName,
             donation_type: item.donation_type,
@@ -583,7 +583,7 @@ document.getElementById('addItemBtn').addEventListener('click', function() {
     
     const item = {
         id: ++itemCounter,
-        donation_item_id: null,
+        is_existing: false,
         item_id: itemSelect.value,
         item_name: selectedItemOption.getAttribute('data-name'),
         donation_type: currentCategoryType,
@@ -662,7 +662,7 @@ function updateItemsTable() {
         donationItems.forEach((item, index) => {
             const lineTotal = item.quantity * item.item_cost;
             totalItemCost += lineTotal;
-            const existingBadge = item.donation_item_id ? '<span class="badge bg-secondary ms-1">Existing</span>' : '<span class="badge bg-success ms-1">New</span>';
+            const existingBadge = item.is_existing ? '<span class="badge bg-secondary ms-1">Existing</span>' : '<span class="badge bg-success ms-1">New</span>';
             
             tableHtml += `
                 <tr>
@@ -690,7 +690,7 @@ function updateItemsTable() {
                 <input type="hidden" name="uom_id_${index + 1}" value="${item.uom_code}">
                 <input type="hidden" name="location_name_${index + 1}" value="${item.location_name}">
                 <input type="hidden" name="item_comments_${index + 1}" value="${item.comments || ''}">
-                ${item.donation_item_id ? `<input type="hidden" name="donation_item_id_${index + 1}" value="${item.donation_item_id}">` : ''}
+                <input type="hidden" name="is_existing_${index + 1}" value="${item.is_existing ? 'true' : 'false'}">
             `;
         });
         
